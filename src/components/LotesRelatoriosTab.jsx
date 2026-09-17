@@ -16,7 +16,7 @@ import {
 } from 'lucide-react';
 
 export const LotesRelatoriosTab = () => {
-  const { lotesRelatorios = [], structures = [], showToast } = useGeotechData();
+  const { lotesRelatorios = [], structures = [], addLoteRelatorio, showToast } = useGeotechData();
   const [isNewLoteOpen, setIsNewLoteOpen] = useState(false);
   const [generating, setGenerating] = useState(false);
 
@@ -32,10 +32,18 @@ export const LotesRelatoriosTab = () => {
     e.preventDefault();
     setGenerating(true);
     setTimeout(() => {
+      addLoteRelatorio({
+        ...loteForm,
+        id: `LOTE-${Date.now().toString().slice(-6)}`,
+        status: 'CONCLUÍDO',
+        totalRelatorios: (loteForm.estruturas || []).length * 2,
+        responsavel: 'Eng. Marcelo N. Siqueira',
+        dataGeracao: new Date().toLocaleString('pt-BR'),
+        tamanhoArquivo: '14.8 MB'
+      });
       setGenerating(false);
       setIsNewLoteOpen(false);
-      showToast('Lote de relatórios gerado com sucesso! Arquivo consolidado pronto.', 'success');
-    }, 1200);
+    }, 800);
   };
 
   return (

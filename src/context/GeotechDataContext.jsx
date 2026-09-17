@@ -430,6 +430,17 @@ export const GeotechDataProvider = ({ children }) => {
     return null;
   };
 
+  // Lotes de Relatórios
+  const addLoteRelatorio = (loteData) => {
+    const saved = storageService.saveLoteRelatorios(loteData);
+    if (saved) {
+      setLotesRelatorios(prev => [saved, ...prev.filter(l => l.id !== saved.id)]);
+      showToast(`Lote ${saved.titulo || saved.id} gerado e salvo com sucesso!`, 'success');
+      return saved;
+    }
+    return null;
+  };
+
   // Instrumentos filtrados pela estrutura ativa
   const filteredInstruments = activeStructureId === 'TODAS'
     ? instruments
@@ -494,7 +505,8 @@ export const GeotechDataProvider = ({ children }) => {
       addOrdemServico,
       updateOrdemServico,
       addContratoTerceiro,
-      addCliente
+      addCliente,
+      addLoteRelatorio
     }}>
       {children}
     </GeotechDataContext.Provider>

@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useGeotechData } from '../context/GeotechDataContext';
 import { 
   ClipboardEdit, 
@@ -20,10 +20,16 @@ import {
   X
 } from 'lucide-react';
 
-export const ColetasTab = ({ onNavigateTab, initialSubTab = 'concluidas' }) => {
+export const ColetasTab = ({ onNavigateTab, initialSubTab, defaultSubTab }) => {
   const { coletas = [], structures = [], isOnline, showToast, addColeta } = useGeotechData();
   
-  const [subTab, setSubTab] = useState(initialSubTab); // 'concluidas' | 'preenchimento' | 'fila'
+  const [subTab, setSubTab] = useState(defaultSubTab || initialSubTab || 'concluidas'); // 'concluidas' | 'preenchimento' | 'fila'
+
+  useEffect(() => {
+    if (defaultSubTab || initialSubTab) {
+      setSubTab(defaultSubTab || initialSubTab);
+    }
+  }, [defaultSubTab, initialSubTab]);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedStructure, setSelectedStructure] = useState('TODAS');
   const [selectedDetailColeta, setSelectedDetailColeta] = useState(null);
