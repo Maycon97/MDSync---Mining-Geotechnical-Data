@@ -29,6 +29,7 @@ import { OrdensServicoTab } from './components/OrdensServicoTab';
 import { LotesRelatoriosTab } from './components/LotesRelatoriosTab';
 import { ClientesTab } from './components/ClientesTab';
 import { ContratosTerceirosTab } from './components/ContratosTerceirosTab';
+import { ProfileSettingsTab } from './components/ProfileSettingsTab';
 import { 
   Activity, 
   AlertCircle, 
@@ -145,6 +146,7 @@ export function App() {
         onOpenReport={() => handleNavigateTab('lotes_relatorios')}
         onOpenChecklist={() => setChecklistModalOpen(true)}
         onToggleDrawer={() => setDrawerOpen(!drawerOpen)}
+        onOpenProfile={() => handleNavigateTab('configuracoes_perfil')}
       />
 
       {/* Menu Retrátil Lateral 3D (Consolidado e Alfabético) */}
@@ -158,8 +160,7 @@ export function App() {
           setDrawerOpen(false);
         }}
         onEditProfile={() => {
-          setAuthModalTab('profile');
-          setAuthModalOpen(true);
+          handleNavigateTab('configuracoes_perfil');
           setDrawerOpen(false);
         }}
         onOpenChecklist={() => {
@@ -286,6 +287,10 @@ export function App() {
         {activeTab === 'cadastro' && (
           <InstrumentsRegistryTab />
         )}
+
+        {activeTab === 'configuracoes_perfil' && (
+          <ProfileSettingsTab onNavigateTab={handleNavigateTab} />
+        )}
       </main>
 
       {/* Botão de Ação Rápida Flutuante (Mobile FAB) */}
@@ -361,6 +366,7 @@ export function App() {
         isOpen={authModalOpen} 
         onClose={() => setAuthModalOpen(false)} 
         initialTab={authModalTab}
+        onNavigateToProfileTab={() => handleNavigateTab('configuracoes_perfil')}
       />
 
       <SyncQueueModal 

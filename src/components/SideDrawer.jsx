@@ -37,7 +37,8 @@ import {
   UserCheck,
   Download,
   RotateCcw,
-  Sparkles
+  Sparkles,
+  UserCog
 } from 'lucide-react';
 
 export const SideDrawer = ({ 
@@ -124,9 +125,8 @@ export const SideDrawer = ({
   };
 
   const handleEditProfileClick = () => {
-    onClose();
-    if (onOpenEditProfile) onOpenEditProfile();
-    else if (onEditProfile) onEditProfile();
+    recordUsage('configuracoes_perfil');
+    handleNav('configuracoes_perfil');
   };
 
   /* ============================================================
@@ -203,6 +203,15 @@ export const SideDrawer = ({
       tabId: 'contratos',
       badge: contratosVigentesCount,
       badgeColor: '#4ade80'
+    },
+    {
+      id: 'configuracoes_perfil',
+      title: 'Configurações de Perfil',
+      subtitle: 'Credenciais & RBAC',
+      icon: UserCog,
+      iconColor: '#38bdf8',
+      type: 'tab',
+      tabId: 'configuracoes_perfil'
     },
     {
       id: 'dashboard',
@@ -455,7 +464,11 @@ export const SideDrawer = ({
           <div className="card-3d-drawer" style={{ padding: '0.85rem' }}>
             
             {/* Foto, Nome e Cargo */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+            <div 
+              onClick={handleEditProfileClick}
+              style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', cursor: 'pointer' }}
+              title="Abrir Configurações de Perfil"
+            >
               <div style={{
                 position: 'relative',
                 width: '44px',

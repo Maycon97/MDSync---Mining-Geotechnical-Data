@@ -7,7 +7,7 @@ import {
   Menu
 } from 'lucide-react';
 
-export const Header = ({ onToggleDrawer }) => {
+export const Header = ({ onToggleDrawer, onOpenProfile }) => {
   const { currentUser } = useAuth();
   const { isOnline } = useGeotechData();
 
@@ -99,15 +99,15 @@ export const Header = ({ onToggleDrawer }) => {
           <span>{isOnline ? 'ONLINE' : 'OFFLINE'}</span>
         </div>
 
-        {/* Card Rápido de Perfil 3D que abre o menu lateral */}
+        {/* Card Rápido de Perfil 3D que abre Configurações de Perfil */}
         <button
-          onClick={onToggleDrawer}
+          onClick={onOpenProfile || onToggleDrawer}
           style={{
             display: 'flex',
             alignItems: 'center',
             gap: '0.45rem',
             padding: '0.3rem 0.65rem',
-            borderRadius: '10px',
+            borderRadius: '6px',
             background: 'linear-gradient(145deg, var(--bg-card), var(--bg-surface))',
             border: '1px solid var(--border-highlight)',
             boxShadow: '0 3px 8px rgba(0, 0, 0, 0.15)',
@@ -115,7 +115,7 @@ export const Header = ({ onToggleDrawer }) => {
             color: 'var(--text-main)',
             transition: 'all 0.15s ease'
           }}
-          title="Abrir Menu e Perfil do Usuário"
+          title="Abrir Configurações de Perfil"
         >
           <div style={{
             width: '26px',

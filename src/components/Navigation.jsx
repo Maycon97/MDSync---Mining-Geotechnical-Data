@@ -15,7 +15,8 @@ import {
   Box,
   FileText,
   ClipboardCheck,
-  LifeBuoy
+  LifeBuoy,
+  UserCog
 } from 'lucide-react';
 
 export const TABS = [
@@ -30,7 +31,8 @@ export const TABS = [
   { id: 'laudo', label: 'Laudo ANM 95/2022', icon: FileText, desc: 'Emissão e gestão de laudos regulatórios ANM e PNSB' },
   { id: 'historico', label: 'Histórico de Dados', icon: History, desc: 'Consulta, filtros e exportação' },
   { id: 'ia', label: 'IA & Estabilidade', icon: Cpu, desc: 'Auditoria preditiva e parecer automatizado' },
-  { id: 'cadastro', label: 'Cadastro & Limites', icon: Database, desc: 'Catálogo de instrumentos, cotas e seções' }
+  { id: 'cadastro', label: 'Cadastro & Limites', icon: Database, desc: 'Catálogo de instrumentos, cotas e seções' },
+  { id: 'configuracoes_perfil', label: 'Configurações de Perfil', icon: UserCog, desc: 'Gestão de credenciais, dados cadastrais e permissões RBAC' }
 ];
 
 export const Navigation = ({ activeTab, onSelectTab }) => {

@@ -19,7 +19,7 @@ import {
   UserCog
 } from 'lucide-react';
 
-export const AuthModal = ({ isOpen, onClose, initialTab = 'login' }) => {
+export const AuthModal = ({ isOpen, onClose, initialTab = 'login', onNavigateToProfileTab }) => {
   const { currentUser, login, register, users, changeRole, updateProfile } = useAuth();
   
   const [tab, setTab] = useState(initialTab); // 'login' | 'register' | 'profile'
@@ -287,6 +287,33 @@ export const AuthModal = ({ isOpen, onClose, initialTab = 'login' }) => {
         {tab === 'profile' ? (
           /* Formulário de Edição de Perfil (InspectApp) */
           <form onSubmit={handleProfileSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
+            {onNavigateToProfileTab && (
+              <button
+                type="button"
+                onClick={() => {
+                  onClose();
+                  onNavigateToProfileTab();
+                }}
+                style={{
+                  padding: '0.55rem 0.85rem',
+                  borderRadius: '4px',
+                  border: '1px solid var(--border-highlight)',
+                  backgroundColor: 'var(--primary-accent-bg)',
+                  color: 'var(--primary-accent)',
+                  fontSize: '0.78rem',
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '0.45rem',
+                  marginBottom: '0.25rem'
+                }}
+              >
+                <UserCog size={15} />
+                <span>Abrir na Aba Individual: Configurações de Perfil</span>
+              </button>
+            )}
             <div style={{
               display: 'flex',
               alignItems: 'center',
