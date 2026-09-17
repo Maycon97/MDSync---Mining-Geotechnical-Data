@@ -3,10 +3,11 @@ import { defineConfig } from 'vite'
 
 // https://vite.dev/config/
 export default defineConfig({
+  base: './',
   plugins: [react()],
   server: {
     watch: {
-      ignored: ['**/android/**', '**/*.apk', '**/dist/**']
+      ignored: ['**/android/**', '**/ios/**', '**/*.apk', '**/dist/**']
     }
   }
 })
