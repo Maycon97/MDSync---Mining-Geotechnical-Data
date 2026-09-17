@@ -1,0 +1,8 @@
+{
+  "appId": "com.itaminas.mdsync",
+  "appName": "MDSync Geotecnia",
+  "webDir": "dist",
+  "server": {
+    "androidScheme": "https"
+  }
+}
