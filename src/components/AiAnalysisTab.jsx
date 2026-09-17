@@ -42,6 +42,10 @@ export const AiAnalysisTab = ({ onNavigateTab }) => {
     anomalies, 
     pluviometria, 
     stats,
+    contratosTerceiros = [],
+    ordensServico = [],
+    clientes = [],
+    coletas = [],
     activeStructureId, 
     selectStructure 
   } = useGeotechData();
@@ -142,7 +146,11 @@ Como posso te ajudar hoje?
         instruments,
         anomalies,
         pluviometria,
-        stats
+        stats,
+        contratosTerceiros,
+        ordensServico,
+        clientes,
+        coletas
       };
 
       const result = await geminiService.sendMessage({
@@ -270,6 +278,24 @@ Como posso te ajudar hoje?
                 } else if (act.param === 'home') {
                   icon = <Activity size={14} style={{ color: '#a855f7' }} />;
                   label = 'Ir para Página Inicial (Home)';
+                } else if (act.param === 'coletas') {
+                  icon = <ClipboardEdit size={14} style={{ color: '#f59e0b' }} />;
+                  label = 'Ver Coletas de Campo';
+                } else if (act.param === 'ordens_servico') {
+                  icon = <Activity size={14} style={{ color: '#0284c7' }} />;
+                  label = 'Ver Ordens de Serviço';
+                } else if (act.param === 'contratos') {
+                  icon = <Layers size={14} style={{ color: '#8b5cf6' }} />;
+                  label = 'Ver Contratos Terceiros';
+                } else if (act.param === 'clientes') {
+                  icon = <Activity size={14} style={{ color: '#38bdf8' }} />;
+                  label = 'Ver Clientes & Unidades';
+                } else if (act.param === 'lotes_relatorios') {
+                  icon = <FileText size={14} style={{ color: '#60a5fa' }} />;
+                  label = 'Ver Lotes de Relatórios';
+                } else if (act.param === '3d') {
+                  icon = <Activity size={14} style={{ color: '#3b82f6' }} />;
+                  label = 'Abrir Modelo 3D da Cava Jangada';
                 }
               } else if (act.type === 'DOWNLOAD' && act.param === 'apk') {
                 icon = <Download size={14} style={{ color: '#10b981' }} />;
