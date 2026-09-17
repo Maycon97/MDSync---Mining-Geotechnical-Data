@@ -116,16 +116,44 @@ export const GeotechDataProvider = ({ children }) => {
     }
   };
 
-  // Carregar dados mestre de /data/geotech_master.json
+  // Carregar dados mestre de data/geotech_master.json com suporte a GitHub Pages / Capacitor / dev
   useEffect(() => {
     async function loadData() {
       try {
         setLoading(true);
-        const res = await fetch('/data/geotech_master.json');
-        if (!res.ok) {
-          throw new Error(`Falha ao carregar banco de dados geotécnico: HTTP ${res.status}`);
+        const baseUrl = import.meta.env.BASE_URL || './';
+        const targetUrl = `${baseUrl.endsWith('/') ? baseUrl : baseUrl + '/'}data/geotech_master.json`;
+
+        let res;
+        try {
+          res = await fetch(targetUrl);
+          if (!res.ok) {
+            res = await fetch('./data/geotech_master.json');
+          }
+        } catch {
+          try {
+            res = await fetch('./data/geotech_master.json');
+          } catch(err) {
+            // Seguirá para o fallback de cache
+          }
         }
-        const data = await res.json();
+
+        let data;
+        if (res && res.ok) {
+          data = await res.json();
+          try {
+            localStorage.setItem('mdsync_cached_master_data', JSON.stringify(data));
+          } catch (storageErr) {
+            console.warn('Aviso: Armazenamento local indisponível para cache offline:', storageErr);
+          }
+        } else {
+          const cached = localStorage.getItem('mdsync_cached_master_data');
+          if (cached) {
+            data = JSON.parse(cached);
+          } else {
+            throw new Error(`Falha ao carregar banco de dados geotécnico: HTTP ${res ? res.status : 'ERR'}`);
+          }
+        }
         setMasterData(data);
         setStructures(data.estruturas || []);
         setLimites(data.limites || {});

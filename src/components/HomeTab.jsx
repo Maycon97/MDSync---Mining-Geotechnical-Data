@@ -194,7 +194,7 @@ export const HomeTab = ({ onNavigateTab }) => {
           <div style={{ maxWidth: '850px' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.5rem' }}>
               <img 
-                src="/logo_mdsync_icon.png" 
+                src="./logo_mdsync_icon.png" 
                 alt="MDSync" 
                 style={{ height: '48px', width: '48px', objectFit: 'contain', filter: 'drop-shadow(0 4px 12px rgba(56, 189, 248, 0.3))' }} 
               />

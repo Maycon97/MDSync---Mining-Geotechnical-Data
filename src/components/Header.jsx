@@ -78,7 +78,7 @@ export const Header = ({ onOpenAuth, onOpenSync, onOpenReport, onOpenChecklist, 
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
           <img 
-            src="/logo_mdsync_icon.png" 
+            src="./logo_mdsync_icon.png" 
             alt="MDSync Logo" 
             style={{ 
               height: '42px', 
@@ -127,7 +127,7 @@ export const Header = ({ onOpenAuth, onOpenSync, onOpenReport, onOpenChecklist, 
 
         {/* Botão Baixar APK Android */}
         <a
-          href="/mdsync-geotecnia.apk"
+          href="./mdsync-geotecnia.apk"
           download="mdsync-geotecnia.apk"
           className="btn-secondary"
           style={{
