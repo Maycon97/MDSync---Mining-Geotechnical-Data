@@ -1,0 +1,72 @@
+[
+  {
+    "name": "p_gina_1_informa_es_gerais",
+    "label": "Página 1 - Informações Gerais",
+    "type": "esriQuestionTypePage",
+    "required": null,
+    "options": []
+  },
+  {
+    "name": "p_gina_2_acessos",
+    "label": "Página 2 - Acessos",
+    "type": "esriQuestionTypePage",
+    "required": null,
+    "options": []
+  },
+  {
+    "name": "p_gina_3_maci_o_e_ombreiras",
+    "label": "Página 3 - Maciço e Ombreiras",
+    "type": "esriQuestionTypePage",
+    "required": null,
+    "options": []
+  },
+  {
+    "name": "p_gina_4_dispositivos_de_drenag",
+    "label": "Página 4 - Dispositivos de Drenagem Superficial",
+    "type": "esriQuestionTypePage",
+    "required": null,
+    "options": []
+  },
+  {
+    "name": "p_gina_5_reservat_rio",
+    "label": "Página 5 - Reservatório",
+    "type": "esriQuestionTypePage",
+    "required": null,
+    "options": []
+  },
+  {
+    "name": "p_gina_6_drenagem_interna",
+    "label": "Página 6 - Drenagem Interna",
+    "type": "esriQuestionTypePage",
+    "required": null,
+    "options": []
+  },
+  {
+    "name": "p_gina_7_instrumenta_o",
+    "label": "Página 7 - Instrumentação",
+    "type": "esriQuestionTypePage",
+    "required": null,
+    "options": []
+  },
+  {
+    "name": "p_gina_8_sistema_extravasor",
+    "label": "Página 8 - Sistema Extravasor",
+    "type": "esriQuestionTypePage",
+    "required": null,
+    "options": []
+  },
+  {
+    "name": "p_gina_9_estado_de_conserva_o_d",
+    "label": "Página 9 - Estado de Conservação da Estrutura - EC",
+    "type": "esriQuestionTypePage",
+    "required": null,
+    "options": []
+  },
+  {
+    "name": "p_gina_10_assinatura",
+    "label": "Página 10 - Assinatura",
+    "type": "esriQuestionTypePage",
+    "required": null,
+    "options": []
+  }
+]

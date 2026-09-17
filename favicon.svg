@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0284c7"/>
+      <stop offset="100%" stop-color="#0f172a"/>
+    </linearGradient>
+    <linearGradient id="waveGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#38bdf8"/>
+      <stop offset="100%" stop-color="#0284c7"/>
+    </linearGradient>
+  </defs>
+  
+  <!-- Fundo Arredondado do App -->
+  <rect width="512" height="512" rx="112" fill="url(#bgGrad)"/>
+  
+  <!-- Seção da Barragem -->
+  <polygon points="60,400 190,160 320,160 450,400" fill="#334155" stroke="#475569" stroke-width="8"/>
+  <!-- Crista da Barragem -->
+  <rect x="186" y="150" width="140" height="24" rx="6" fill="#64748b"/>
+  
+  <!-- Linha Freática / Nível da Água -->
+  <path d="M 60,320 Q 180,310 260,260 T 450,380" fill="none" stroke="#38bdf8" stroke-width="12" stroke-dasharray="16 8"/>
+  
+  <!-- Piezômetro Central -->
+  <line x1="256" y1="130" x2="256" y2="360" stroke="#f8fafc" stroke-width="10"/>
+  <!-- Cabeça do Sensor com Pulso -->
+  <circle cx="256" cy="120" r="28" fill="#10b981" stroke="#ffffff" stroke-width="8"/>
+  <circle cx="256" cy="120" r="12" fill="#ffffff"/>
+  
+  <!-- Gotas d'água estilizadas -->
+  <path d="M 330,220 C 330,240 310,255 310,270 C 310,285 322,295 330,295 C 338,295 350,285 350,270 C 350,255 330,240 330,220 Z" fill="url(#waveGrad)"/>
+</svg>
