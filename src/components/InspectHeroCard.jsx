@@ -15,21 +15,41 @@ import {
   QrCode, 
   ArrowRight,
   ShieldCheck,
-  X
+  X,
+  Download,
+  Layers,
+  Sparkles
 } from 'lucide-react';
 
-export const InspectHeroCard = ({ onNavigateTab }) => {
+export const InspectHeroCard = ({ 
+  onNavigate, 
+  onNavigateTab, 
+  onSelectInstrument, 
+  onOpenSync 
+}) => {
   const { currentUser } = useAuth();
   const { 
     isOnline, 
-    offlineCount, 
+    offlineCount = 0, 
     contratosTerceiros = [], 
     coletas = [], 
-    showToast 
+    instruments = [],
+    showToast,
+    toggleSimulatedOffline 
   } = useGeotechData();
 
   const [isUpdatingForms, setIsUpdatingForms] = useState(false);
   const [showQrModal, setShowQrModal] = useState(false);
+  const [qrScanningActive, setQrScanningActive] = useState(false);
+
+  // Unificação de navegação para suportar onNavigateTab e onNavigate
+  const navigate = (tabId, subTab = null) => {
+    if (onNavigateTab) {
+      onNavigateTab(tabId, subTab);
+    } else if (onNavigate) {
+      onNavigate(tabId, subTab);
+    }
+  };
 
   const contratosCount = contratosTerceiros.length;
   const emPreenchimentoCount = coletas.filter(c => c.status === 'EM_PREENCHIMENTO').length;
@@ -40,11 +60,31 @@ export const InspectHeroCard = ({ onNavigateTab }) => {
     setTimeout(() => {
       setIsUpdatingForms(false);
       showToast('Formulários de campo e parâmetros de ensaio atualizados!', 'success');
-    }, 900);
+    }, 800);
+  };
+
+  // Amostra de instrumentos para o QR Code
+  const qrSampleInstruments = instruments.length > 0 
+    ? instruments.slice(0, 5) 
+    : [
+        { id: 'INA-108', estrutura: 'CAVA_CENTRAL', tipo: 'Piezômetro Pneumático' },
+        { id: 'PZ-03', estrutura: 'BARRAGEM_B1', tipo: 'Piezômetro Casagrande' },
+        { id: 'NA-04', estrutura: 'PILHA_NORTE', tipo: 'Medidor Nível d\'Água' },
+        { id: 'V-01', estrutura: 'DIQUE_SUL', tipo: 'Vertedouro Parshall' }
+      ];
+
+  const handleSelectQrInstrument = (inst) => {
+    setShowQrModal(false);
+    if (onSelectInstrument) {
+      onSelectInstrument(inst);
+    } else {
+      navigate('campo');
+    }
+    showToast(`Instrumento ${inst.id} (${inst.estrutura || 'Geotecnia'}) identificado via QR Code!`, 'success');
   };
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem', marginBottom: '1.5rem' }}>
       
       {/* ============================================================
           CARD SUPERIOR: BEM-VINDO + STATUS INSPECTAPP
@@ -61,76 +101,60 @@ export const InspectHeroCard = ({ onNavigateTab }) => {
           overflow: 'hidden'
         }}
       >
-        <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: '1.5rem' }}>
-          
-          {/* Lado Esquerdo: Identificação e Mensagem */}
-          <div style={{ flex: '1 1 340px' }}>
-            
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.85rem', marginBottom: '0.75rem' }}>
-              <div style={{
-                position: 'relative',
-                width: '56px',
-                height: '56px',
-                borderRadius: '50%',
-                border: '2px solid #10b981',
-                padding: '2px',
-                backgroundColor: 'rgba(255, 255, 255, 0.05)'
-              }}>
-                {currentUser?.foto ? (
-                  <img 
-                    src={currentUser.foto} 
-                    alt={currentUser.nome} 
-                    style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover' }} 
-                  />
-                ) : (
-                  <div style={{
-                    width: '100%',
-                    height: '100%',
-                    borderRadius: '50%',
-                    backgroundColor: '#0284c7',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    color: '#ffffff',
-                    fontWeight: 800,
-                    fontSize: '1.1rem'
-                  }}>
-                    {currentUser?.avatar || 'MA'}
-                  </div>
-                )}
-                <div style={{
-                  position: 'absolute',
-                  bottom: '0px',
-                  right: '0px',
-                  width: '12px',
-                  height: '12px',
-                  borderRadius: '50%',
-                  backgroundColor: '#10b981',
-                  border: '2px solid var(--bg-surface)'
-                }} />
-              </div>
+        {/* Marca d'água de engenharia sutil */}
+        <div style={{
+          position: 'absolute',
+          top: '-20px',
+          right: '-20px',
+          opacity: 0.04,
+          pointerEvents: 'none'
+        }}>
+          <ShieldCheck size={260} />
+        </div>
 
-              <div>
-                <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)', display: 'block' }}>
-                  Bem-vindo,
-                </span>
-                <h2 style={{ fontSize: '1.25rem', fontWeight: 800, margin: 0, color: 'var(--text-main)' }}>
-                  {currentUser?.nome || 'Marcos Alexandre Rodrigues'}
-                </h2>
-                <span style={{ fontSize: '0.74rem', color: 'var(--primary-accent)', fontWeight: 600 }}>
-                  {currentUser?.setor || 'Engenharia Geotécnica & Barragens'} • Itaminas S/A
-                </span>
-              </div>
+        <div style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          flexWrap: 'wrap',
+          gap: '1.25rem',
+          position: 'relative',
+          zIndex: 1
+        }}>
+          {/* Lado Esquerdo: Mensagem e Telemetria de Conexão */}
+          <div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '0.4rem' }}>
+              <span style={{
+                backgroundColor: 'rgba(16, 185, 129, 0.15)',
+                color: '#10b981',
+                padding: '0.2rem 0.6rem',
+                borderRadius: '9999px',
+                fontSize: '0.72rem',
+                fontWeight: 700,
+                letterSpacing: '0.04em',
+                textTransform: 'uppercase',
+                border: '1px solid rgba(16, 185, 129, 0.3)',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '0.35rem'
+              }}>
+                <span style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: '#10b981', display: 'inline-block' }} />
+                MDSync v2.0 Inspect
+              </span>
+              <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>• Itaminas Mineração</span>
             </div>
 
-            <p style={{ fontSize: '0.825rem', color: 'var(--text-muted)', margin: '0 0 1rem 0' }}>
-              Tenho algumas informações importantes para você:
+            <h2 style={{ fontSize: '1.45rem', fontWeight: 800, color: 'var(--text-main)', margin: '0 0 0.4rem 0', letterSpacing: '-0.02em' }}>
+              Bem-vindo, {currentUser?.nome || 'Eng. Marcelo N. Siqueira'}!
+            </h2>
+            <p style={{ fontSize: '0.84rem', color: 'var(--text-muted)', margin: 0, maxWidth: '650px', lineHeight: 1.4 }}>
+              Sistema de telemetria geotécnica, leituras de campo e fiscalização de estruturas.
             </p>
 
-            {/* Linha de Status de Conectividade & Hardware */}
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.85rem' }}>
+            {/* Chips de Telemetria de Hardware (GPS, Conexão, Armazenamento) */}
+            <div style={{ display: 'flex', gap: '0.65rem', flexWrap: 'wrap', marginTop: '1rem' }}>
               
-              {/* GPS */}
+              {/* GPS RTK */}
               <div style={{
                 display: 'flex',
                 alignItems: 'center',
@@ -145,7 +169,7 @@ export const InspectHeroCard = ({ onNavigateTab }) => {
                 </div>
                 <div>
                   <span style={{ fontSize: '0.7rem', fontWeight: 700, color: '#10b981', display: 'block', textTransform: 'uppercase' }}>
-                    GPS ATIVADO
+                    GPS ATIVO
                   </span>
                   <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)' }}>
                     Alta Precisão RTK
@@ -153,21 +177,27 @@ export const InspectHeroCard = ({ onNavigateTab }) => {
                 </div>
               </div>
 
-              {/* Wi-Fi / Conexão */}
-              <div style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.45rem',
-                backgroundColor: isOnline ? 'rgba(16, 185, 129, 0.1)' : 'rgba(239, 68, 68, 0.1)',
-                padding: '0.4rem 0.75rem',
-                borderRadius: '8px',
-                border: isOnline ? '1px solid rgba(16, 185, 129, 0.25)' : '1px solid rgba(239, 68, 68, 0.25)'
-              }}>
-                <div style={{ color: isOnline ? '#10b981' : '#ef4444' }}>
+              {/* Wi-Fi / Conexão (com Toggle Interativo) */}
+              <div 
+                onClick={toggleSimulatedOffline}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.45rem',
+                  backgroundColor: isOnline ? 'rgba(16, 185, 129, 0.1)' : 'rgba(245, 158, 11, 0.12)',
+                  padding: '0.4rem 0.75rem',
+                  borderRadius: '8px',
+                  border: isOnline ? '1px solid rgba(16, 185, 129, 0.25)' : '1px solid rgba(245, 158, 11, 0.35)',
+                  cursor: 'pointer',
+                  transition: 'all 0.15s ease'
+                }}
+                title={isOnline ? 'Clique para simular modo offline de campo' : 'Modo offline. Clique para reconectar'}
+              >
+                <div style={{ color: isOnline ? '#10b981' : '#f59e0b' }}>
                   {isOnline ? <CheckCircle2 size={16} /> : <WifiOff size={16} />}
                 </div>
                 <div>
-                  <span style={{ fontSize: '0.7rem', fontWeight: 700, color: isOnline ? '#10b981' : '#ef4444', display: 'block', textTransform: 'uppercase' }}>
+                  <span style={{ fontSize: '0.7rem', fontWeight: 700, color: isOnline ? '#10b981' : '#f59e0b', display: 'block', textTransform: 'uppercase' }}>
                     {isOnline ? 'WI-FI / 4G ONLINE' : 'MODO OFFLINE'}
                   </span>
                   <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)' }}>
@@ -239,19 +269,30 @@ export const InspectHeroCard = ({ onNavigateTab }) => {
                   VERSÃO DO APP
                 </span>
                 <span style={{ fontSize: '0.78rem', fontWeight: 700, color: 'var(--text-main)' }}>
-                  v2.4 (Build 2026.09.16)
+                  v2.0 GEOTEC
                 </span>
               </div>
-              <span style={{
-                fontSize: '0.68rem',
-                fontWeight: 700,
-                color: '#10b981',
-                backgroundColor: 'rgba(16, 185, 129, 0.15)',
-                padding: '0.15rem 0.45rem',
-                borderRadius: '8px'
-              }}>
-                APK Oficial
-              </span>
+              <a
+                href="./mdsync-geotecnia.apk"
+                download="mdsync-geotecnia.apk"
+                style={{
+                  fontSize: '0.68rem',
+                  fontWeight: 700,
+                  color: '#10b981',
+                  backgroundColor: 'rgba(16, 185, 129, 0.15)',
+                  padding: '0.15rem 0.5rem',
+                  borderRadius: '8px',
+                  textDecoration: 'none',
+                  border: '1px solid rgba(16, 185, 129, 0.3)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.25rem'
+                }}
+                title="Baixar instalador APK oficial para Android"
+              >
+                <Download size={11} />
+                <span>APK Oficial</span>
+              </a>
             </div>
           </div>
 
@@ -272,9 +313,9 @@ export const InspectHeroCard = ({ onNavigateTab }) => {
           gap: '0.85rem'
         }}>
           
-          {/* 1. CONTRATOS (Badge 92) */}
+          {/* 1. CONTRATOS (Redireciona para o módulo Contratos de Terceiros) */}
           <button
-            onClick={() => onNavigateTab('contratos')}
+            onClick={() => navigate('contratos')}
             style={{
               padding: '1.15rem 1.25rem',
               borderRadius: '14px',
@@ -285,9 +326,10 @@ export const InspectHeroCard = ({ onNavigateTab }) => {
               justifyContent: 'space-between',
               cursor: 'pointer',
               boxShadow: '0 4px 14px rgba(16, 185, 129, 0.15)',
-              transition: 'transform 0.15s, box-shadow 0.15s',
+              transition: 'all 0.15s cubic-bezier(0.16, 1, 0.3, 1)',
               textAlign: 'left'
             }}
+            title="Abrir Módulo de Contratos de Empresas Terceirizadas"
           >
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
               <div style={{
@@ -298,7 +340,8 @@ export const InspectHeroCard = ({ onNavigateTab }) => {
                 color: '#ffffff',
                 display: 'flex',
                 alignItems: 'center',
-                justifyContent: 'center'
+                justifyContent: 'center',
+                boxShadow: '0 2px 8px rgba(16, 185, 129, 0.4)'
               }}>
                 <FileText size={22} />
               </div>
@@ -323,15 +366,16 @@ export const InspectHeroCard = ({ onNavigateTab }) => {
               justifyContent: 'center',
               fontSize: '0.95rem',
               fontWeight: 800,
-              boxShadow: '0 2px 8px rgba(0,0,0,0.3)'
+              boxShadow: '0 2px 8px rgba(0,0,0,0.3)',
+              border: '1.5px solid rgba(255, 255, 255, 0.2)'
             }}>
-              {contratosCount || 92}
+              {contratosCount || 5}
             </div>
           </button>
 
-          {/* 2. EM PREENCHIMENTO (Badge 19) */}
+          {/* 2. EM PREENCHIMENTO (Redireciona para Coletas > Sub-aba Em Preenchimento) */}
           <button
-            onClick={() => onNavigateTab('coletas', 'preenchimento')}
+            onClick={() => navigate('coletas', 'preenchimento')}
             style={{
               padding: '1.15rem 1.25rem',
               borderRadius: '14px',
@@ -342,9 +386,10 @@ export const InspectHeroCard = ({ onNavigateTab }) => {
               justifyContent: 'space-between',
               cursor: 'pointer',
               boxShadow: '0 4px 14px rgba(245, 158, 11, 0.15)',
-              transition: 'transform 0.15s, box-shadow 0.15s',
+              transition: 'all 0.15s cubic-bezier(0.16, 1, 0.3, 1)',
               textAlign: 'left'
             }}
+            title="Acessar Coletas em Preenchimento (Rascunhos)"
           >
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
               <div style={{
@@ -355,7 +400,8 @@ export const InspectHeroCard = ({ onNavigateTab }) => {
                 color: '#ffffff',
                 display: 'flex',
                 alignItems: 'center',
-                justifyContent: 'center'
+                justifyContent: 'center',
+                boxShadow: '0 2px 8px rgba(245, 158, 11, 0.4)'
               }}>
                 <Edit3 size={22} />
               </div>
@@ -380,15 +426,22 @@ export const InspectHeroCard = ({ onNavigateTab }) => {
               justifyContent: 'center',
               fontSize: '0.95rem',
               fontWeight: 800,
-              boxShadow: '0 2px 8px rgba(0,0,0,0.3)'
+              boxShadow: '0 2px 8px rgba(0,0,0,0.3)',
+              border: '1.5px solid rgba(255, 255, 255, 0.2)'
             }}>
-              {emPreenchimentoCount || 19}
+              {emPreenchimentoCount || 2}
             </div>
           </button>
 
-          {/* 3. AGUARDANDO ENVIO (Badge 0) */}
+          {/* 3. AGUARDANDO ENVIO (Redireciona para Coletas > Fila de Integração ou Modal de Sync) */}
           <button
-            onClick={() => onNavigateTab('coletas', 'fila')}
+            onClick={() => {
+              if (onOpenSync && offlineCount > 0) {
+                onOpenSync();
+              } else {
+                navigate('coletas', 'fila');
+              }
+            }}
             style={{
               padding: '1.15rem 1.25rem',
               borderRadius: '14px',
@@ -399,9 +452,10 @@ export const InspectHeroCard = ({ onNavigateTab }) => {
               justifyContent: 'space-between',
               cursor: 'pointer',
               boxShadow: '0 4px 14px rgba(2, 132, 199, 0.15)',
-              transition: 'transform 0.15s, box-shadow 0.15s',
+              transition: 'all 0.15s cubic-bezier(0.16, 1, 0.3, 1)',
               textAlign: 'left'
             }}
+            title="Abrir Fila de Sincronização / Aguardando Envio"
           >
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
               <div style={{
@@ -412,7 +466,8 @@ export const InspectHeroCard = ({ onNavigateTab }) => {
                 color: '#ffffff',
                 display: 'flex',
                 alignItems: 'center',
-                justifyContent: 'center'
+                justifyContent: 'center',
+                boxShadow: '0 2px 8px rgba(2, 132, 199, 0.4)'
               }}>
                 <Clock size={22} />
               </div>
@@ -437,13 +492,14 @@ export const InspectHeroCard = ({ onNavigateTab }) => {
               justifyContent: 'center',
               fontSize: '0.95rem',
               fontWeight: 800,
-              boxShadow: '0 2px 8px rgba(0,0,0,0.3)'
+              boxShadow: '0 2px 8px rgba(0,0,0,0.3)',
+              border: '1.5px solid rgba(255, 255, 255, 0.2)'
             }}>
-              {aguardandoEnvioCount}
+              {aguardandoEnvioCount || 1}
             </div>
           </button>
 
-          {/* 4. LER UM QR CODE */}
+          {/* 4. LER UM QR CODE (Abre Modal de Scanner e Carrega Instrumento no Campo) */}
           <button
             onClick={() => setShowQrModal(true)}
             style={{
@@ -456,9 +512,10 @@ export const InspectHeroCard = ({ onNavigateTab }) => {
               justifyContent: 'space-between',
               cursor: 'pointer',
               boxShadow: '0 4px 14px rgba(168, 85, 247, 0.15)',
-              transition: 'transform 0.15s, box-shadow 0.15s',
+              transition: 'all 0.15s cubic-bezier(0.16, 1, 0.3, 1)',
               textAlign: 'left'
             }}
+            title="Escanear QR Code para Identificar Instrumento Geotécnico"
           >
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
               <div style={{
@@ -469,7 +526,8 @@ export const InspectHeroCard = ({ onNavigateTab }) => {
                 color: '#ffffff',
                 display: 'flex',
                 alignItems: 'center',
-                justifyContent: 'center'
+                justifyContent: 'center',
+                boxShadow: '0 2px 8px rgba(168, 85, 247, 0.4)'
               }}>
                 <QrCode size={22} />
               </div>
@@ -489,7 +547,9 @@ export const InspectHeroCard = ({ onNavigateTab }) => {
         </div>
       </div>
 
-      {/* MODAL SIMULADOR QR CODE */}
+      {/* ============================================================
+          MODAL LEITOR / SIMULADOR DE QR CODE GEOTÉCNICO
+          ============================================================ */}
       {showQrModal && (
         <div className="modal-backdrop" style={{
           position: 'fixed',
@@ -498,63 +558,142 @@ export const InspectHeroCard = ({ onNavigateTab }) => {
           right: 0,
           bottom: 0,
           backgroundColor: 'rgba(0,0,0,0.75)',
-          backdropFilter: 'blur(5px)',
-          zIndex: 1300,
+          backdropFilter: 'blur(8px)',
+          zIndex: 1400,
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
           padding: '1rem'
         }}>
-          <div className="card-panel" style={{ width: '100%', maxWidth: '420px', padding: '1.5rem', textAlign: 'center' }}>
+          <div className="card-panel" style={{ 
+            width: '100%', 
+            maxWidth: '460px', 
+            padding: '1.5rem', 
+            textAlign: 'center',
+            boxShadow: '0 25px 60px rgba(0, 0, 0, 0.65)',
+            border: '1.5px solid rgba(168, 85, 247, 0.4)'
+          }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-              <h3 style={{ fontSize: '1.1rem', fontWeight: 800, margin: 0, color: 'var(--text-main)' }}>
-                Leitor de QR Code / Barcode
-              </h3>
-              <button onClick={() => setShowQrModal(false)} style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <QrCode size={20} style={{ color: '#a855f7' }} />
+                <h3 style={{ fontSize: '1.1rem', fontWeight: 800, margin: 0, color: 'var(--text-main)' }}>
+                  Leitor de QR Code Geotécnico
+                </h3>
+              </div>
+              <button 
+                onClick={() => { setShowQrModal(false); setQrScanningActive(false); }} 
+                style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', padding: '4px' }}
+                title="Fechar"
+              >
                 <X size={20} />
               </button>
             </div>
 
+            {/* Viewfinder com Feixe de Laser 3D */}
             <div style={{
-              width: '200px',
-              height: '200px',
+              width: '210px',
+              height: '210px',
               margin: '0 auto 1.25rem',
-              borderRadius: '12px',
-              border: '2px dashed var(--primary-accent)',
+              borderRadius: '16px',
+              border: '2px dashed rgba(168, 85, 247, 0.7)',
               display: 'flex',
               flexDirection: 'column',
               alignItems: 'center',
               justifyContent: 'center',
               gap: '0.75rem',
-              backgroundColor: 'var(--bg-secondary)',
-              position: 'relative'
+              backgroundColor: 'rgba(15, 23, 42, 0.65)',
+              position: 'relative',
+              overflow: 'hidden',
+              boxShadow: 'inset 0 0 25px rgba(168, 85, 247, 0.25)'
             }}>
-              <QrCode size={64} style={{ color: 'var(--primary-accent)' }} />
-              <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-                Aponte a câmera para a placa do instrumento
+              {/* Feixe animado de escaneamento a laser */}
+              <div style={{
+                position: 'absolute',
+                left: 0,
+                right: 0,
+                height: '3px',
+                background: 'linear-gradient(90deg, transparent, #a855f7, #e879f9, transparent)',
+                boxShadow: '0 0 14px #a855f7',
+                top: qrScanningActive ? '80%' : '15%',
+                transition: 'top 1.4s ease-in-out',
+                animation: 'pulseGlow 1.2s infinite alternate'
+              }} />
+
+              <QrCode size={70} style={{ color: '#c084fc', opacity: 0.9 }} />
+              <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', padding: '0 0.75rem' }}>
+                {qrScanningActive ? 'Escaneando placa de identificação...' : 'Aponte a câmera para a plaqueta do instrumento'}
               </span>
             </div>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+            <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)', margin: '0 0 0.75rem 0', fontWeight: 600 }}>
+              Ou selecione um instrumento identificado para registrar leitura:
+            </p>
+
+            {/* Lista de Instrumentos Identificados no QR Code */}
+            <div style={{ 
+              display: 'flex', 
+              flexDirection: 'column', 
+              gap: '0.45rem', 
+              marginBottom: '1.25rem', 
+              maxHeight: '190px', 
+              overflowY: 'auto',
+              textAlign: 'left'
+            }}>
+              {qrSampleInstruments.map((inst, i) => (
+                <button
+                  key={inst.uid || inst.id || i}
+                  onClick={() => handleSelectQrInstrument(inst)}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    padding: '0.65rem 0.85rem',
+                    borderRadius: '8px',
+                    backgroundColor: 'var(--bg-secondary)',
+                    border: '1px solid var(--border-medium)',
+                    color: 'var(--text-main)',
+                    cursor: 'pointer',
+                    fontSize: '0.8rem',
+                    transition: 'all 0.15s ease',
+                    boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+                  }}
+                  title={`Registrar leitura no ${inst.id}`}
+                >
+                  <div>
+                    <span style={{ fontWeight: 800, color: '#c084fc', display: 'block' }}>
+                      {inst.id}
+                    </span>
+                    <span style={{ fontSize: '0.68rem', color: 'var(--text-muted)' }}>
+                      {inst.tipo || 'Instrumento Geotécnico'} • {inst.estrutura || 'Estrutura'}
+                    </span>
+                  </div>
+                  <ArrowRight size={15} style={{ color: '#a855f7' }} />
+                </button>
+              ))}
+            </div>
+
+            {/* Botões de Ação do Modal */}
+            <div style={{ display: 'flex', gap: '0.5rem' }}>
               <button
                 onClick={() => {
                   setShowQrModal(false);
-                  onNavigateTab('campo');
-                  showToast('Instrumento INA-108 identificado via QR Code!', 'success');
+                  navigate('campo');
+                  showToast('Abrindo formulário de coleta de campo...', 'info');
                 }}
                 className="btn-primary"
-                style={{ width: '100%', fontSize: '0.825rem' }}
+                style={{ flex: 1, fontSize: '0.8rem' }}
               >
-                Simular Leitura: Piezômetro INA-108
+                Abrir Coleta Manual
               </button>
               <button
                 onClick={() => setShowQrModal(false)}
                 className="btn-secondary"
-                style={{ width: '100%', fontSize: '0.825rem' }}
+                style={{ flex: 1, fontSize: '0.8rem' }}
               >
-                Fechar
+                Cancelar
               </button>
             </div>
+
           </div>
         </div>
       )}

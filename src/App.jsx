@@ -54,7 +54,10 @@ export function App() {
   const [reportModalOpen, setReportModalOpen] = useState(false);
   const [checklistModalOpen, setChecklistModalOpen] = useState(false);
 
-  const handleNavigateTab = (tabId) => {
+  const handleNavigateTab = (tabId, subTab = null) => {
+    if (subTab) {
+      setColetaInitialSubTab(subTab);
+    }
     setActiveTab(tabId);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
@@ -185,14 +188,24 @@ export function App() {
       <main style={{ flex: 1, padding: '1.25rem', maxWidth: '1600px', width: '100%', margin: '0 auto' }}>
         {activeTab === 'home' && (
           <div>
-            <InspectHeroCard onNavigate={handleNavigateTab} />
+            <InspectHeroCard 
+              onNavigate={handleNavigateTab} 
+              onNavigateTab={handleNavigateTab}
+              onSelectInstrument={handleSelectInstrumentForReading}
+              onOpenSync={() => setSyncModalOpen(true)}
+            />
             <HomeTab onNavigateTab={handleNavigateTab} />
           </div>
         )}
 
         {activeTab === 'dashboard' && (
           <div>
-            <InspectHeroCard onNavigate={handleNavigateTab} />
+            <InspectHeroCard 
+              onNavigate={handleNavigateTab} 
+              onNavigateTab={handleNavigateTab}
+              onSelectInstrument={handleSelectInstrumentForReading}
+              onOpenSync={() => setSyncModalOpen(true)}
+            />
             <DashboardTab onNavigateTab={handleNavigateTab} />
           </div>
         )}
