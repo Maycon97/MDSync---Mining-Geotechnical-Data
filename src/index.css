@@ -34,6 +34,12 @@
   --transition-fast: 0.15s cubic-bezier(0.4, 0, 0.2, 1);
   --transition-normal: 0.25s cubic-bezier(0.16, 1, 0.3, 1);
   --transition-bounce: 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+
+  /* Suporte a Safe Area Insets (iOS Notch, Dynamic Island, Home Indicator & Android Cutouts) */
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-left: env(safe-area-inset-left, 0px);
+  --safe-right: env(safe-area-inset-right, 0px);
 }
 
 /* ============================================================
@@ -898,15 +904,19 @@ button:focus-visible, .btn-action:focus-visible {
     padding: 0.75rem !important;
   }
 
-  /* Barra de cabeçalho mais compacta */
+  /* Barra de cabeçalho mais compacta e adaptada a entalhes */
   .header-bar {
-    padding: 0.5rem 0.75rem !important;
+    padding-top: calc(0.5rem + var(--safe-top)) !important;
+    padding-bottom: 0.5rem !important;
+    padding-left: calc(0.75rem + var(--safe-left)) !important;
+    padding-right: calc(0.75rem + var(--safe-right)) !important;
   }
 
   /* Abas com rolagem suave touch */
   .nav-horizontal-scroll {
     padding: 0.25rem 0.5rem 0 !important;
     gap: 0.25rem !important;
+    -webkit-overflow-scrolling: touch;
   }
 
   .nav-horizontal-scroll button {
@@ -914,7 +924,7 @@ button:focus-visible, .btn-action:focus-visible {
     font-size: 0.78rem !important;
   }
 
-  /* Modais em modo bottom sheet para celular */
+  /* Modais em modo bottom sheet para celular com safe-bottom */
   .modal-backdrop {
     align-items: flex-end !important;
     padding: 0 !important;
@@ -925,7 +935,7 @@ button:focus-visible, .btn-action:focus-visible {
     max-width: 100% !important;
     border-radius: 20px 20px 0 0 !important;
     max-height: 94vh !important;
-    padding: 1.25rem !important;
+    padding: 1.25rem 1.25rem calc(1.25rem + var(--safe-bottom)) !important;
     margin: 0 !important;
   }
 
@@ -941,13 +951,30 @@ button:focus-visible, .btn-action:focus-visible {
 /* Telas Ultra Pequenas (< 480px) */
 @media (max-width: 480px) {
   .header-bar select {
-    max-width: 150px !important;
+    max-width: 130px !important;
     font-size: 0.75rem !important;
   }
 
   .btn-primary, .btn-secondary {
-    font-size: 0.78rem !important;
+    font-size: 0.76rem !important;
+    padding: 0.45rem 0.7rem !important;
   }
+
+  .stat-card-value {
+    font-size: 1.25rem !important;
+  }
+}
+
+/* Suporte aos Botões e Menus Flutuantes com Safe Area */
+.mobile-fab-container {
+  bottom: calc(1.25rem + var(--safe-bottom)) !important;
+  right: calc(1.25rem + var(--safe-right)) !important;
+}
+
+.drawer-container {
+  padding-top: var(--safe-top) !important;
+  padding-bottom: var(--safe-bottom) !important;
+  padding-left: var(--safe-left) !important;
 }
 
 /* ============================================================
@@ -965,7 +992,8 @@ button:focus-visible, .btn-action:focus-visible {
   footer,
   .no-print,
   .mobile-fab-container,
-  .system-toast-container {
+  .system-toast-container,
+  .drawer-overlay {
     display: none !important;
   }
 
@@ -995,8 +1023,21 @@ button:focus-visible, .btn-action:focus-visible {
     margin: 0 !important;
     background: #ffffff !important;
     color: #0f172a !important;
-    padding: 0 !important;
-    margin: 0 !important;
+    break-inside: avoid !important;
+    page-break-inside: avoid !important;
+  }
+
+  table,
+  tr,
+  figure,
+  .chart-container {
+    break-inside: avoid !important;
+    page-break-inside: avoid !important;
+  }
+
+  h1, h2, h3, h4 {
+    break-after: avoid !important;
+    page-break-after: avoid !important;
   }
 
   #laudo-anm-content {
