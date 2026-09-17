@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useGeotechData } from '../context/GeotechDataContext';
+import { storageService } from '../services/storageService';
 import { 
   X, 
-  Home, 
   LayoutDashboard, 
   LineChart, 
   ClipboardEdit, 
@@ -14,7 +14,6 @@ import {
   Briefcase, 
   ChevronRight, 
   ChevronDown, 
-  User, 
   Edit3, 
   MapPin, 
   ClipboardCheck, 
@@ -26,9 +25,17 @@ import {
   CheckCircle2,
   Clock,
   Send,
-  ExternalLink,
-  ShieldCheck,
-  Award
+  Award,
+  Box,
+  Smartphone,
+  CloudLightning,
+  Wifi,
+  WifiOff,
+  Sun,
+  Moon,
+  LogIn,
+  UserCheck,
+  Download
 } from 'lucide-react';
 
 export const SideDrawer = ({ 
@@ -36,20 +43,35 @@ export const SideDrawer = ({
   onClose, 
   activeTab, 
   onSelectTab, 
-  onOpenEditProfile 
+  onOpenEditProfile,
+  onEditProfile,
+  onOpenReport,
+  onOpenSync,
+  onOpenAuth,
+  onOpenChecklist
 }) => {
-  const { currentUser, currentRole } = useAuth();
+  const { currentUser, currentRole, currentRoleKey, changeRole, allRoles } = useAuth();
   const { 
     coletas = [], 
     ordensServico = [], 
     contratosTerceiros = [], 
     fluigTickets = [], 
-    anomalies = [] 
+    offlineCount = 0,
+    isOnline,
+    toggleSimulatedOffline
   } = useGeotechData();
 
+  const [theme, setTheme] = useState(() => storageService.getTheme());
+  const [roleSelectorOpen, setRoleSelectorOpen] = useState(false);
   const [coletasExpanded, setColetasExpanded] = useState(true);
 
   if (!isOpen) return null;
+
+  const toggleTheme = () => {
+    const nextTheme = theme === 'dark' ? 'light' : 'dark';
+    setTheme(nextTheme);
+    storageService.setTheme(nextTheme);
+  };
 
   // Contadores dinâmicos para badges
   const coletasConcluidasCount = coletas.filter(c => c.status === 'CONCLUIDA').length;
@@ -57,11 +79,218 @@ export const SideDrawer = ({
   const coletasFilaCount = coletas.filter(c => c.status === 'FILA_INTEGRACAO').length;
   const osAbertasCount = ordensServico.filter(o => o.status !== 'CONCLUIDA').length;
   const contratosVigentesCount = contratosTerceiros.length;
+  const chamadosAbertosCount = fluigTickets.filter(t => t.status !== 'CONCLUIDO').length;
 
   const handleNav = (tabId, subTab = null) => {
-    onSelectTab(tabId, subTab);
+    if (tabId === 'laudo' && onOpenReport) {
+      onOpenReport();
+    } else if (tabId === 'checklist' && onOpenChecklist) {
+      onSelectTab('checklist');
+    } else {
+      onSelectTab(tabId, subTab);
+    }
     onClose();
   };
+
+  const handleEditProfileClick = () => {
+    onClose();
+    if (onOpenEditProfile) onOpenEditProfile();
+    else if (onEditProfile) onEditProfile();
+  };
+
+  /* ============================================================
+     TODOS OS ITENS EM ORDEM ALFABÉTICA RIGOROSA (A a Z)
+     ============================================================ */
+  const menuItems = [
+    {
+      id: 'analises',
+      letter: 'A',
+      title: 'Análises',
+      icon: LineChart,
+      iconColor: '#a78bfa',
+      type: 'tab',
+      tabId: 'analises'
+    },
+    {
+      id: 'baixar_apk',
+      letter: 'B',
+      title: 'Baixar APK Android',
+      subtitle: 'Instalador 4.3 MB',
+      icon: Smartphone,
+      iconColor: '#10b981',
+      type: 'link',
+      href: './mdsync-geotecnia.apk',
+      download: 'mdsync-geotecnia.apk'
+    },
+    {
+      id: 'cadastro',
+      letter: 'C',
+      title: 'Cadastro & Limites',
+      icon: Database,
+      iconColor: '#cbd5e1',
+      type: 'tab',
+      tabId: 'cadastro'
+    },
+    {
+      id: 'chamados',
+      letter: 'C',
+      title: 'Chamados (TOTVS Fluig)',
+      icon: LifeBuoy,
+      iconColor: '#38bdf8',
+      type: 'tab',
+      tabId: 'chamados',
+      badge: chamadosAbertosCount > 0 ? chamadosAbertosCount : null,
+      badgeColor: '#38bdf8'
+    },
+    {
+      id: 'checklist',
+      letter: 'C',
+      title: 'CheckList (Survey123 FIR)',
+      icon: ClipboardCheck,
+      iconColor: '#34d399',
+      type: 'tab',
+      tabId: 'checklist'
+    },
+    {
+      id: 'clientes',
+      letter: 'C',
+      title: 'Clientes',
+      icon: Building2,
+      iconColor: '#38bdf8',
+      type: 'tab',
+      tabId: 'clientes'
+    },
+    {
+      id: 'coletas',
+      letter: 'C',
+      title: 'Coletas',
+      icon: ClipboardEdit,
+      iconColor: '#fbbf24',
+      type: 'collapsible_coletas',
+      badge: coletas.length,
+      badgeColor: '#fbbf24'
+    },
+    {
+      id: 'contratos',
+      letter: 'C',
+      title: 'Contratos de Terceiros',
+      icon: Briefcase,
+      iconColor: '#4ade80',
+      type: 'tab',
+      tabId: 'contratos',
+      badge: contratosVigentesCount,
+      badgeColor: '#4ade80'
+    },
+    {
+      id: 'dashboard',
+      letter: 'D',
+      title: 'Dashboard',
+      icon: LayoutDashboard,
+      iconColor: '#38bdf8',
+      type: 'tab',
+      tabId: 'home'
+    },
+    {
+      id: 'fila_sync',
+      letter: 'F',
+      title: 'Fila de Sincronização',
+      icon: CloudLightning,
+      iconColor: offlineCount > 0 ? '#f59e0b' : '#94a3b8',
+      type: 'action',
+      action: () => {
+        onClose();
+        if (onOpenSync) onOpenSync();
+      },
+      badge: offlineCount > 0 ? offlineCount : null,
+      badgeColor: '#f59e0b'
+    },
+    {
+      id: 'mapa',
+      letter: 'G',
+      title: 'Georreferenciamento (Mapa)',
+      icon: MapPin,
+      iconColor: '#10b981',
+      type: 'tab',
+      tabId: 'mapa'
+    },
+    {
+      id: 'ia',
+      letter: 'I',
+      title: 'IA & Estabilidade (Geotinho)',
+      icon: Cpu,
+      iconColor: '#c084fc',
+      type: 'tab',
+      tabId: 'ia'
+    },
+    {
+      id: 'importacoes',
+      letter: 'I',
+      title: 'Importações (PCMI)',
+      icon: FolderInput,
+      iconColor: '#34d399',
+      type: 'tab',
+      tabId: 'importacoes'
+    },
+    {
+      id: 'laudo',
+      letter: 'L',
+      title: 'Laudo ANM nº 95/2022',
+      icon: FileText,
+      iconColor: '#60a5fa',
+      type: 'tab',
+      tabId: 'laudo'
+    },
+    {
+      id: 'lotes_relatorios',
+      letter: 'L',
+      title: 'Lotes de Relatórios',
+      icon: Layers,
+      iconColor: '#60a5fa',
+      type: 'tab',
+      tabId: 'lotes_relatorios'
+    },
+    {
+      id: 'ordens_servico',
+      letter: 'O',
+      title: 'Ordens de Serviço',
+      icon: Wrench,
+      iconColor: '#f97316',
+      type: 'tab',
+      tabId: 'ordens_servico',
+      badge: osAbertasCount > 0 ? osAbertasCount : null,
+      badgeColor: '#f97316'
+    },
+    {
+      id: 'piezometria',
+      letter: 'P',
+      title: 'Piezometria & NA',
+      icon: LineChart,
+      iconColor: '#f59e0b',
+      type: 'tab',
+      tabId: 'piezometria'
+    },
+    {
+      id: 'vazao',
+      letter: 'V',
+      title: 'Vazão & Vertedouros',
+      icon: Droplets,
+      iconColor: '#0284c7',
+      type: 'tab',
+      tabId: 'vazao'
+    },
+    {
+      id: '3d',
+      letter: 'V',
+      title: 'Visualizador 3D (Spline)',
+      icon: Box,
+      iconColor: '#ec4899',
+      type: 'tab',
+      tabId: '3d'
+    }
+  ];
+
+  // Agrupamento alfabético para divisórias limpas
+  let currentLetter = '';
 
   return (
     <div 
@@ -72,421 +301,670 @@ export const SideDrawer = ({
         left: 0,
         right: 0,
         bottom: 0,
-        backgroundColor: 'rgba(0, 0, 0, 0.65)',
-        backdropFilter: 'blur(4px)',
-        zIndex: 1200,
+        backgroundColor: 'rgba(5, 11, 26, 0.75)',
+        backdropFilter: 'blur(8px)',
+        zIndex: 1300,
         display: 'flex',
-        animation: 'fadeIn 0.25s ease-out'
       }}
       onClick={onClose}
     >
       <div 
-        className="drawer-content"
+        className="drawer-3d-panel drawer-container"
         onClick={e => e.stopPropagation()}
         style={{
-          width: '320px',
-          maxWidth: '85vw',
-          height: '100%',
-          backgroundColor: '#172554', // Azul profundo característico do InspectApp
-          backgroundImage: 'linear-gradient(180deg, #1e3a8a 0%, #0f172a 100%)',
-          color: '#ffffff',
           display: 'flex',
           flexDirection: 'column',
-          boxShadow: '4px 0 25px rgba(0,0,0,0.5)',
-          animation: 'drawerSlideIn 0.3s cubic-bezier(0.16, 1, 0.3, 1)',
-          overflowY: 'auto'
+          width: '360px',
+          maxWidth: '88vw',
+          height: '100%',
         }}
       >
         {/* ============================================================
-            1. CABEÇALHO DO PERFIL (INSPIRADO NO INSPECTAPP)
+            1. CABEÇALHO DO MDSYNC (MOVIDO DO TOPO) EM 3D
             ============================================================ */}
         <div style={{
-          padding: '1.75rem 1.25rem 1.25rem',
-          borderBottom: '1px solid rgba(255, 255, 255, 0.12)',
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          position: 'relative',
-          textAlign: 'center'
+          padding: '1.25rem 1.15rem 1rem',
+          background: 'linear-gradient(180deg, rgba(2, 132, 199, 0.22) 0%, rgba(15, 23, 42, 0.4) 100%)',
+          borderBottom: '1px solid rgba(56, 189, 248, 0.25)',
+          boxShadow: '0 4px 15px rgba(0, 0, 0, 0.3)',
+          position: 'relative'
         }}>
-          {/* Botão Fechar */}
+          {/* Botão Fechar em 3D */}
           <button
             onClick={onClose}
             style={{
               position: 'absolute',
               top: '12px',
               right: '12px',
-              background: 'none',
-              border: 'none',
-              color: 'rgba(255, 255, 255, 0.7)',
+              background: 'linear-gradient(145deg, rgba(255, 255, 255, 0.1), rgba(0, 0, 0, 0.2))',
+              border: '1px solid rgba(255, 255, 255, 0.15)',
+              borderRadius: '8px',
+              color: '#ffffff',
               cursor: 'pointer',
-              padding: '4px'
+              padding: '6px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              boxShadow: '0 2px 6px rgba(0, 0, 0, 0.4)',
+              transition: 'transform 0.15s ease'
             }}
             title="Fechar Menu"
           >
-            <X size={22} />
+            <X size={18} />
           </button>
 
-          {/* Avatar com Anel Verde de Status Ativo */}
-          <div style={{
-            position: 'relative',
-            width: '76px',
-            height: '76px',
-            borderRadius: '50%',
-            padding: '3px',
-            border: '2.5px solid #10b981', // Verde de conexão ativa
-            boxShadow: '0 4px 15px rgba(16, 185, 129, 0.35)',
-            marginBottom: '0.75rem',
-            backgroundColor: 'rgba(255, 255, 255, 0.1)'
-          }}>
-            {currentUser?.foto ? (
-              <img 
-                src={currentUser.foto} 
-                alt={currentUser.nome} 
-                style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover' }} 
-              />
-            ) : (
-              <div style={{
-                width: '100%',
-                height: '100%',
-                borderRadius: '50%',
-                backgroundColor: '#2563eb',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                fontSize: '1.4rem',
-                fontWeight: 800,
-                color: '#ffffff'
-              }}>
-                {currentUser?.avatar || 'MA'}
-              </div>
-            )}
-            {/* Ponto de status */}
+          {/* Logo & Marca Oficial MDSync */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.85rem' }}>
             <div style={{
-              position: 'absolute',
-              bottom: '2px',
-              right: '4px',
-              width: '14px',
-              height: '14px',
-              borderRadius: '50%',
-              backgroundColor: '#10b981',
-              border: '2px solid #1e3a8a'
-            }} />
-          </div>
-
-          {/* Nome e E-mail */}
-          <h3 style={{ fontSize: '1.05rem', fontWeight: 700, margin: '0 0 2px 0', color: '#ffffff' }}>
-            {currentUser?.nome || 'Marcos Alexandre Rodrigues'}
-          </h3>
-          <p style={{ fontSize: '0.76rem', color: 'rgba(255, 255, 255, 0.65)', margin: '0 0 0.5rem 0' }}>
-            {currentUser?.email || 'marcos.rodrigues@itaminas.com.br'}
-          </p>
-
-          {/* Setor / Cargo */}
-          <div style={{
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: '0.35rem',
-            padding: '0.2rem 0.65rem',
-            borderRadius: '12px',
-            backgroundColor: 'rgba(255, 255, 255, 0.12)',
-            fontSize: '0.7rem',
-            fontWeight: 600,
-            color: '#60a5fa',
-            marginBottom: '0.75rem'
-          }}>
-            <Award size={12} />
-            <span>{currentUser?.setor || currentRole?.title || 'Engenharia Geotécnica'}</span>
-          </div>
-
-          {/* Botão EDITAR PERFIL (Como na imagem do InspectApp) */}
-          <button
-            onClick={() => {
-              onClose();
-              if (onOpenEditProfile) onOpenEditProfile();
-            }}
-            style={{
-              background: 'none',
-              border: 'none',
-              color: '#34d399',
-              fontSize: '0.75rem',
-              fontWeight: 700,
+              width: '46px',
+              height: '46px',
+              borderRadius: '12px',
+              background: 'linear-gradient(135deg, rgba(56, 189, 248, 0.25), rgba(2, 132, 199, 0.1))',
+              border: '1px solid rgba(56, 189, 248, 0.4)',
               display: 'flex',
               alignItems: 'center',
-              gap: '0.4rem',
-              cursor: 'pointer',
-              letterSpacing: '0.05em',
-              textTransform: 'uppercase',
-              padding: '0.25rem 0.5rem',
-              borderRadius: '4px',
-              transition: 'background-color 0.2s'
-            }}
-          >
-            <Edit3 size={13} />
-            <span>EDITAR PERFIL</span>
-          </button>
+              justifyContent: 'center',
+              boxShadow: '0 4px 12px rgba(2, 132, 199, 0.3), inset 0 1px 1px rgba(255, 255, 255, 0.3)'
+            }}>
+              <img 
+                src="./logo_mdsync_icon.png" 
+                alt="MDSync Logo" 
+                style={{ 
+                  height: '36px', 
+                  width: '36px', 
+                  objectFit: 'contain',
+                  filter: 'drop-shadow(0 4px 8px rgba(56, 189, 248, 0.4))'
+                }} 
+              />
+            </div>
+            <div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem' }}>
+                <span style={{ 
+                  fontWeight: 800, 
+                  fontSize: '1.25rem', 
+                  letterSpacing: '-0.02em', 
+                  color: '#ffffff',
+                  textShadow: '0 2px 4px rgba(0, 0, 0, 0.5)'
+                }}>
+                  MDSync
+                </span>
+                <span style={{ 
+                  fontSize: '0.65rem', 
+                  fontWeight: 700, 
+                  background: 'linear-gradient(135deg, #0284c7 0%, #0369a1 100%)', 
+                  color: '#ffffff', 
+                  padding: '0.15rem 0.45rem', 
+                  borderRadius: '6px',
+                  border: '1px solid rgba(125, 211, 252, 0.4)',
+                  boxShadow: '0 2px 4px rgba(0, 0, 0, 0.2)'
+                }}>
+                  v2.0 GEOTEC
+                </span>
+              </div>
+              <p style={{ 
+                fontSize: '0.65rem', 
+                fontWeight: 600, 
+                color: 'rgba(255, 255, 255, 0.65)', 
+                letterSpacing: '0.04em', 
+                textTransform: 'uppercase', 
+                margin: '2px 0 0 0' 
+              }}>
+                MINING | GEOTECHNICS | DATA PLATFORM
+              </p>
+            </div>
+          </div>
         </div>
 
         {/* ============================================================
-            2. LISTA PRINCIPAL DE NAVEGAÇÃO DO MENU RETRÁTIL
+            2. PERFIL DO USUÁRIO & AÇÕES RÁPIDAS (3D CARD)
             ============================================================ */}
-        <div style={{ flex: 1, padding: '0.75rem 0.5rem', display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
-          
-          <div style={{ padding: '0.3rem 0.75rem', fontSize: '0.68rem', fontWeight: 800, textTransform: 'uppercase', color: 'rgba(255, 255, 255, 0.45)', letterSpacing: '0.05em' }}>
-            Menu Principal InspectApp
-          </div>
-
-          {/* 1. Dashboard */}
-          <button
-            onClick={() => handleNav('home')}
-            style={navItemStyle(activeTab === 'home' || activeTab === 'dashboard')}
-          >
-            <LayoutDashboard size={18} style={{ color: '#38bdf8' }} />
-            <span style={{ flex: 1, textAlign: 'left', fontWeight: (activeTab === 'home' || activeTab === 'dashboard') ? 700 : 500 }}>
-              Dashboard
-            </span>
-          </button>
-
-          {/* 2. Análises */}
-          <button
-            onClick={() => handleNav('analises')}
-            style={navItemStyle(activeTab === 'analises')}
-          >
-            <LineChart size={18} style={{ color: '#a78bfa' }} />
-            <span style={{ flex: 1, textAlign: 'left', fontWeight: activeTab === 'analises' ? 700 : 500 }}>
-              Análises
-            </span>
-          </button>
-
-          {/* 3. Coletas (com sub-abas: Concluídas, Em Preenchimento, Fila de Integração) */}
-          <div>
-            <div 
-              onClick={() => setColetasExpanded(!coletasExpanded)}
-              style={{
-                ...navItemStyle(activeTab === 'coletas'),
-                justifyContent: 'space-between'
-              }}
-            >
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flex: 1 }}>
-                <ClipboardEdit size={18} style={{ color: '#fbbf24' }} />
-                <span style={{ textAlign: 'left', fontWeight: activeTab === 'coletas' ? 700 : 500 }}>
-                  Coletas
-                </span>
+        <div style={{ padding: '0.85rem 0.95rem 0.5rem' }}>
+          <div className="card-3d-drawer" style={{ padding: '0.85rem' }}>
+            
+            {/* Foto, Nome e Cargo */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+              <div style={{
+                position: 'relative',
+                width: '46px',
+                height: '46px',
+                borderRadius: '50%',
+                padding: '2px',
+                border: '2px solid #10b981',
+                boxShadow: '0 0 10px rgba(16, 185, 129, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.3)',
+                background: 'linear-gradient(145deg, #1e3a8a, #0f172a)'
+              }}>
+                {currentUser?.foto ? (
+                  <img 
+                    src={currentUser.foto} 
+                    alt={currentUser.nome} 
+                    style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover' }} 
+                  />
+                ) : (
+                  <div style={{
+                    width: '100%',
+                    height: '100%',
+                    borderRadius: '50%',
+                    backgroundColor: '#0284c7',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontSize: '1.1rem',
+                    fontWeight: 800,
+                    color: '#ffffff'
+                  }}>
+                    {currentUser?.avatar || currentUser?.nome?.charAt(0) || 'M'}
+                  </div>
+                )}
+                {/* Ponto de status online */}
+                <div style={{
+                  position: 'absolute',
+                  bottom: '0px',
+                  right: '1px',
+                  width: '12px',
+                  height: '12px',
+                  borderRadius: '50%',
+                  backgroundColor: '#10b981',
+                  border: '2px solid #0f172a'
+                }} />
               </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                <span style={{
-                  backgroundColor: 'rgba(251, 191, 36, 0.25)',
-                  color: '#fbbf24',
-                  fontSize: '0.68rem',
-                  fontWeight: 700,
-                  padding: '0.1rem 0.4rem',
-                  borderRadius: '10px'
+
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <h4 style={{ 
+                  fontSize: '0.9rem', 
+                  fontWeight: 700, 
+                  margin: 0, 
+                  color: '#ffffff',
+                  whiteSpace: 'nowrap',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis'
                 }}>
-                  {coletas.length}
-                </span>
-                {coletasExpanded ? <ChevronDown size={15} /> : <ChevronRight size={15} />}
+                  {currentUser?.nome || 'Eng. Geotécnico'}
+                </h4>
+                <p style={{ 
+                  fontSize: '0.72rem', 
+                  color: 'rgba(255, 255, 255, 0.6)', 
+                  margin: '1px 0 3px 0',
+                  whiteSpace: 'nowrap',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis'
+                }}>
+                  {currentUser?.email || 'operacao@itaminas.com.br'}
+                </p>
+                <div style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '0.3rem',
+                  padding: '0.1rem 0.45rem',
+                  borderRadius: '10px',
+                  backgroundColor: 'rgba(56, 189, 248, 0.15)',
+                  border: '1px solid rgba(56, 189, 248, 0.3)',
+                  fontSize: '0.65rem',
+                  fontWeight: 700,
+                  color: '#38bdf8'
+                }}>
+                  <Award size={10} />
+                  <span>{currentRole?.title || currentUser?.badge || 'Engenharia'}</span>
+                </div>
               </div>
             </div>
 
-            {/* Sub-abas de Coletas */}
-            {coletasExpanded && (
-              <div style={{ paddingLeft: '1.75rem', display: 'flex', flexDirection: 'column', gap: '0.2rem', marginTop: '0.2rem' }}>
-                <button
-                  onClick={() => handleNav('coletas', 'concluidas')}
-                  style={subNavItemStyle(activeTab === 'coletas')}
-                >
-                  <CheckCircle2 size={14} style={{ color: '#10b981' }} />
-                  <span style={{ flex: 1, textAlign: 'left' }}>Concluídas</span>
-                  <span style={badgeStyle('#10b981')}>{coletasConcluidasCount}</span>
-                </button>
+            {/* Ações de Perfil: Editar Perfil / Trocar Perfil */}
+            <div style={{ 
+              display: 'flex', 
+              gap: '0.4rem', 
+              marginTop: '0.65rem', 
+              paddingTop: '0.55rem', 
+              borderTop: '1px solid rgba(255, 255, 255, 0.08)' 
+            }}>
+              <button
+                onClick={handleEditProfileClick}
+                style={{
+                  flex: 1,
+                  background: 'rgba(255, 255, 255, 0.06)',
+                  border: '1px solid rgba(255, 255, 255, 0.12)',
+                  borderRadius: '6px',
+                  color: '#34d399',
+                  fontSize: '0.7rem',
+                  fontWeight: 700,
+                  padding: '0.35rem 0.4rem',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '0.35rem',
+                  cursor: 'pointer'
+                }}
+              >
+                <Edit3 size={11} />
+                <span>Perfil</span>
+              </button>
 
-                <button
-                  onClick={() => handleNav('coletas', 'preenchimento')}
-                  style={subNavItemStyle(activeTab === 'coletas')}
-                >
-                  <Clock size={14} style={{ color: '#fbbf24' }} />
-                  <span style={{ flex: 1, textAlign: 'left' }}>Em Preenchimento</span>
-                  <span style={badgeStyle('#fbbf24')}>{coletasPreenchimentoCount}</span>
-                </button>
+              <button
+                onClick={() => setRoleSelectorOpen(!roleSelectorOpen)}
+                style={{
+                  flex: 1,
+                  background: 'rgba(56, 189, 248, 0.1)',
+                  border: '1px solid rgba(56, 189, 248, 0.25)',
+                  borderRadius: '6px',
+                  color: '#38bdf8',
+                  fontSize: '0.7rem',
+                  fontWeight: 700,
+                  padding: '0.35rem 0.4rem',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '0.35rem',
+                  cursor: 'pointer'
+                }}
+              >
+                <UserCheck size={11} />
+                <span>Cargo</span>
+                <ChevronDown size={11} />
+              </button>
 
-                <button
-                  onClick={() => handleNav('coletas', 'fila')}
-                  style={subNavItemStyle(activeTab === 'coletas')}
-                >
-                  <Send size={14} style={{ color: '#f87171' }} />
-                  <span style={{ flex: 1, textAlign: 'left' }}>Fila de Integração</span>
-                  <span style={badgeStyle('#f87171')}>{coletasFilaCount}</span>
-                </button>
+              <button
+                onClick={() => {
+                  onClose();
+                  if (onOpenAuth) onOpenAuth('login');
+                }}
+                style={{
+                  background: 'rgba(255, 255, 255, 0.06)',
+                  border: '1px solid rgba(255, 255, 255, 0.12)',
+                  borderRadius: '6px',
+                  color: 'rgba(255, 255, 255, 0.8)',
+                  fontSize: '0.7rem',
+                  fontWeight: 600,
+                  padding: '0.35rem 0.5rem',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '0.3rem',
+                  cursor: 'pointer'
+                }}
+                title="Login / Alternar Usuário"
+              >
+                <LogIn size={11} />
+              </button>
+            </div>
+
+            {/* Dropdown de Cargos Operacionais */}
+            {roleSelectorOpen && allRoles && (
+              <div style={{
+                marginTop: '0.5rem',
+                padding: '0.4rem',
+                backgroundColor: 'rgba(15, 23, 42, 0.85)',
+                border: '1px solid rgba(56, 189, 248, 0.3)',
+                borderRadius: '8px',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '0.2rem'
+              }}>
+                {Object.keys(allRoles).map(rKey => {
+                  const roleObj = allRoles[rKey];
+                  const isCur = currentRoleKey === rKey;
+                  return (
+                    <div
+                      key={rKey}
+                      onClick={() => {
+                        changeRole(rKey);
+                        setRoleSelectorOpen(false);
+                      }}
+                      style={{
+                        padding: '0.35rem 0.5rem',
+                        borderRadius: '5px',
+                        fontSize: '0.72rem',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        backgroundColor: isCur ? 'rgba(2, 132, 199, 0.3)' : 'transparent',
+                        color: isCur ? '#38bdf8' : 'rgba(255, 255, 255, 0.8)',
+                        fontWeight: isCur ? 700 : 500
+                      }}
+                    >
+                      <span>{roleObj.title}</span>
+                      {isCur && <CheckCircle2 size={12} style={{ color: '#38bdf8' }} />}
+                    </div>
+                  );
+                })}
               </div>
             )}
-          </div>
 
-          {/* 4. Importações (PCMI) */}
-          <button
-            onClick={() => handleNav('importacoes')}
-            style={navItemStyle(activeTab === 'importacoes')}
-          >
-            <FolderInput size={18} style={{ color: '#34d399' }} />
-            <span style={{ flex: 1, textAlign: 'left', fontWeight: activeTab === 'importacoes' ? 700 : 500 }}>
-              Importações (PCMI)
-            </span>
-          </button>
+            {/* ============================================================
+                BARRA DE CONTROLES RÁPIDOS 3D: TEMA & STATUS DE CONEXÃO
+                ============================================================ */}
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              gap: '0.5rem',
+              marginTop: '0.65rem',
+              paddingTop: '0.55rem',
+              borderTop: '1px solid rgba(255, 255, 255, 0.08)'
+            }}>
+              {/* Botão de Tema 3D */}
+              <button
+                onClick={toggleTheme}
+                style={{
+                  flex: 1,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '0.4rem',
+                  padding: '0.35rem 0.5rem',
+                  borderRadius: '6px',
+                  background: 'linear-gradient(145deg, rgba(255,255,255,0.08), rgba(0,0,0,0.2))',
+                  border: '1px solid rgba(255, 255, 255, 0.15)',
+                  color: '#ffffff',
+                  fontSize: '0.72rem',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  boxShadow: '0 2px 4px rgba(0,0,0,0.25)'
+                }}
+                title={`Alternar para tema ${theme === 'dark' ? 'Claro' : 'Escuro'}`}
+              >
+                {theme === 'dark' ? (
+                  <>
+                    <Sun size={13} style={{ color: '#f59e0b' }} />
+                    <span>Claro</span>
+                  </>
+                ) : (
+                  <>
+                    <Moon size={13} style={{ color: '#38bdf8' }} />
+                    <span>Escuro</span>
+                  </>
+                )}
+              </button>
 
-          {/* 5. Ordens de Serviço */}
-          <button
-            onClick={() => handleNav('ordens_servico')}
-            style={navItemStyle(activeTab === 'ordens_servico')}
-          >
-            <Wrench size={18} style={{ color: '#f97316' }} />
-            <span style={{ flex: 1, textAlign: 'left', fontWeight: activeTab === 'ordens_servico' ? 700 : 500 }}>
-              Ordens de Serviço
-            </span>
-            {osAbertasCount > 0 && (
-              <span style={badgeStyle('#f97316')}>{osAbertasCount}</span>
-            )}
-          </button>
-
-          {/* 6. Lotes de Relatórios */}
-          <button
-            onClick={() => handleNav('lotes_relatorios')}
-            style={navItemStyle(activeTab === 'lotes_relatorios')}
-          >
-            <Layers size={18} style={{ color: '#60a5fa' }} />
-            <span style={{ flex: 1, textAlign: 'left', fontWeight: activeTab === 'lotes_relatorios' ? 700 : 500 }}>
-              Lotes de Relatórios
-            </span>
-          </button>
-
-          {/* 7. Clientes */}
-          <button
-            onClick={() => handleNav('clientes')}
-            style={navItemStyle(activeTab === 'clientes')}
-          >
-            <Building2 size={18} style={{ color: '#38bdf8' }} />
-            <span style={{ flex: 1, textAlign: 'left', fontWeight: activeTab === 'clientes' ? 700 : 500 }}>
-              Clientes
-            </span>
-          </button>
-
-          {/* 8. Contratos de Empresas Terceiras */}
-          <button
-            onClick={() => handleNav('contratos')}
-            style={navItemStyle(activeTab === 'contratos')}
-          >
-            <Briefcase size={18} style={{ color: '#4ade80' }} />
-            <span style={{ flex: 1, textAlign: 'left', fontWeight: activeTab === 'contratos' ? 700 : 500 }}>
-              Contratos de Terceiros
-            </span>
-            <span style={badgeStyle('#4ade80')}>{contratosVigentesCount}</span>
-          </button>
-
-          {/* Divisor de Módulos Geotécnicos Especializados */}
-          <div style={{ margin: '0.75rem 0.5rem 0.25rem', borderTop: '1px solid rgba(255, 255, 255, 0.1)', paddingTop: '0.5rem' }}>
-            <div style={{ padding: '0.2rem 0.25rem', fontSize: '0.65rem', fontWeight: 800, textTransform: 'uppercase', color: 'rgba(255, 255, 255, 0.4)', letterSpacing: '0.05em' }}>
-              Módulos Geotécnicos Especializados
+              {/* Botão de Conexão Online/Offline 3D */}
+              <button
+                onClick={toggleSimulatedOffline}
+                style={{
+                  flex: 1,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '0.35rem',
+                  padding: '0.35rem 0.5rem',
+                  borderRadius: '6px',
+                  background: isOnline 
+                    ? 'linear-gradient(145deg, rgba(16, 185, 129, 0.25), rgba(5, 150, 105, 0.15))' 
+                    : 'linear-gradient(145deg, rgba(245, 158, 11, 0.25), rgba(217, 119, 6, 0.15))',
+                  border: `1px solid ${isOnline ? 'rgba(16, 185, 129, 0.4)' : 'rgba(245, 158, 11, 0.4)'}`,
+                  color: isOnline ? '#34d399' : '#fbbf24',
+                  fontSize: '0.72rem',
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                  boxShadow: '0 2px 4px rgba(0,0,0,0.25)'
+                }}
+                title={isOnline ? 'Conexão ativa. Clique para simular offline' : 'Modo offline. Clique para reconectar'}
+              >
+                {isOnline ? <Wifi size={13} /> : <WifiOff size={13} />}
+                <span>{isOnline ? 'ONLINE' : 'OFFLINE'}</span>
+              </button>
             </div>
+
           </div>
-
-          <button onClick={() => handleNav('mapa')} style={subNavItemStyle(activeTab === 'mapa')}>
-            <MapPin size={15} style={{ color: '#10b981' }} />
-            <span>Georreferenciamento (Mapa)</span>
-          </button>
-
-          <button onClick={() => handleNav('checklist')} style={subNavItemStyle(activeTab === 'checklist')}>
-            <ClipboardCheck size={15} style={{ color: '#34d399' }} />
-            <span>CheckList (Survey123 FIR)</span>
-          </button>
-
-          <button onClick={() => handleNav('chamados')} style={subNavItemStyle(activeTab === 'chamados')}>
-            <LifeBuoy size={15} style={{ color: '#38bdf8' }} />
-            <span style={{ flex: 1, textAlign: 'left' }}>Chamados (TOTVS Fluig)</span>
-            {fluigTickets.filter(t => t.status !== 'CONCLUIDO').length > 0 && (
-              <span style={badgeStyle('#38bdf8')}>{fluigTickets.filter(t => t.status !== 'CONCLUIDO').length}</span>
-            )}
-          </button>
-
-          <button onClick={() => handleNav('piezometria')} style={subNavItemStyle(activeTab === 'piezometria')}>
-            <LineChart size={15} style={{ color: '#f59e0b' }} />
-            <span>Piezometria & NA</span>
-          </button>
-
-          <button onClick={() => handleNav('vazao')} style={subNavItemStyle(activeTab === 'vazao')}>
-            <Droplets size={15} style={{ color: '#0284c7' }} />
-            <span>Vazão & Vertedouros</span>
-          </button>
-
-          <button onClick={() => handleNav('laudo')} style={subNavItemStyle(activeTab === 'laudo')}>
-            <FileText size={15} style={{ color: '#60a5fa' }} />
-            <span>Laudo ANM nº 95/2022</span>
-          </button>
-
-          <button onClick={() => handleNav('ia')} style={subNavItemStyle(activeTab === 'ia')}>
-            <Cpu size={15} style={{ color: '#a855f7' }} />
-            <span>IA & Estabilidade (Gemini)</span>
-          </button>
-
-          <button onClick={() => handleNav('cadastro')} style={subNavItemStyle(activeTab === 'cadastro')}>
-            <Database size={15} style={{ color: '#cbd5e1' }} />
-            <span>Cadastro & Limites</span>
-          </button>
-
         </div>
 
-        {/* Rodapé do Menu Lateral */}
+        {/* ============================================================
+            3. LISTA DE NAVEGAÇÃO COMPLETA EM ORDEM ALFABÉTICA (A a Z)
+            ============================================================ */}
         <div style={{
-          padding: '0.85rem 1.25rem',
+          flex: 1,
+          overflowY: 'auto',
+          padding: '0.5rem 0.95rem 1rem',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '0.3rem'
+        }}>
+          <div style={{ 
+            fontSize: '0.65rem', 
+            fontWeight: 800, 
+            textTransform: 'uppercase', 
+            color: 'rgba(255, 255, 255, 0.45)', 
+            letterSpacing: '0.06em',
+            padding: '0.2rem 0.3rem',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between'
+          }}>
+            <span>Módulos & Ações (A - Z)</span>
+            <span style={{ fontSize: '0.6rem', color: '#38bdf8' }}>{menuItems.length} Itens</span>
+          </div>
+
+          {menuItems.map((item) => {
+            const showLetterHeader = item.letter !== currentLetter;
+            if (showLetterHeader) {
+              currentLetter = item.letter;
+            }
+
+            const ItemIcon = item.icon;
+            const isTabActive = item.tabId && (activeTab === item.tabId || (item.tabId === 'home' && activeTab === 'dashboard'));
+
+            return (
+              <React.Fragment key={item.id}>
+                {/* Separador Alfabético 3D */}
+                {showLetterHeader && (
+                  <div className="alpha-separator-3d">
+                    <div className="alpha-badge-3d">{item.letter}</div>
+                    <div className="alpha-line-3d" />
+                  </div>
+                )}
+
+                {/* Tipo: Link Externo / Download (ex: Baixar APK) */}
+                {item.type === 'link' && (
+                  <a
+                    href={item.href}
+                    download={item.download}
+                    className="nav-item-3d"
+                    title={item.title}
+                  >
+                    <ItemIcon size={17} style={{ color: item.iconColor }} />
+                    <div style={{ flex: 1, textAlign: 'left' }}>
+                      <div style={{ fontWeight: 600 }}>{item.title}</div>
+                      {item.subtitle && (
+                        <div style={{ fontSize: '0.65rem', color: 'rgba(255, 255, 255, 0.5)' }}>
+                          {item.subtitle}
+                        </div>
+                      )}
+                    </div>
+                    <Download size={13} style={{ color: item.iconColor, opacity: 0.8 }} />
+                  </a>
+                )}
+
+                {/* Tipo: Ação Especial (ex: Fila de Sincronização) */}
+                {item.type === 'action' && (
+                  <button
+                    onClick={item.action}
+                    className="nav-item-3d"
+                    title={item.title}
+                  >
+                    <ItemIcon size={17} style={{ color: item.iconColor }} />
+                    <span style={{ flex: 1, textAlign: 'left', fontWeight: 600 }}>
+                      {item.title}
+                    </span>
+                    {item.badge !== null && item.badge !== undefined && (
+                      <span style={{
+                        backgroundColor: `${item.badgeColor}25`,
+                        color: item.badgeColor,
+                        fontSize: '0.68rem',
+                        fontWeight: 700,
+                        padding: '0.1rem 0.4rem',
+                        borderRadius: '10px',
+                        border: `1px solid ${item.badgeColor}45`
+                      }}>
+                        {item.badge}
+                      </span>
+                    )}
+                  </button>
+                )}
+
+                {/* Tipo: Coletas com Sub-abas Retráteis */}
+                {item.type === 'collapsible_coletas' && (
+                  <div>
+                    <div 
+                      onClick={() => setColetasExpanded(!coletasExpanded)}
+                      className={`nav-item-3d ${activeTab === 'coletas' ? 'active' : ''}`}
+                      style={{ justifyContent: 'space-between' }}
+                    >
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flex: 1 }}>
+                        <ItemIcon size={17} style={{ color: item.iconColor }} />
+                        <span style={{ textAlign: 'left', fontWeight: activeTab === 'coletas' ? 700 : 600 }}>
+                          {item.title}
+                        </span>
+                      </div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                        <span style={{
+                          backgroundColor: 'rgba(251, 191, 36, 0.25)',
+                          color: '#fbbf24',
+                          fontSize: '0.68rem',
+                          fontWeight: 700,
+                          padding: '0.1rem 0.4rem',
+                          borderRadius: '10px'
+                        }}>
+                          {item.badge}
+                        </span>
+                        {coletasExpanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+                      </div>
+                    </div>
+
+                    {/* Sub-abas de Coletas */}
+                    {coletasExpanded && (
+                      <div style={{ 
+                        paddingLeft: '1.5rem', 
+                        display: 'flex', 
+                        flexDirection: 'column', 
+                        gap: '0.2rem', 
+                        marginTop: '0.25rem',
+                        borderLeft: '2px solid rgba(251, 191, 36, 0.3)',
+                        marginLeft: '0.85rem'
+                      }}>
+                        <button
+                          onClick={() => handleNav('coletas', 'concluidas')}
+                          style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '0.5rem',
+                            padding: '0.4rem 0.65rem',
+                            borderRadius: '6px',
+                            background: 'rgba(255, 255, 255, 0.04)',
+                            border: '1px solid rgba(255, 255, 255, 0.06)',
+                            color: '#ffffff',
+                            fontSize: '0.75rem',
+                            cursor: 'pointer',
+                            width: '100%',
+                            textAlign: 'left'
+                          }}
+                        >
+                          <CheckCircle2 size={13} style={{ color: '#10b981' }} />
+                          <span style={{ flex: 1 }}>Concluídas</span>
+                          <span style={{ fontSize: '0.65rem', color: '#10b981', fontWeight: 700 }}>
+                            {coletasConcluidasCount}
+                          </span>
+                        </button>
+
+                        <button
+                          onClick={() => handleNav('coletas', 'preenchimento')}
+                          style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '0.5rem',
+                            padding: '0.4rem 0.65rem',
+                            borderRadius: '6px',
+                            background: 'rgba(255, 255, 255, 0.04)',
+                            border: '1px solid rgba(255, 255, 255, 0.06)',
+                            color: '#ffffff',
+                            fontSize: '0.75rem',
+                            cursor: 'pointer',
+                            width: '100%',
+                            textAlign: 'left'
+                          }}
+                        >
+                          <Clock size={13} style={{ color: '#fbbf24' }} />
+                          <span style={{ flex: 1 }}>Em Preenchimento</span>
+                          <span style={{ fontSize: '0.65rem', color: '#fbbf24', fontWeight: 700 }}>
+                            {coletasPreenchimentoCount}
+                          </span>
+                        </button>
+
+                        <button
+                          onClick={() => handleNav('coletas', 'fila')}
+                          style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '0.5rem',
+                            padding: '0.4rem 0.65rem',
+                            borderRadius: '6px',
+                            background: 'rgba(255, 255, 255, 0.04)',
+                            border: '1px solid rgba(255, 255, 255, 0.06)',
+                            color: '#ffffff',
+                            fontSize: '0.75rem',
+                            cursor: 'pointer',
+                            width: '100%',
+                            textAlign: 'left'
+                          }}
+                        >
+                          <Send size={13} style={{ color: '#f87171' }} />
+                          <span style={{ flex: 1 }}>Fila de Integração</span>
+                          <span style={{ fontSize: '0.65rem', color: '#f87171', fontWeight: 700 }}>
+                            {coletasFilaCount}
+                          </span>
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Tipo: Aba Padrão de Navegação */}
+                {item.type === 'tab' && (
+                  <button
+                    onClick={() => handleNav(item.tabId)}
+                    className={`nav-item-3d ${isTabActive ? 'active' : ''}`}
+                    title={item.title}
+                  >
+                    <ItemIcon size={17} style={{ color: item.iconColor }} />
+                    <span style={{ flex: 1, textAlign: 'left', fontWeight: isTabActive ? 700 : 600 }}>
+                      {item.title}
+                    </span>
+                    {item.badge !== null && item.badge !== undefined && (
+                      <span style={{
+                        backgroundColor: `${item.badgeColor}25`,
+                        color: item.badgeColor,
+                        fontSize: '0.68rem',
+                        fontWeight: 700,
+                        padding: '0.1rem 0.4rem',
+                        borderRadius: '10px',
+                        border: `1px solid ${item.badgeColor}45`
+                      }}>
+                        {item.badge}
+                      </span>
+                    )}
+                  </button>
+                )}
+              </React.Fragment>
+            );
+          })}
+        </div>
+
+        {/* ============================================================
+            4. RODAPÉ DO MENU LATERAL EM RELEVO 3D
+            ============================================================ */}
+        <div style={{
+          padding: '0.75rem 1.15rem',
           borderTop: '1px solid rgba(255, 255, 255, 0.1)',
-          fontSize: '0.72rem',
-          color: 'rgba(255, 255, 255, 0.45)',
+          background: 'rgba(10, 18, 38, 0.6)',
+          fontSize: '0.7rem',
+          color: 'rgba(255, 255, 255, 0.5)',
           display: 'flex',
           alignItems: 'center',
-          justifyContent: 'space-between'
+          justifyContent: 'space-between',
+          boxShadow: 'inset 0 1px 0 rgba(255, 255, 255, 0.05)'
         }}>
-          <span>MDSync v2.4 (Sysdam/Inspect)</span>
-          <span>Itaminas S/A</span>
+          <span style={{ fontWeight: 600 }}>MDSync v2.0 GEOTEC</span>
+          <span style={{ color: '#38bdf8', fontWeight: 700 }}>Itaminas Mineração</span>
         </div>
 
       </div>
     </div>
   );
 };
-
-const navItemStyle = (isActive) => ({
-  display: 'flex',
-  alignItems: 'center',
-  gap: '0.75rem',
-  padding: '0.65rem 0.85rem',
-  borderRadius: '8px',
-  backgroundColor: isActive ? 'rgba(59, 130, 246, 0.3)' : 'transparent',
-  color: isActive ? '#ffffff' : 'rgba(255, 255, 255, 0.85)',
-  border: isActive ? '1px solid rgba(96, 165, 250, 0.4)' : '1px solid transparent',
-  fontSize: '0.84rem',
-  cursor: 'pointer',
-  transition: 'all 0.15s ease',
-  width: '100%'
-});
-
-const subNavItemStyle = (isActive) => ({
-  display: 'flex',
-  alignItems: 'center',
-  gap: '0.6rem',
-  padding: '0.45rem 0.75rem',
-  borderRadius: '6px',
-  backgroundColor: isActive ? 'rgba(255, 255, 255, 0.12)' : 'transparent',
-  color: isActive ? '#ffffff' : 'rgba(255, 255, 255, 0.75)',
-  border: 'none',
-  fontSize: '0.78rem',
-  cursor: 'pointer',
-  width: '100%',
-  textAlign: 'left'
-});
-
-const badgeStyle = (color) => ({
-  backgroundColor: `${color}25`,
-  color: color,
-  fontSize: '0.68rem',
-  fontWeight: 700,
-  padding: '0.1rem 0.4rem',
-  borderRadius: '10px',
-  border: `1px solid ${color}45`
-});

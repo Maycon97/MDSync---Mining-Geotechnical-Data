@@ -144,7 +144,7 @@ export function App() {
         onToggleDrawer={() => setDrawerOpen(!drawerOpen)}
       />
 
-      {/* Menu Retrátil Lateral Animado (InspectApp / Sysdam Style) */}
+      {/* Menu Retrátil Lateral 3D (Consolidado e Alfabético) */}
       <SideDrawer 
         isOpen={drawerOpen}
         onClose={() => setDrawerOpen(false)}
@@ -165,6 +165,15 @@ export function App() {
         }}
         onOpenReport={() => {
           handleNavigateTab('lotes_relatorios');
+          setDrawerOpen(false);
+        }}
+        onOpenSync={() => {
+          setSyncModalOpen(true);
+          setDrawerOpen(false);
+        }}
+        onOpenAuth={(tab) => {
+          setAuthModalTab(tab || 'login');
+          setAuthModalOpen(true);
           setDrawerOpen(false);
         }}
       />
