@@ -78,8 +78,6 @@ export const SideDrawer = ({
     }
   });
 
-  if (!isOpen) return null;
-
   const toggleTheme = () => {
     const nextTheme = theme === 'dark' ? 'light' : 'dark';
     setTheme(nextTheme);
@@ -333,6 +331,8 @@ export const SideDrawer = ({
 
     return ordered;
   }, [recentUsage, coletas.length, contratosVigentesCount, chamadosAbertosCount, offlineCount, osAbertasCount]);
+
+  if (!isOpen) return null;
 
   return (
     <div 
