@@ -214,13 +214,10 @@ export const SideDrawer = ({
         },
         {
           id: 'fila_sync',
-          title: 'Fila de Sincronização',
+          title: 'Fila de Sincronização Offline',
           icon: CloudLightning,
-          type: 'action',
-          action: () => {
-            onClose();
-            if (onOpenSync) onOpenSync();
-          },
+          type: 'tab',
+          tabId: 'fila_sync',
           badge: offlineCount > 0 ? offlineCount : null,
           badgeColor: '#f59e0b'
         }

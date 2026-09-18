@@ -15,6 +15,7 @@ import { AiAnalysisTab } from './components/AiAnalysisTab';
 import { InstrumentsRegistryTab } from './components/InstrumentsRegistryTab';
 import { AuthModal } from './components/AuthModal';
 import { SyncQueueModal } from './components/SyncQueueModal';
+import { SyncQueueTab } from './components/SyncQueueTab';
 import { ReportModal } from './components/ReportModal';
 import { ChecklistModal } from './components/ChecklistModal';
 import { ChecklistTab } from './components/ChecklistTab';
@@ -142,7 +143,7 @@ export function App() {
       {/* Barra de Topo */}
       <Header 
         onOpenAuth={() => { setAuthModalTab('login'); setAuthModalOpen(true); }}
-        onOpenSync={() => setSyncModalOpen(true)}
+        onOpenSync={() => handleNavigateTab('fila_sync')}
         onOpenReport={() => handleNavigateTab('lotes_relatorios')}
         onOpenChecklist={() => setChecklistModalOpen(true)}
         onToggleDrawer={() => setDrawerOpen(!drawerOpen)}
@@ -172,7 +173,7 @@ export function App() {
           setDrawerOpen(false);
         }}
         onOpenSync={() => {
-          setSyncModalOpen(true);
+          handleNavigateTab('fila_sync');
           setDrawerOpen(false);
         }}
         onOpenAuth={(tab) => {
@@ -193,7 +194,7 @@ export function App() {
               onNavigate={handleNavigateTab} 
               onNavigateTab={handleNavigateTab}
               onSelectInstrument={handleSelectInstrumentForReading}
-              onOpenSync={() => setSyncModalOpen(true)}
+              onOpenSync={() => handleNavigateTab('fila_sync')}
             />
             <HomeTab onNavigateTab={handleNavigateTab} />
           </div>
@@ -205,7 +206,7 @@ export function App() {
               onNavigate={handleNavigateTab} 
               onNavigateTab={handleNavigateTab}
               onSelectInstrument={handleSelectInstrumentForReading}
-              onOpenSync={() => setSyncModalOpen(true)}
+              onOpenSync={() => handleNavigateTab('fila_sync')}
             />
             <DashboardTab onNavigateTab={handleNavigateTab} />
           </div>
@@ -250,6 +251,10 @@ export function App() {
 
         {activeTab === 'campo' && (
           <FieldCollectionTab preSelectedInstrument={selectedInstrumentForReading} />
+        )}
+
+        {activeTab === 'fila_sync' && (
+          <SyncQueueTab onNavigateTab={handleNavigateTab} />
         )}
 
         {activeTab === 'checklist' && (
@@ -384,7 +389,7 @@ export function App() {
         onClose={() => setChecklistModalOpen(false)}
         onOpenReport={() => { setChecklistModalOpen(false); setReportModalOpen(true); }}
         onOpenAuth={() => { setChecklistModalOpen(false); setAuthModalOpen(true); }}
-        onOpenSync={() => { setChecklistModalOpen(false); setSyncModalOpen(true); }}
+        onOpenSync={() => { setChecklistModalOpen(false); handleNavigateTab('fila_sync'); }}
       />
 
       {/* Rodapé Institucional */}

@@ -16,7 +16,8 @@ import {
   FileText,
   ClipboardCheck,
   LifeBuoy,
-  UserCog
+  UserCog,
+  CloudLightning
 } from 'lucide-react';
 
 export const TABS = [
@@ -24,6 +25,7 @@ export const TABS = [
   { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, desc: 'Visão executiva e KPIs' },
   { id: 'mapa', label: 'Georreferenciamento', icon: MapPin, desc: 'Satélite, estruturas e localização espacial dos instrumentos' },
   { id: 'campo', label: 'Coleta de Campo', icon: ClipboardEdit, desc: 'Módulo Inspect: fotos, GPS e leituras' },
+  { id: 'fila_sync', label: 'Fila de Sincronização Offline', icon: CloudLightning, desc: 'Gestão de coletas offline e envio à nuvem central' },
   { id: 'checklist', label: 'CheckList', icon: ClipboardCheck, desc: 'Ficha de Inspeção Regular - FIR (Survey123 Itaminas)' },
   { id: 'chamados', label: 'Chamados', icon: LifeBuoy, desc: 'Abertura e gestão de chamados com integração direta ao TOTVS Fluig' },
   { id: 'piezometria', label: 'Piezometria & NA', icon: LineChart, desc: 'Curvas de INA/PZ com limites de alerta' },
@@ -36,7 +38,7 @@ export const TABS = [
 ];
 
 export const Navigation = ({ activeTab, onSelectTab }) => {
-  const { stats, anomalies, fluigTickets = [] } = useGeotechData();
+  const { stats, anomalies, fluigTickets = [], offlineCount = 0 } = useGeotechData();
 
   return (
     <nav style={{
@@ -85,6 +87,20 @@ export const Navigation = ({ activeTab, onSelectTab }) => {
             <span>{tab.label}</span>
 
             {/* Badges de Destaque Específicos por Aba */}
+            {tab.id === 'fila_sync' && offlineCount > 0 && (
+              <span style={{
+                backgroundColor: 'var(--geo-atencao-bg)',
+                color: 'var(--geo-atencao)',
+                border: '1px solid var(--geo-atencao-border)',
+                fontSize: '0.7rem',
+                fontWeight: 700,
+                padding: '0.1rem 0.4rem',
+                borderRadius: '9999px'
+              }}>
+                {offlineCount}
+              </span>
+            )}
+
             {tab.id === 'campo' && anomalies.length > 0 && (
               <span style={{
                 backgroundColor: 'var(--geo-atencao-bg)',
