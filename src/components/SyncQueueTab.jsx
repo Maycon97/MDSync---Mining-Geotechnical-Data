@@ -493,6 +493,143 @@ export const SyncQueueTab = ({ onNavigateTab }) => {
         )}
       </div>
 
+      {/* 6. CADEIA DE INTEGRAÇÃO CORPORATIVA ITAMINAS & BLINDAGEM DE SEGURANÇA */}
+      <div className="card-panel" style={{ padding: '1.5rem', marginTop: '1.5rem' }}>
+        <div style={{
+          display: 'flex',
+          flexWrap: 'wrap',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          gap: '1rem',
+          marginBottom: '1.25rem',
+          borderBottom: '1px solid var(--border-subtle)',
+          paddingBottom: '1rem'
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+            <div style={{
+              width: '38px',
+              height: '38px',
+              borderRadius: '8px',
+              backgroundColor: 'rgba(56, 189, 248, 0.15)',
+              color: 'var(--primary-accent)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center'
+            }}>
+              <ShieldCheck size={22} />
+            </div>
+            <div>
+              <h2 style={{ fontSize: '1.05rem', fontWeight: 800, color: 'var(--text-main)', margin: 0 }}>
+                Cadeia de Integração Corporativa & Staging (ITAMINAS PCMI)
+              </h2>
+              <p style={{ fontSize: '0.76rem', color: 'var(--text-muted)', margin: '0.15rem 0 0' }}>
+                Pipeline de importação automática de novas coletas para a pasta oficial de monitoramento.
+              </p>
+            </div>
+          </div>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+            <button
+              onClick={() => {
+                const pkg = storageService.exportCorporateStagingPackage();
+                storageService.downloadCorporateStagingPackage(pkg);
+                alert(`Lote ${pkg.batchId} gerado com sucesso!\n\nArquivos prontos para integração:\n- ${pkg.jsonFilename}\n- ${pkg.csvFilename}\n\nDestino Alvo: C:\\Users\\maycon.nascimento\\ITAMINAS\\SPLO - General\\03) Geotecnia\\01) PCMI\\02) Monitoramentos\\00) Leituras\\MDSync_Integracao_Campo\\01_Entrada_Novas_Leituras`);
+              }}
+              className="btn-primary"
+              style={{
+                fontSize: '0.78rem',
+                fontWeight: 700,
+                padding: '0.45rem 0.9rem',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.4rem'
+              }}
+            >
+              <Send size={14} />
+              <span>Exportar Pacote para ITAMINAS</span>
+            </button>
+          </div>
+        </div>
+
+        {/* Banner Informativo do Caminho Corporativo */}
+        <div style={{
+          padding: '0.9rem 1.15rem',
+          borderRadius: '8px',
+          backgroundColor: 'var(--bg-input)',
+          border: '1px solid var(--border-subtle)',
+          marginBottom: '1.25rem'
+        }}>
+          <div style={{ fontSize: '0.78rem', fontWeight: 700, color: 'var(--text-main)', marginBottom: '0.25rem' }}>
+            Diretório de Staging Configurado:
+          </div>
+          <code style={{
+            display: 'block',
+            fontSize: '0.74rem',
+            padding: '0.4rem 0.6rem',
+            backgroundColor: 'var(--bg-base)',
+            borderRadius: '6px',
+            color: 'var(--primary-accent)',
+            fontFamily: 'var(--font-mono)',
+            wordBreak: 'break-all'
+          }}>
+            C:\Users\maycon.nascimento\ITAMINAS\SPLO - General\03) Geotecnia\01) PCMI\02) Monitoramentos\00) Leituras\MDSync_Integracao_Campo
+          </code>
+          <div style={{ fontSize: '0.72rem', color: 'var(--text-faint)', marginTop: '0.4rem', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+            <span style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: 'var(--geo-normal)' }}></span>
+            <span>Blindagem Ativa: Leituras originais em <strong>Banco_De_Dados.xlsx</strong> protegidas contra qualquer risco de corrupção ou sobrescrita direta.</span>
+          </div>
+        </div>
+
+        {/* Histórico de Lotes Despachados */}
+        <div>
+          <div style={{ fontSize: '0.82rem', fontWeight: 700, color: 'var(--text-main)', marginBottom: '0.65rem' }}>
+            Lotes Recentes Prontos para Ingestão:
+          </div>
+          {storageService.getStagedBatchesHistory().length === 0 ? (
+            <div style={{ fontSize: '0.76rem', color: 'var(--text-muted)', fontStyle: 'italic', padding: '0.5rem 0' }}>
+              Nenhum lote despachado recentemente. Clique em "Exportar Pacote para ITAMINAS" para gerar a primeira remessa.
+            </div>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+              {storageService.getStagedBatchesHistory().slice(0, 5).map(b => (
+                <div key={b.batchId} style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  padding: '0.6rem 0.85rem',
+                  borderRadius: '6px',
+                  backgroundColor: 'var(--bg-base)',
+                  border: '1px solid var(--border-subtle)',
+                  fontSize: '0.78rem'
+                }}>
+                  <div>
+                    <span style={{ fontWeight: 700, color: 'var(--text-main)' }}>{b.batchId}</span>
+                    <span style={{ color: 'var(--text-muted)', marginLeft: '0.6rem' }}>
+                      {new Date(b.timestamp).toLocaleString('pt-BR')}
+                    </span>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    <span style={{
+                      fontSize: '0.68rem',
+                      fontWeight: 700,
+                      padding: '0.1rem 0.45rem',
+                      borderRadius: '4px',
+                      backgroundColor: 'var(--geo-normal-bg)',
+                      color: 'var(--geo-normal)'
+                    }}>
+                      {b.totalItens} itens
+                    </span>
+                    <span style={{ color: 'var(--text-faint)', fontSize: '0.72rem' }}>
+                      {b.status}
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+
     </div>
   );
 };

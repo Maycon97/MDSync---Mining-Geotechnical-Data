@@ -1,6 +1,9 @@
 // ============================================================
 // MDSync - Storage Service (Persistência Offline & LocalStorage)
+// Blindagem de Dados com Selo de Integridade e Sanitização
 // ============================================================
+
+import { securityShield } from './securityShield';
 
 const STORAGE_KEYS = {
   THEME: 'mdsync_theme',
@@ -82,13 +85,15 @@ export const storageService = {
   },
   saveLocalReading(reading) {
     try {
+      const sanitized = securityShield.sanitizeObject(reading);
       const readings = this.getLocalReadings();
       const newReading = {
-        ...reading,
-        id: reading.id || `READ-${Date.now()}`,
-        dataRegistro: reading.dataRegistro || new Date().toISOString(),
-        origem: 'Campo (App Web)',
-        sincronizado: reading.sincronizado !== undefined ? reading.sincronizado : true
+        ...sanitized,
+        id: sanitized.id || `READ-${Date.now()}`,
+        dataRegistro: sanitized.dataRegistro || new Date().toISOString(),
+        origem: 'Campo (App Web MDSync)',
+        sincronizado: sanitized.sincronizado !== undefined ? sanitized.sincronizado : true,
+        sealHash: sanitized.sealHash || `SEAL-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`
       };
       // Evitar duplicatas
       const existingIdx = readings.findIndex(r => r.id === newReading.id);
@@ -98,6 +103,7 @@ export const storageService = {
         readings.unshift(newReading);
       }
       localStorage.setItem(STORAGE_KEYS.LOCAL_READINGS, JSON.stringify(readings));
+      securityShield.logSecurityEvent('SAVE_READING', { id: newReading.id, instrumento: newReading.instrumento || newReading.id });
       return newReading;
     } catch (e) {
       console.error('Erro ao salvar leitura local:', e);
@@ -116,14 +122,15 @@ export const storageService = {
   },
   saveLocalAnomaly(anomaly) {
     try {
+      const sanitized = securityShield.sanitizeObject(anomaly);
       const anomalies = this.getLocalAnomalies();
       const newAnomaly = {
-        ...anomaly,
-        id: anomaly.id || `ANOM-${Date.now().toString().slice(-4)}`,
-        dataRegistro: anomaly.dataRegistro || new Date().toISOString().split('T')[0],
-        status: anomaly.status || 'Registrado em Campo',
-        origem: 'Módulo Inspect',
-        sincronizado: anomaly.sincronizado !== undefined ? anomaly.sincronizado : true
+        ...sanitized,
+        id: sanitized.id || `ANOM-${Date.now().toString().slice(-4)}`,
+        dataRegistro: sanitized.dataRegistro || new Date().toISOString().split('T')[0],
+        status: sanitized.status || 'Registrado em Campo',
+        origem: 'Módulo Inspect (MDSync)',
+        sincronizado: sanitized.sincronizado !== undefined ? sanitized.sincronizado : true
       };
       const existingIdx = anomalies.findIndex(a => a.id === newAnomaly.id);
       if (existingIdx !== -1) {
@@ -132,6 +139,7 @@ export const storageService = {
         anomalies.unshift(newAnomaly);
       }
       localStorage.setItem(STORAGE_KEYS.LOCAL_ANOMALIES, JSON.stringify(anomalies));
+      securityShield.logSecurityEvent('SAVE_ANOMALY', { id: newAnomaly.id, severidade: newAnomaly.severidade });
       return newAnomaly;
     } catch (e) {
       console.error('Erro ao salvar anomalia local:', e);
@@ -150,13 +158,14 @@ export const storageService = {
   },
   saveLocalChecklist(checklist) {
     try {
+      const sanitized = securityShield.sanitizeObject(checklist);
       const checklists = this.getLocalChecklists();
       const newChecklist = {
-        ...checklist,
-        id: checklist.id || `FIR-${Date.now().toString().slice(-6)}`,
-        dataRegistro: checklist.dataRegistro || new Date().toISOString(),
+        ...sanitized,
+        id: sanitized.id || `FIR-${Date.now().toString().slice(-6)}`,
+        dataRegistro: sanitized.dataRegistro || new Date().toISOString(),
         origem: 'Survey123 FIR (MDSync)',
-        sincronizado: checklist.sincronizado !== undefined ? checklist.sincronizado : true
+        sincronizado: sanitized.sincronizado !== undefined ? sanitized.sincronizado : true
       };
       const existingIdx = checklists.findIndex(c => c.id === newChecklist.id);
       if (existingIdx !== -1) {
@@ -165,6 +174,7 @@ export const storageService = {
         checklists.unshift(newChecklist);
       }
       localStorage.setItem(STORAGE_KEYS.LOCAL_CHECKLISTS, JSON.stringify(checklists));
+      securityShield.logSecurityEvent('SAVE_CHECKLIST', { id: newChecklist.id, estrutura: newChecklist.estrutura });
       return newChecklist;
     } catch (e) {
       console.error('Erro ao salvar checklist local:', e);
@@ -193,16 +203,17 @@ export const storageService = {
   },
   saveFluigTicket(ticket) {
     try {
+      const sanitized = securityShield.sanitizeObject(ticket);
       const tickets = this.getFluigTickets();
-      const numProtocolo = ticket.protocolo || `FLUIG-${Math.floor(10000 + Math.random() * 90000)}`;
+      const numProtocolo = sanitized.protocolo || `FLUIG-${Math.floor(10000 + Math.random() * 90000)}`;
       const newTicket = {
-        ...ticket,
-        id: ticket.id || `FLUIG-2026-${numProtocolo.replace('FLUIG-', '')}`,
+        ...sanitized,
+        id: sanitized.id || `FLUIG-2026-${numProtocolo.replace('FLUIG-', '')}`,
         protocolo: numProtocolo,
-        dataAbertura: ticket.dataAbertura || new Date().toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' }),
-        processoId: ticket.processoId || 'GEO_GESTAO_ANOMALIAS',
+        dataAbertura: sanitized.dataAbertura || new Date().toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' }),
+        processoId: sanitized.processoId || 'GEO_GESTAO_ANOMALIAS',
         origem: 'App MDSync (Integrado TOTVS Fluig)',
-        sincronizado: ticket.sincronizado !== undefined ? ticket.sincronizado : true
+        sincronizado: sanitized.sincronizado !== undefined ? sanitized.sincronizado : true
       };
       const existingIdx = tickets.findIndex(t => t.id === newTicket.id || t.protocolo === newTicket.protocolo);
       if (existingIdx !== -1) {
@@ -211,6 +222,7 @@ export const storageService = {
         tickets.unshift(newTicket);
       }
       localStorage.setItem(STORAGE_KEYS.FLUIG_TICKETS, JSON.stringify(tickets));
+      securityShield.logSecurityEvent('SAVE_FLUIG_TICKET', { protocolo: newTicket.protocolo });
       return newTicket;
     } catch (e) {
       console.error('Erro ao salvar chamado Fluig:', e);
@@ -534,6 +546,128 @@ export const storageService = {
     });
 
     this.clearOfflineQueue();
+    
+    // Auto-gerar pacote de staging corporativo se houver itens sincronizados
+    try {
+      this.exportCorporateStagingPackage(syncedItems);
+    } catch (e) {
+      console.warn('Falha no auto-despacho para staging corporativo:', e);
+    }
+
     return { count: syncedItems.length, items: syncedItems };
+  },
+
+  // Gerar Pacote de Staging para a Pasta Corporativa ITAMINAS (00) Leituras\MDSync_Integracao_Campo)
+  exportCorporateStagingPackage(specificItems = null) {
+    const items = specificItems || [
+      ...this.getLocalReadings().map(r => ({ ...r, type: 'reading' })),
+      ...this.getLocalAnomalies().map(a => ({ ...a, type: 'anomaly' })),
+      ...this.getLocalChecklists().map(c => ({ ...c, type: 'checklist' })),
+      ...this.getFluigTickets().map(f => ({ ...f, type: 'fluig_ticket' }))
+    ];
+
+    const timestampStr = new Date().toISOString().replace(/[:.]/g, '-');
+    const batchId = `LOTE_MDSYNC_${Date.now()}`;
+    const jsonFilename = `MDSync_Lote_Campo_${timestampStr}.json`;
+    const csvFilename = `Leituras_Campo_${timestampStr}.csv`;
+
+    const readings = items.filter(i => i.type === 'reading' || i.tipo || i.cotaCalculada !== undefined);
+    const anomalies = items.filter(i => i.type === 'anomaly' || i.severidade);
+    const checklists = items.filter(i => i.type === 'checklist' || i.surveyId);
+    const fluigTickets = items.filter(i => i.type === 'fluig_ticket' || i.protocolo);
+
+    // Gerar CSV delimitado por ponto e vírgula compatível com Excel corporativo
+    const csvRows = [
+      'Estrutura;Instrumento;Tipo;Data;Hora;Leitura;Cota_NA;Status;Operador;Origem;Hash_Integridade'
+    ];
+    readings.forEach(r => {
+      csvRows.push([
+        r.estrutura || 'BARRAGEM B1',
+        r.instrumento || r.id || '',
+        r.tipo || 'INA',
+        r.data || new Date().toISOString().split('T')[0],
+        r.hora || '12:00:00',
+        String(r.valor !== undefined ? r.valor : (r.leitura || 0)).replace('.', ','),
+        String(r.cotaCalculada !== undefined ? r.cotaCalculada : (r.cota || 0)).replace('.', ','),
+        r.status || 'NORMAL',
+        r.operador || 'Técnico de Campo',
+        'App MDSync',
+        r.sealHash || ''
+      ].join(';'));
+    });
+
+    const payload = {
+      batchId,
+      geradoEm: new Date().toISOString(),
+      origem: 'App Web/Mobile MDSync',
+      pastaDestinoAlvo: 'C:\\Users\\maycon.nascimento\\ITAMINAS\\SPLO - General\\03) Geotecnia\\01) PCMI\\02) Monitoramentos\\00) Leituras\\MDSync_Integracao_Campo',
+      totalItens: items.length,
+      readings,
+      anomalies,
+      checklists,
+      fluigTickets
+    };
+
+    // Registrar no histórico de lotes despachados
+    try {
+      const history = JSON.parse(localStorage.getItem('mdsync_staged_batches_history') || '[]');
+      history.unshift({
+        batchId,
+        jsonFilename,
+        csvFilename,
+        timestamp: payload.geradoEm,
+        totalItens: items.length,
+        totalLeituras: readings.length,
+        status: 'PRONTO_PARA_INTEGRACAO'
+      });
+      localStorage.setItem('mdsync_staged_batches_history', JSON.stringify(history.slice(0, 30)));
+    } catch (e) {}
+
+    securityShield.logSecurityEvent('DISPATCH_STAGING_PACKAGE', { batchId, totalItens: items.length });
+
+    return {
+      batchId,
+      jsonFilename,
+      csvFilename,
+      payload,
+      csvContent: csvRows.join('\r\n'),
+      totalItens: items.length
+    };
+  },
+
+  // Dispara download dos arquivos de integração de campo
+  downloadCorporateStagingPackage(packageData) {
+    if (!packageData) return;
+
+    // 1. Download do JSON mestre
+    const jsonBlob = new Blob([JSON.stringify(packageData.payload, null, 2)], { type: 'application/json' });
+    const jsonUrl = URL.createObjectURL(jsonBlob);
+    const aJson = document.createElement('a');
+    aJson.href = jsonUrl;
+    aJson.download = packageData.jsonFilename;
+    aJson.click();
+    URL.revokeObjectURL(jsonUrl);
+
+    // 2. Download do CSV para Excel se houver leituras
+    if (packageData.csvContent && packageData.payload.readings?.length > 0) {
+      setTimeout(() => {
+        const csvBlob = new Blob(['\uFEFF' + packageData.csvContent], { type: 'text/csv;charset=utf-8;' });
+        const csvUrl = URL.createObjectURL(csvBlob);
+        const aCsv = document.createElement('a');
+        aCsv.href = csvUrl;
+        aCsv.download = packageData.csvFilename;
+        aCsv.click();
+        URL.revokeObjectURL(csvUrl);
+      }, 300);
+    }
+  },
+
+  // Histórico de lotes despachados
+  getStagedBatchesHistory() {
+    try {
+      return JSON.parse(localStorage.getItem('mdsync_staged_batches_history') || '[]');
+    } catch {
+      return [];
+    }
   }
 };

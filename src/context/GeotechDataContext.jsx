@@ -116,45 +116,52 @@ export const GeotechDataProvider = ({ children }) => {
     }
   };
 
-  // Carregar dados mestre de data/geotech_master.json com suporte a GitHub Pages / Capacitor / dev
-  useEffect(() => {
-    async function loadData() {
-      try {
-        setLoading(true);
-        const baseUrl = import.meta.env.BASE_URL || './';
-        const targetUrl = `${baseUrl.endsWith('/') ? baseUrl : baseUrl + '/'}data/geotech_master.json`;
+  // Carregar dados mestre de data/geotech_master.json com suporte robusto a SPA, GitHub Pages e Capacitor
+  const loadMasterDatabase = async () => {
+    try {
+      setLoading(true);
+      const baseUrl = import.meta.env.BASE_URL || './';
+      const cleanBase = baseUrl.endsWith('/') ? baseUrl : baseUrl + '/';
+      const candidates = [
+        `${cleanBase}data/geotech_master.json`,
+        './data/geotech_master.json',
+        '/data/geotech_master.json',
+        'data/geotech_master.json'
+      ];
 
-        let res;
+      let validData = null;
+      for (const url of candidates) {
         try {
-          res = await fetch(targetUrl);
-          if (!res.ok) {
-            res = await fetch('./data/geotech_master.json');
+          const res = await fetch(url, { cache: 'no-store' });
+          const contentType = res.headers.get('content-type') || '';
+          if (res.ok && (contentType.includes('application/json') || url.endsWith('.json'))) {
+            const parsed = await res.json();
+            if (parsed && (parsed.instrumentos || parsed.estruturas)) {
+              validData = parsed;
+              break;
+            }
           }
-        } catch {
-          try {
-            res = await fetch('./data/geotech_master.json');
-          } catch(err) {
-            // Seguirá para o fallback de cache
-          }
+        } catch (e) {
+          // tentar próximo candidato
         }
+      }
 
-        let data;
-        if (res && res.ok) {
-          data = await res.json();
-          try {
-            localStorage.setItem('mdsync_cached_master_data', JSON.stringify(data));
-          } catch (storageErr) {
-            console.warn('Aviso: Armazenamento local indisponível para cache offline:', storageErr);
-          }
-        } else {
-          const cached = localStorage.getItem('mdsync_cached_master_data');
-          if (cached) {
-            data = JSON.parse(cached);
-          } else {
-            throw new Error(`Falha ao carregar banco de dados geotécnico: HTTP ${res ? res.status : 'ERR'}`);
-          }
+      let data = validData;
+      if (data) {
+        try {
+          localStorage.setItem('mdsync_cached_master_data', JSON.stringify(data));
+        } catch (storageErr) {
+          console.warn('Aviso: Armazenamento local indisponível para cache offline:', storageErr);
         }
-        setMasterData(data);
+      } else {
+        const cached = localStorage.getItem('mdsync_cached_master_data');
+        if (cached) {
+          data = JSON.parse(cached);
+        } else {
+          throw new Error('Falha ao carregar banco de dados geotécnico: JSON não encontrado.');
+        }
+      }
+      setMasterData(data);
         setStructures(data.estruturas || []);
         setLimites(data.limites || {});
         setReadingsPiezometria(data.leiturasPiezometricas || []);
@@ -210,9 +217,11 @@ export const GeotechDataProvider = ({ children }) => {
       } finally {
         setLoading(false);
       }
-    }
-    loadData();
-  }, []);
+    };
+
+    useEffect(() => {
+      loadMasterDatabase();
+    }, []);
 
   // Salvar estrutura ativa
   const selectStructure = (structId) => {
@@ -534,7 +543,13 @@ export const GeotechDataProvider = ({ children }) => {
       updateOrdemServico,
       addContratoTerceiro,
       addCliente,
-      addLoteRelatorio
+      addLoteRelatorio,
+      refreshMasterData: loadMasterDatabase,
+      exportCorporatePackage: () => {
+        const pkg = storageService.exportCorporateStagingPackage();
+        storageService.downloadCorporateStagingPackage(pkg);
+        return pkg;
+      }
     }}>
       {children}
     </GeotechDataContext.Provider>
