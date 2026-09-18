@@ -181,6 +181,13 @@ export const SideDrawer = ({
           badgeColor: '#fbbf24'
         },
         {
+          id: 'campo',
+          title: 'Coleta em Campo (Inspect)',
+          icon: ClipboardEdit,
+          type: 'tab',
+          tabId: 'campo'
+        },
+        {
           id: 'checklist',
           title: 'CheckList FIR (Survey123)',
           icon: ClipboardCheck,

@@ -1054,65 +1054,6 @@ button:focus-visible, .btn-action:focus-visible {
 }
 
 /* ============================================================
-   INSPECTAPP / SYSDAM SIDE DRAWER ANIMATIONS & UTILITIES
-   ============================================================ */
-@keyframes drawerSlideIn {
-  from {
-    transform: translateX(-100%);
-    opacity: 0.5;
-  }
-  to {
-    transform: translateX(0);
-    opacity: 1;
-  }
-}
-
-@keyframes drawerFadeIn {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
-}
-
-.drawer-overlay {
-  animation: drawerFadeIn 0.25s ease-out;
-}
-
-.drawer-container {
-  animation: drawerSlideIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-/* ============================================================
-   MENU LATERAL (DRAWER) - ESTÉTICA ULTRA-CLEAN & MODERNA
-   ============================================================ */
-
-@keyframes drawerFadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
-}
-
-@keyframes drawerSlideIn {
-  from { transform: translateX(-100%); }
-  to { transform: translateX(0); }
-}
-
-/* Botão Clean de Abrir Menu no Cabeçalho */
-.btn-menu-clean,
-.btn-menu-3d {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.42rem 0.8rem;
-  border-radius: 7px;
-  background: var(--bg-surface);
-  border: 1px solid var(--border-medium);
-  color: var(--text-main);
-  font-weight: 600;
-  font-size: 0.8rem;
-  letter-spacing: 0.01em;
-/* ============================================================
    MENU LATERAL (DRAWER) - ESTÉTICA ULTRA-CLEAN & TRANSLÚCIDA
    ============================================================ */
 
