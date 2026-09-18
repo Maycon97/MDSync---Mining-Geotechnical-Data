@@ -1,9 +1,10 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useGeotechData } from '../context/GeotechDataContext';
 import { storageService } from '../services/storageService';
 import { 
   X, 
+  Search,
   LayoutDashboard, 
   LineChart, 
   ClipboardEdit, 
@@ -14,7 +15,6 @@ import {
   Briefcase, 
   ChevronRight, 
   ChevronDown, 
-  Edit3, 
   MapPin, 
   ClipboardCheck, 
   LifeBuoy, 
@@ -22,10 +22,10 @@ import {
   FileText, 
   Cpu, 
   Database,
+  History,
   CheckCircle2,
   Clock,
   Send,
-  Award,
   Box,
   Smartphone,
   CloudLightning,
@@ -33,12 +33,10 @@ import {
   WifiOff,
   Sun,
   Moon,
-  LogIn,
   UserCheck,
   Download,
-  RotateCcw,
-  Sparkles,
-  UserCog
+  UserCog,
+  Check
 } from 'lucide-react';
 
 export const SideDrawer = ({ 
@@ -46,11 +44,8 @@ export const SideDrawer = ({
   onClose, 
   activeTab, 
   onSelectTab, 
-  onOpenEditProfile,
-  onEditProfile,
   onOpenReport,
   onOpenSync,
-  onOpenAuth,
   onOpenChecklist
 }) => {
   const { currentUser, currentRole, currentRoleKey, changeRole, allRoles } = useAuth();
@@ -67,16 +62,18 @@ export const SideDrawer = ({
   const [theme, setTheme] = useState(() => storageService.getTheme());
   const [roleSelectorOpen, setRoleSelectorOpen] = useState(false);
   const [coletasExpanded, setColetasExpanded] = useState(true);
+  const [searchQuery, setSearchQuery] = useState('');
 
-  // Lista dinâmica ordenada pelo mais recente (LRU / Most Recently Used)
-  const [recentUsage, setRecentUsage] = useState(() => {
-    try {
-      const saved = localStorage.getItem('mdsync_recent_menu_ids');
-      return saved ? JSON.parse(saved) : [];
-    } catch (e) {
-      return [];
-    }
-  });
+  // Fechar com tecla Escape
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape' && isOpen) {
+        onClose();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, onClose]);
 
   const toggleTheme = () => {
     const nextTheme = theme === 'dark' ? 'light' : 'dark';
@@ -84,32 +81,13 @@ export const SideDrawer = ({
     storageService.setTheme(nextTheme);
   };
 
-  // Contadores dinâmicos para badges
+  // Contadores para badges
   const coletasConcluidasCount = coletas.filter(c => c.status === 'CONCLUIDA').length;
   const coletasPreenchimentoCount = coletas.filter(c => c.status === 'EM_PREENCHIMENTO').length;
   const coletasFilaCount = coletas.filter(c => c.status === 'FILA_INTEGRACAO').length;
   const osAbertasCount = ordensServico.filter(o => o.status !== 'CONCLUIDA').length;
   const contratosVigentesCount = contratosTerceiros.length;
   const chamadosAbertosCount = fluigTickets.filter(t => t.status !== 'CONCLUIDO').length;
-
-  // Registrar uso de um item para colocá-lo no topo
-  const recordUsage = (itemId) => {
-    setRecentUsage(prev => {
-      const filtered = prev.filter(id => id !== itemId);
-      const updated = [itemId, ...filtered];
-      try {
-        localStorage.setItem('mdsync_recent_menu_ids', JSON.stringify(updated));
-      } catch (e) {}
-      return updated;
-    });
-  };
-
-  const resetUsageOrder = () => {
-    setRecentUsage([]);
-    try {
-      localStorage.removeItem('mdsync_recent_menu_ids');
-    } catch (e) {}
-  };
 
   const handleNav = (tabId, subTab = null) => {
     if (tabId === 'laudo' && onOpenReport) {
@@ -122,941 +100,659 @@ export const SideDrawer = ({
     onClose();
   };
 
-  const handleEditProfileClick = () => {
-    recordUsage('configuracoes_perfil');
-    handleNav('configuracoes_perfil');
-  };
-
-  /* ============================================================
-     CATÁLOGO BASE DOS 19 MÓDULOS E AÇÕES
-     ============================================================ */
-  const baseMenuItems = [
+  /* Catálogo de Módulos Categorizados */
+  const menuCategories = useMemo(() => [
     {
-      id: 'analises',
-      title: 'Análises',
-      icon: LineChart,
-      iconColor: '#a78bfa',
-      type: 'tab',
-      tabId: 'analises'
+      category: 'Monitoramento',
+      items: [
+        {
+          id: 'dashboard',
+          title: 'Dashboard Executivo',
+          icon: LayoutDashboard,
+          type: 'tab',
+          tabId: 'home'
+        },
+        {
+          id: 'mapa',
+          title: 'Georreferenciamento',
+          icon: MapPin,
+          type: 'tab',
+          tabId: 'mapa'
+        },
+        {
+          id: 'piezometria',
+          title: 'Piezometria & NA',
+          icon: LineChart,
+          type: 'tab',
+          tabId: 'piezometria'
+        },
+        {
+          id: 'vazao',
+          title: 'Vazão & Vertedouros',
+          icon: Droplets,
+          type: 'tab',
+          tabId: 'vazao'
+        },
+        {
+          id: '3d',
+          title: 'Visualizador 3D Spline',
+          icon: Box,
+          type: 'tab',
+          tabId: '3d'
+        }
+      ]
     },
     {
-      id: 'baixar_apk',
-      title: 'Baixar APK Android',
-      subtitle: 'Instalador 4.3 MB',
-      icon: Smartphone,
-      iconColor: '#10b981',
-      type: 'link',
-      href: './mdsync-geotecnia.apk',
-      download: 'mdsync-geotecnia.apk'
+      category: 'Operação de Campo',
+      items: [
+        {
+          id: 'coletas',
+          title: 'Coletas de Campo',
+          icon: ClipboardEdit,
+          type: 'collapsible_coletas',
+          badge: coletas.length,
+          badgeColor: '#fbbf24'
+        },
+        {
+          id: 'checklist',
+          title: 'CheckList FIR (Survey123)',
+          icon: ClipboardCheck,
+          type: 'tab',
+          tabId: 'checklist'
+        },
+        {
+          id: 'ordens_servico',
+          title: 'Ordens de Serviço',
+          icon: Wrench,
+          type: 'tab',
+          tabId: 'ordens_servico',
+          badge: osAbertasCount > 0 ? osAbertasCount : null,
+          badgeColor: '#f97316'
+        },
+        {
+          id: 'chamados',
+          title: 'Chamados Fluig',
+          icon: LifeBuoy,
+          type: 'tab',
+          tabId: 'chamados',
+          badge: chamadosAbertosCount > 0 ? chamadosAbertosCount : null,
+          badgeColor: '#38bdf8'
+        },
+        {
+          id: 'fila_sync',
+          title: 'Fila de Sincronização',
+          icon: CloudLightning,
+          type: 'action',
+          action: () => {
+            onClose();
+            if (onOpenSync) onOpenSync();
+          },
+          badge: offlineCount > 0 ? offlineCount : null,
+          badgeColor: '#f59e0b'
+        }
+      ]
     },
     {
-      id: 'cadastro',
-      title: 'Cadastro & Limites',
-      icon: Database,
-      iconColor: '#cbd5e1',
-      type: 'tab',
-      tabId: 'cadastro'
+      category: 'Engenharia & Relatórios',
+      items: [
+        {
+          id: 'ia',
+          title: 'IA Geotinho (Estabilidade)',
+          icon: Cpu,
+          type: 'tab',
+          tabId: 'ia'
+        },
+        {
+          id: 'laudo',
+          title: 'Laudo ANM nº 95/2022',
+          icon: FileText,
+          type: 'tab',
+          tabId: 'laudo'
+        },
+        {
+          id: 'lotes_relatorios',
+          title: 'Lotes de Relatórios',
+          icon: Layers,
+          type: 'tab',
+          tabId: 'lotes_relatorios'
+        },
+        {
+          id: 'historico',
+          title: 'Histórico de Dados',
+          icon: History,
+          type: 'tab',
+          tabId: 'historico'
+        }
+      ]
     },
     {
-      id: 'chamados',
-      title: 'Chamados (TOTVS Fluig)',
-      icon: LifeBuoy,
-      iconColor: '#38bdf8',
-      type: 'tab',
-      tabId: 'chamados',
-      badge: chamadosAbertosCount > 0 ? chamadosAbertosCount : null,
-      badgeColor: '#38bdf8'
-    },
-    {
-      id: 'checklist',
-      title: 'CheckList (Survey123 FIR)',
-      icon: ClipboardCheck,
-      iconColor: '#34d399',
-      type: 'tab',
-      tabId: 'checklist'
-    },
-    {
-      id: 'clientes',
-      title: 'Clientes',
-      icon: Building2,
-      iconColor: '#38bdf8',
-      type: 'tab',
-      tabId: 'clientes'
-    },
-    {
-      id: 'coletas',
-      title: 'Coletas',
-      icon: ClipboardEdit,
-      iconColor: '#fbbf24',
-      type: 'collapsible_coletas',
-      badge: coletas.length,
-      badgeColor: '#fbbf24'
-    },
-    {
-      id: 'contratos',
-      title: 'Contratos de Terceiros',
-      icon: Briefcase,
-      iconColor: '#4ade80',
-      type: 'tab',
-      tabId: 'contratos',
-      badge: contratosVigentesCount,
-      badgeColor: '#4ade80'
-    },
-    {
-      id: 'configuracoes_perfil',
-      title: 'Configurações de Perfil',
-      subtitle: 'Credenciais & RBAC',
-      icon: UserCog,
-      iconColor: '#38bdf8',
-      type: 'tab',
-      tabId: 'configuracoes_perfil'
-    },
-    {
-      id: 'dashboard',
-      title: 'Dashboard',
-      icon: LayoutDashboard,
-      iconColor: '#38bdf8',
-      type: 'tab',
-      tabId: 'home'
-    },
-    {
-      id: 'fila_sync',
-      title: 'Fila de Sincronização',
-      icon: CloudLightning,
-      iconColor: offlineCount > 0 ? '#f59e0b' : '#94a3b8',
-      type: 'action',
-      action: () => {
-        onClose();
-        if (onOpenSync) onOpenSync();
-      },
-      badge: offlineCount > 0 ? offlineCount : null,
-      badgeColor: '#f59e0b'
-    },
-    {
-      id: 'mapa',
-      title: 'Georreferenciamento (Mapa)',
-      icon: MapPin,
-      iconColor: '#10b981',
-      type: 'tab',
-      tabId: 'mapa'
-    },
-    {
-      id: 'ia',
-      title: 'IA & Estabilidade (Geotinho)',
-      icon: Cpu,
-      iconColor: '#c084fc',
-      type: 'tab',
-      tabId: 'ia'
-    },
-    {
-      id: 'importacoes',
-      title: 'Importações (PCMI)',
-      icon: FolderInput,
-      iconColor: '#34d399',
-      type: 'tab',
-      tabId: 'importacoes'
-    },
-    {
-      id: 'laudo',
-      title: 'Laudo ANM nº 95/2022',
-      icon: FileText,
-      iconColor: '#60a5fa',
-      type: 'tab',
-      tabId: 'laudo'
-    },
-    {
-      id: 'lotes_relatorios',
-      title: 'Lotes de Relatórios',
-      icon: Layers,
-      iconColor: '#60a5fa',
-      type: 'tab',
-      tabId: 'lotes_relatorios'
-    },
-    {
-      id: 'ordens_servico',
-      title: 'Ordens de Serviço',
-      icon: Wrench,
-      iconColor: '#f97316',
-      type: 'tab',
-      tabId: 'ordens_servico',
-      badge: osAbertasCount > 0 ? osAbertasCount : null,
-      badgeColor: '#f97316'
-    },
-    {
-      id: 'piezometria',
-      title: 'Piezometria & NA',
-      icon: LineChart,
-      iconColor: '#f59e0b',
-      type: 'tab',
-      tabId: 'piezometria'
-    },
-    {
-      id: 'vazao',
-      title: 'Vazão & Vertedouros',
-      icon: Droplets,
-      iconColor: '#0284c7',
-      type: 'tab',
-      tabId: 'vazao'
-    },
-    {
-      id: '3d',
-      title: 'Visualizador 3D (Spline)',
-      icon: Box,
-      iconColor: '#ec4899',
-      type: 'tab',
-      tabId: '3d'
+      category: 'Gestão & Sistema',
+      items: [
+        {
+          id: 'cadastro',
+          title: 'Cadastro & Limites',
+          icon: Database,
+          type: 'tab',
+          tabId: 'cadastro'
+        },
+        {
+          id: 'clientes',
+          title: 'Clientes',
+          icon: Building2,
+          type: 'tab',
+          tabId: 'clientes'
+        },
+        {
+          id: 'contratos',
+          title: 'Contratos Terceiros',
+          icon: Briefcase,
+          type: 'tab',
+          tabId: 'contratos',
+          badge: contratosVigentesCount > 0 ? contratosVigentesCount : null,
+          badgeColor: '#10b981'
+        },
+        {
+          id: 'importacoes',
+          title: 'Importações PCMI',
+          icon: FolderInput,
+          type: 'tab',
+          tabId: 'importacoes'
+        },
+        {
+          id: 'configuracoes_perfil',
+          title: 'Configurações de Perfil',
+          icon: UserCog,
+          type: 'tab',
+          tabId: 'configuracoes_perfil'
+        },
+        {
+          id: 'baixar_apk',
+          title: 'Baixar APK Android',
+          icon: Smartphone,
+          type: 'link',
+          href: './mdsync-geotecnia.apk',
+          download: 'mdsync-geotecnia.apk'
+        }
+      ]
     }
-  ];
+  ], [
+    coletas.length, 
+    osAbertasCount, 
+    chamadosAbertosCount, 
+    offlineCount, 
+    contratosVigentesCount, 
+    onOpenSync, 
+    onClose
+  ]);
 
-  /* ============================================================
-     ORDENAÇÃO FLEXÍVEL: O ÚLTIMO USADO FICA PRIMEIRO (TOPO)
-     ============================================================ */
-  const displayMenuItems = useMemo(() => {
-    const itemsMap = new Map(baseMenuItems.map(i => [i.id, i]));
-    const ordered = [];
+  // Filtragem da busca
+  const filteredCategories = useMemo(() => {
+    const q = searchQuery.trim().toLowerCase();
+    if (!q) return menuCategories;
 
-    // 1. Itens usados recentemente (do mais recente para o mais antigo)
-    recentUsage.forEach(id => {
-      if (itemsMap.has(id)) {
-        ordered.push({ ...itemsMap.get(id), isRecent: true });
-        itemsMap.delete(id);
-      }
-    });
-
-    // 2. Itens restantes ordenados alfabeticamente
-    const remaining = Array.from(itemsMap.values()).sort((a, b) => a.title.localeCompare(b.title));
-    remaining.forEach(item => {
-      ordered.push({ ...item, isRecent: false });
-    });
-
-    return ordered;
-  }, [recentUsage, coletas.length, contratosVigentesCount, chamadosAbertosCount, offlineCount, osAbertasCount]);
+    return menuCategories.map(cat => {
+      const matched = cat.items.filter(item => 
+        item.title.toLowerCase().includes(q)
+      );
+      return { ...cat, items: matched };
+    }).filter(cat => cat.items.length > 0);
+  }, [menuCategories, searchQuery]);
 
   if (!isOpen) return null;
 
   return (
     <div 
       className="drawer-overlay"
-      style={{
-        position: 'fixed',
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
-        backgroundColor: 'rgba(5, 11, 26, 0.75)',
-        backdropFilter: 'blur(8px)',
-        zIndex: 1300,
-        display: 'flex',
-      }}
       onClick={onClose}
+      role="dialog"
+      aria-modal="true"
+      aria-label="Menu Lateral MDSync"
     >
       <div 
-        className="drawer-3d-panel drawer-container"
+        className="drawer-clean-panel"
         onClick={e => e.stopPropagation()}
-        style={{
-          display: 'flex',
-          flexDirection: 'column',
-          width: '360px',
-          maxWidth: '88vw',
-          height: '100%',
-        }}
       >
         {/* ============================================================
-            1. CABEÇALHO DO MDSYNC (MENOS ARREDONDADO / INDUSTRIAL)
+            1. CABEÇALHO CLEAN
             ============================================================ */}
-        <div style={{
-          padding: '1.15rem 1.15rem 0.95rem',
-          background: 'linear-gradient(180deg, rgba(2, 132, 199, 0.22) 0%, rgba(15, 23, 42, 0.4) 100%)',
-          borderBottom: '1px solid rgba(56, 189, 248, 0.25)',
-          boxShadow: '0 4px 15px rgba(0, 0, 0, 0.3)',
-          position: 'relative'
-        }}>
-          {/* Botão Fechar Menos Arredondado (4px) */}
-          <button
-            onClick={onClose}
-            style={{
-              position: 'absolute',
-              top: '12px',
-              right: '12px',
-              background: 'linear-gradient(145deg, rgba(255, 255, 255, 0.1), rgba(0, 0, 0, 0.2))',
-              border: '1px solid rgba(255, 255, 255, 0.15)',
-              borderRadius: '4px',
-              color: '#ffffff',
-              cursor: 'pointer',
-              padding: '5px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              boxShadow: '0 2px 6px rgba(0, 0, 0, 0.4)',
-              transition: 'transform 0.15s ease'
-            }}
-            title="Fechar Menu"
-          >
-            <X size={18} />
-          </button>
-
-          {/* Logo & Marca Oficial MDSync */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.85rem' }}>
-            <div style={{
-              width: '44px',
-              height: '44px',
-              borderRadius: '6px',
-              background: 'linear-gradient(135deg, rgba(56, 189, 248, 0.25), rgba(2, 132, 199, 0.1))',
-              border: '1px solid rgba(56, 189, 248, 0.4)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              boxShadow: '0 4px 12px rgba(2, 132, 199, 0.3), inset 0 1px 1px rgba(255, 255, 255, 0.3)'
-            }}>
-              <img 
-                src="./logo_mdsync_icon.png" 
-                alt="MDSync Logo" 
-                style={{ 
-                  height: '34px', 
-                  width: '34px', 
-                  objectFit: 'contain',
-                  filter: 'drop-shadow(0 4px 8px rgba(56, 189, 248, 0.4))'
-                }} 
-              />
-            </div>
+        <div className="drawer-header-clean">
+          <div className="drawer-brand-clean">
+            <img 
+              src="./logo_mdsync_icon.png" 
+              alt="MDSync" 
+              style={{ height: '24px', width: '24px', objectFit: 'contain' }} 
+            />
             <div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem' }}>
-                <span style={{ 
-                  fontWeight: 800, 
-                  fontSize: '1.25rem', 
-                  letterSpacing: '-0.02em', 
-                  color: '#ffffff',
-                  textShadow: '0 2px 4px rgba(0, 0, 0, 0.5)'
-                }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                <span style={{ fontWeight: 700, fontSize: '0.92rem', color: 'var(--text-main)' }}>
                   MDSync
                 </span>
                 <span style={{ 
-                  fontSize: '0.65rem', 
-                  fontWeight: 700, 
-                  background: 'linear-gradient(135deg, #0284c7 0%, #0369a1 100%)', 
-                  color: '#ffffff', 
-                  padding: '0.12rem 0.4rem', 
-                  borderRadius: '3px',
-                  border: '1px solid rgba(125, 211, 252, 0.4)',
-                  boxShadow: '0 2px 4px rgba(0, 0, 0, 0.2)'
+                  fontSize: '0.6rem', 
+                  fontWeight: 600, 
+                  backgroundColor: 'var(--primary-accent-bg)', 
+                  color: 'var(--primary-accent)', 
+                  padding: '0.05rem 0.3rem', 
+                  borderRadius: '4px',
+                  border: '1px solid rgba(56, 189, 248, 0.2)'
                 }}>
-                  v2.0 GEOTEC
+                  v2.0
                 </span>
               </div>
-              <p style={{ 
-                fontSize: '0.65rem', 
-                fontWeight: 600, 
-                color: 'rgba(255, 255, 255, 0.65)', 
-                letterSpacing: '0.04em', 
-                textTransform: 'uppercase', 
-                margin: '2px 0 0 0' 
-              }}>
-                MINING | GEOTECHNICS | DATA PLATFORM
+              <p style={{ fontSize: '0.62rem', color: 'var(--text-faint)', margin: 0, letterSpacing: '0.02em' }}>
+                Itaminas Mineração
               </p>
             </div>
           </div>
+
+          <button
+            onClick={onClose}
+            className="drawer-close-btn"
+            title="Fechar (Esc)"
+          >
+            <X size={16} />
+          </button>
         </div>
 
         {/* ============================================================
-            2. PERFIL DO USUÁRIO & AÇÕES RÁPIDAS (MENOS ARREDONDADO: 6px)
+            2. CAMPO DE BUSCA CLEAN
             ============================================================ */}
-        <div style={{ padding: '0.75rem 0.95rem 0.4rem' }}>
-          <div className="card-3d-drawer" style={{ padding: '0.85rem' }}>
-            
-            {/* Foto, Nome e Cargo */}
+        <div className="drawer-search-wrapper">
+          <Search 
+            size={13} 
+            style={{ 
+              position: 'absolute', 
+              left: '0.6rem', 
+              color: 'var(--text-faint)', 
+              pointerEvents: 'none' 
+            }} 
+          />
+          <input
+            type="text"
+            className="drawer-search-input"
+            placeholder="Buscar ferramenta..."
+            value={searchQuery}
+            onChange={e => setSearchQuery(e.target.value)}
+          />
+          {searchQuery && (
+            <button
+              onClick={() => setSearchQuery('')}
+              className="drawer-search-clear"
+              title="Limpar busca"
+            >
+              <X size={12} />
+            </button>
+          )}
+        </div>
+
+        {/* ============================================================
+            3. LISTA DE MÓDULOS CATEGORIZADOS
+            ============================================================ */}
+        <div className="drawer-clean-scroll">
+          {filteredCategories.length === 0 ? (
+            <div style={{ 
+              padding: '2rem 1rem', 
+              textAlign: 'center', 
+              color: 'var(--text-faint)',
+              fontSize: '0.78rem' 
+            }}>
+              Nenhum módulo encontrado para "{searchQuery}".
+            </div>
+          ) : (
+            filteredCategories.map((cat) => (
+              <div key={cat.category} style={{ marginBottom: '0.35rem' }}>
+                {/* Título da Categoria */}
+                <div className="drawer-section-title">
+                  <span>{cat.category}</span>
+                  {searchQuery && (
+                    <span style={{ fontSize: '0.6rem', color: 'var(--text-faint)' }}>
+                      {cat.items.length}
+                    </span>
+                  )}
+                </div>
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.1rem' }}>
+                  {cat.items.map((item) => {
+                    const ItemIcon = item.icon;
+                    const isTabActive = item.tabId && (
+                      activeTab === item.tabId || 
+                      (item.tabId === 'home' && activeTab === 'dashboard')
+                    );
+
+                    /* 1. Item Tipo: Link Externo (APK) */
+                    if (item.type === 'link') {
+                      return (
+                        <a
+                          key={item.id}
+                          href={item.href}
+                          download={item.download}
+                          className="nav-item-clean"
+                          title={item.title}
+                        >
+                          <ItemIcon size={15} style={{ color: 'var(--primary-accent)' }} />
+                          <span style={{ flex: 1 }}>{item.title}</span>
+                          <Download size={12} style={{ color: 'var(--text-faint)', opacity: 0.8 }} />
+                        </a>
+                      );
+                    }
+
+                    /* 2. Item Tipo: Ação Especial */
+                    if (item.type === 'action') {
+                      return (
+                        <button
+                          key={item.id}
+                          onClick={item.action}
+                          className="nav-item-clean"
+                          title={item.title}
+                        >
+                          <ItemIcon size={15} style={{ color: item.badge ? '#f59e0b' : 'inherit' }} />
+                          <span style={{ flex: 1 }}>{item.title}</span>
+                          {item.badge !== null && item.badge !== undefined && (
+                            <span 
+                              className="badge-pill-clean"
+                              style={{
+                                backgroundColor: 'rgba(245, 158, 11, 0.15)',
+                                color: '#f59e0b',
+                                border: '1px solid rgba(245, 158, 11, 0.25)'
+                              }}
+                            >
+                              {item.badge}
+                            </span>
+                          )}
+                        </button>
+                      );
+                    }
+
+                    /* 3. Item Tipo: Coletas Retrátil */
+                    if (item.type === 'collapsible_coletas') {
+                      return (
+                        <div key={item.id}>
+                          <button
+                            onClick={() => setColetasExpanded(!coletasExpanded)}
+                            className={`nav-item-clean ${activeTab === 'coletas' ? 'active' : ''}`}
+                            style={{ justifyContent: 'space-between' }}
+                          >
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem', flex: 1 }}>
+                              <ItemIcon size={15} style={{ color: activeTab === 'coletas' ? 'var(--primary-accent)' : 'inherit' }} />
+                              <span>{item.title}</span>
+                            </div>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                              <span 
+                                className="badge-pill-clean"
+                                style={{
+                                  backgroundColor: 'rgba(251, 191, 36, 0.15)',
+                                  color: '#fbbf24',
+                                  border: '1px solid rgba(251, 191, 36, 0.25)'
+                                }}
+                              >
+                                {item.badge}
+                              </span>
+                              {coletasExpanded ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
+                            </div>
+                          </button>
+
+                          {/* Subitens de Coletas */}
+                          {coletasExpanded && (
+                            <div className="drawer-sublist">
+                              <button
+                                onClick={() => handleNav('coletas', 'concluidas')}
+                                className="drawer-subitem"
+                              >
+                                <CheckCircle2 size={12} style={{ color: '#10b981' }} />
+                                <span style={{ flex: 1 }}>Concluídas</span>
+                                <span style={{ fontSize: '0.65rem', color: '#10b981', fontWeight: 600 }}>
+                                  {coletasConcluidasCount}
+                                </span>
+                              </button>
+
+                              <button
+                                onClick={() => handleNav('coletas', 'preenchimento')}
+                                className="drawer-subitem"
+                              >
+                                <Clock size={12} style={{ color: '#fbbf24' }} />
+                                <span style={{ flex: 1 }}>Em Preenchimento</span>
+                                <span style={{ fontSize: '0.65rem', color: '#fbbf24', fontWeight: 600 }}>
+                                  {coletasPreenchimentoCount}
+                                </span>
+                              </button>
+
+                              <button
+                                onClick={() => handleNav('coletas', 'fila')}
+                                className="drawer-subitem"
+                              >
+                                <Send size={12} style={{ color: '#f87171' }} />
+                                <span style={{ flex: 1 }}>Fila de Integração</span>
+                                <span style={{ fontSize: '0.65rem', color: '#f87171', fontWeight: 600 }}>
+                                  {coletasFilaCount}
+                                </span>
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    }
+
+                    /* 4. Item Padrão de Navegação */
+                    return (
+                      <button
+                        key={item.id}
+                        onClick={() => handleNav(item.tabId)}
+                        className={`nav-item-clean ${isTabActive ? 'active' : ''}`}
+                        title={item.title}
+                      >
+                        <ItemIcon 
+                          size={15} 
+                          style={{ 
+                            color: isTabActive ? 'var(--primary-accent)' : 'inherit'
+                          }} 
+                        />
+                        <span style={{ flex: 1 }}>{item.title}</span>
+                        {item.badge !== null && item.badge !== undefined && (
+                          <span 
+                            className="badge-pill-clean"
+                            style={{
+                              backgroundColor: item.badgeColor ? `${item.badgeColor}20` : 'var(--primary-accent-bg)',
+                              color: item.badgeColor || 'var(--primary-accent)',
+                              border: `1px solid ${item.badgeColor ? `${item.badgeColor}30` : 'transparent'}`
+                            }}
+                          >
+                            {item.badge}
+                          </span>
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+
+        {/* ============================================================
+            4. SELETOR FLUTUANTE DE CARGOS RBAC (QUANDO ABERTO)
+            ============================================================ */}
+        {roleSelectorOpen && allRoles && (
+          <div style={{
+            margin: '0 0.65rem 0.4rem',
+            padding: '0.35rem',
+            backgroundColor: 'var(--bg-surface)',
+            border: '1px solid var(--border-medium)',
+            borderRadius: '6px',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '0.15rem',
+            boxShadow: '0 4px 16px rgba(0, 0, 0, 0.3)'
+          }}>
+            <div style={{ 
+              fontSize: '0.62rem', 
+              fontWeight: 700, 
+              color: 'var(--text-faint)', 
+              padding: '0.15rem 0.35rem', 
+              textTransform: 'uppercase',
+              letterSpacing: '0.04em'
+            }}>
+              Alternar Papel
+            </div>
+            {Object.keys(allRoles).map(rKey => {
+              const roleObj = allRoles[rKey];
+              const isCur = currentRoleKey === rKey;
+              return (
+                <button
+                  key={rKey}
+                  onClick={() => {
+                    changeRole(rKey);
+                    setRoleSelectorOpen(false);
+                  }}
+                  style={{
+                    padding: '0.32rem 0.5rem',
+                    borderRadius: '4px',
+                    fontSize: '0.72rem',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    backgroundColor: isCur ? 'var(--primary-accent-bg)' : 'transparent',
+                    color: isCur ? 'var(--primary-accent)' : 'var(--text-muted)',
+                    fontWeight: isCur ? 600 : 400,
+                    border: 'none',
+                    textAlign: 'left',
+                    width: '100%',
+                    transition: 'all 0.12s ease'
+                  }}
+                  onMouseEnter={e => {
+                    if (!isCur) e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.04)';
+                  }}
+                  onMouseLeave={e => {
+                    if (!isCur) e.currentTarget.style.backgroundColor = 'transparent';
+                  }}
+                >
+                  <span>{roleObj.title}</span>
+                  {isCur && <Check size={12} style={{ color: 'var(--primary-accent)' }} />}
+                </button>
+              );
+            })}
+          </div>
+        )}
+
+        {/* ============================================================
+            5. RODAPÉ DO USUÁRIO & AÇÕES RÁPIDAS
+            ============================================================ */}
+        <div className="drawer-footer-clean">
+          <div className="drawer-user-row">
+            {/* Card do Usuário */}
             <div 
-              onClick={handleEditProfileClick}
-              style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', cursor: 'pointer' }}
+              onClick={() => handleNav('configuracoes_perfil')}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.55rem',
+                cursor: 'pointer',
+                flex: 1,
+                minWidth: 0
+              }}
               title="Abrir Configurações de Perfil"
             >
+              {/* Avatar com ponto de rede */}
               <div style={{
                 position: 'relative',
-                width: '44px',
-                height: '44px',
-                borderRadius: '8px',
-                padding: '2px',
-                border: '1.5px solid #10b981',
-                boxShadow: '0 0 10px rgba(16, 185, 129, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.3)',
-                background: 'linear-gradient(145deg, #1e3a8a, #0f172a)'
+                width: '30px',
+                height: '30px',
+                borderRadius: '6px',
+                backgroundColor: 'var(--primary-accent-bg)',
+                color: 'var(--primary-accent)',
+                border: '1px solid rgba(56, 189, 248, 0.25)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontWeight: 700,
+                fontSize: '0.78rem',
+                flexShrink: 0
               }}>
                 {currentUser?.foto ? (
                   <img 
                     src={currentUser.foto} 
                     alt={currentUser.nome} 
-                    style={{ width: '100%', height: '100%', borderRadius: '6px', objectFit: 'cover' }} 
+                    style={{ width: '100%', height: '100%', borderRadius: '5px', objectFit: 'cover' }} 
                   />
                 ) : (
-                  <div style={{
-                    width: '100%',
-                    height: '100%',
-                    borderRadius: '6px',
-                    backgroundColor: '#0284c7',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    fontSize: '1.1rem',
-                    fontWeight: 800,
-                    color: '#ffffff'
-                  }}>
-                    {currentUser?.avatar || currentUser?.nome?.charAt(0) || 'M'}
-                  </div>
+                  <span>{currentUser?.avatar || currentUser?.nome?.charAt(0) || 'M'}</span>
                 )}
-                {/* Ponto de status online */}
+                {/* Status Dot */}
                 <div style={{
                   position: 'absolute',
                   bottom: '-2px',
                   right: '-2px',
-                  width: '11px',
-                  height: '11px',
-                  borderRadius: '3px',
-                  backgroundColor: '#10b981',
-                  border: '1.5px solid #0f172a'
+                  width: '7.5px',
+                  height: '7.5px',
+                  borderRadius: '50%',
+                  backgroundColor: isOnline ? '#10b981' : '#f59e0b',
+                  border: '1.5px solid var(--bg-surface)'
                 }} />
               </div>
 
+              {/* Nome e Cargo */}
               <div style={{ flex: 1, minWidth: 0 }}>
-                <h4 style={{ 
-                  fontSize: '0.9rem', 
-                  fontWeight: 700, 
-                  margin: 0, 
-                  color: '#ffffff',
-                  whiteSpace: 'nowrap',
-                  overflow: 'hidden',
-                  textOverflow: 'ellipsis'
+                <div style={{ 
+                  fontSize: '0.76rem', 
+                  fontWeight: 600, 
+                  color: 'var(--text-main)', 
+                  whiteSpace: 'nowrap', 
+                  overflow: 'hidden', 
+                  textOverflow: 'ellipsis' 
                 }}>
                   {currentUser?.nome || 'Eng. Geotécnico'}
-                </h4>
-                <p style={{ 
-                  fontSize: '0.72rem', 
-                  color: 'rgba(255, 255, 255, 0.6)', 
-                  margin: '1px 0 3px 0',
-                  whiteSpace: 'nowrap',
-                  overflow: 'hidden',
-                  textOverflow: 'ellipsis'
+                </div>
+                <div style={{ 
+                  fontSize: '0.62rem', 
+                  color: 'var(--text-faint)', 
+                  whiteSpace: 'nowrap', 
+                  overflow: 'hidden', 
+                  textOverflow: 'ellipsis' 
                 }}>
-                  {currentUser?.email || 'operacao@itaminas.com.br'}
-                </p>
-                <div style={{
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: '0.3rem',
-                  padding: '0.1rem 0.45rem',
-                  borderRadius: '4px',
-                  backgroundColor: 'rgba(56, 189, 248, 0.15)',
-                  border: '1px solid rgba(56, 189, 248, 0.3)',
-                  fontSize: '0.65rem',
-                  fontWeight: 700,
-                  color: '#38bdf8'
-                }}>
-                  <Award size={10} />
-                  <span>{currentRole?.title || currentUser?.badge || 'Engenharia'}</span>
+                  {currentRole?.title || currentUser?.badge || 'Engenharia'}
                 </div>
               </div>
             </div>
 
-            {/* Ações de Perfil: Editar Perfil / Trocar Perfil */}
-            <div style={{ 
-              display: 'flex', 
-              gap: '0.4rem', 
-              marginTop: '0.65rem', 
-              paddingTop: '0.55rem', 
-              borderTop: '1px solid rgba(255, 255, 255, 0.08)' 
-            }}>
-              <button
-                onClick={handleEditProfileClick}
-                style={{
-                  flex: 1,
-                  background: 'rgba(255, 255, 255, 0.06)',
-                  border: '1px solid rgba(255, 255, 255, 0.12)',
-                  borderRadius: '4px',
-                  color: '#34d399',
-                  fontSize: '0.7rem',
-                  fontWeight: 700,
-                  padding: '0.35rem 0.4rem',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: '0.35rem',
-                  cursor: 'pointer'
-                }}
-              >
-                <Edit3 size={11} />
-                <span>Perfil</span>
-              </button>
-
+            {/* Ações Rápidas: Cargo, Tema, Conexão */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.2rem' }}>
               <button
                 onClick={() => setRoleSelectorOpen(!roleSelectorOpen)}
+                className="drawer-action-btn"
+                title="Trocar Papel Operacional (RBAC)"
                 style={{
-                  flex: 1,
-                  background: 'rgba(56, 189, 248, 0.1)',
-                  border: '1px solid rgba(56, 189, 248, 0.25)',
-                  borderRadius: '4px',
-                  color: '#38bdf8',
-                  fontSize: '0.7rem',
-                  fontWeight: 700,
-                  padding: '0.35rem 0.4rem',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: '0.35rem',
-                  cursor: 'pointer'
+                  backgroundColor: roleSelectorOpen ? 'var(--primary-accent-bg)' : 'transparent',
+                  color: roleSelectorOpen ? 'var(--primary-accent)' : 'inherit'
                 }}
               >
-                <UserCheck size={11} />
-                <span>Cargo</span>
-                <ChevronDown size={11} />
+                <UserCheck size={13} />
               </button>
 
-              <button
-                onClick={() => {
-                  onClose();
-                  if (onOpenAuth) onOpenAuth('login');
-                }}
-                style={{
-                  background: 'rgba(255, 255, 255, 0.06)',
-                  border: '1px solid rgba(255, 255, 255, 0.12)',
-                  borderRadius: '4px',
-                  color: 'rgba(255, 255, 255, 0.8)',
-                  fontSize: '0.7rem',
-                  fontWeight: 600,
-                  padding: '0.35rem 0.5rem',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: '0.3rem',
-                  cursor: 'pointer'
-                }}
-                title="Login / Alternar Usuário"
-              >
-                <LogIn size={11} />
-              </button>
-            </div>
-
-            {/* Dropdown de Cargos Operacionais */}
-            {roleSelectorOpen && allRoles && (
-              <div style={{
-                marginTop: '0.5rem',
-                padding: '0.4rem',
-                backgroundColor: 'rgba(15, 23, 42, 0.85)',
-                border: '1px solid rgba(56, 189, 248, 0.3)',
-                borderRadius: '4px',
-                display: 'flex',
-                flexDirection: 'column',
-                gap: '0.2rem'
-              }}>
-                {Object.keys(allRoles).map(rKey => {
-                  const roleObj = allRoles[rKey];
-                  const isCur = currentRoleKey === rKey;
-                  return (
-                    <div
-                      key={rKey}
-                      onClick={() => {
-                        changeRole(rKey);
-                        setRoleSelectorOpen(false);
-                      }}
-                      style={{
-                        padding: '0.35rem 0.5rem',
-                        borderRadius: '3px',
-                        fontSize: '0.72rem',
-                        cursor: 'pointer',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'space-between',
-                        backgroundColor: isCur ? 'rgba(2, 132, 199, 0.3)' : 'transparent',
-                        color: isCur ? '#38bdf8' : 'rgba(255, 255, 255, 0.8)',
-                        fontWeight: isCur ? 700 : 500
-                      }}
-                    >
-                      <span>{roleObj.title}</span>
-                      {isCur && <CheckCircle2 size={12} style={{ color: '#38bdf8' }} />}
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-
-            {/* Controles Rápidos: Tema & Status de Conexão */}
-            <div style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              gap: '0.5rem',
-              marginTop: '0.65rem',
-              paddingTop: '0.55rem',
-              borderTop: '1px solid rgba(255, 255, 255, 0.08)'
-            }}>
-              {/* Botão de Tema 3D */}
               <button
                 onClick={toggleTheme}
-                style={{
-                  flex: 1,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: '0.4rem',
-                  padding: '0.35rem 0.5rem',
-                  borderRadius: '4px',
-                  background: 'linear-gradient(145deg, rgba(255,255,255,0.08), rgba(0,0,0,0.2))',
-                  border: '1px solid rgba(255, 255, 255, 0.15)',
-                  color: '#ffffff',
-                  fontSize: '0.72rem',
-                  fontWeight: 600,
-                  cursor: 'pointer',
-                  boxShadow: '0 2px 4px rgba(0,0,0,0.25)'
-                }}
-                title={`Alternar para tema ${theme === 'dark' ? 'Claro' : 'Escuro'}`}
+                className="drawer-action-btn"
+                title={`Alternar para tema ${theme === 'dark' ? 'claro' : 'escuro'}`}
               >
                 {theme === 'dark' ? (
-                  <>
-                    <Sun size={13} style={{ color: '#f59e0b' }} />
-                    <span>Claro</span>
-                  </>
+                  <Sun size={13} style={{ color: '#f59e0b' }} />
                 ) : (
-                  <>
-                    <Moon size={13} style={{ color: '#38bdf8' }} />
-                    <span>Escuro</span>
-                  </>
+                  <Moon size={13} style={{ color: '#38bdf8' }} />
                 )}
               </button>
 
-              {/* Botão de Conexão Online/Offline 3D */}
               <button
                 onClick={toggleSimulatedOffline}
-                style={{
-                  flex: 1,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: '0.35rem',
-                  padding: '0.35rem 0.5rem',
-                  borderRadius: '4px',
-                  background: isOnline 
-                    ? 'linear-gradient(145deg, rgba(16, 185, 129, 0.25), rgba(5, 150, 105, 0.15))' 
-                    : 'linear-gradient(145deg, rgba(245, 158, 11, 0.25), rgba(217, 119, 6, 0.15))',
-                  border: `1px solid ${isOnline ? 'rgba(16, 185, 129, 0.4)' : 'rgba(245, 158, 11, 0.4)'}`,
-                  color: isOnline ? '#34d399' : '#fbbf24',
-                  fontSize: '0.72rem',
-                  fontWeight: 700,
-                  cursor: 'pointer',
-                  boxShadow: '0 2px 4px rgba(0,0,0,0.25)'
-                }}
-                title={isOnline ? 'Conexão ativa. Clique para simular offline' : 'Modo offline. Clique para reconectar'}
+                className="drawer-action-btn"
+                title={isOnline ? 'Online (Clique para simular offline)' : 'Offline (Clique para conectar)'}
               >
-                {isOnline ? <Wifi size={13} /> : <WifiOff size={13} />}
-                <span>{isOnline ? 'ONLINE' : 'OFFLINE'}</span>
+                {isOnline ? (
+                  <Wifi size={13} style={{ color: '#10b981' }} />
+                ) : (
+                  <WifiOff size={13} style={{ color: '#f59e0b' }} />
+                )}
               </button>
             </div>
-
           </div>
-        </div>
-
-        {/* ============================================================
-            3. LISTA DINÂMICA FLEXÍVEL: ÚLTIMO USADO PRIMEIRO (TOPO)
-            ============================================================ */}
-        <div style={{
-          flex: 1,
-          overflowY: 'auto',
-          padding: '0.4rem 0.95rem 1rem',
-          display: 'flex',
-          flexDirection: 'column',
-          gap: '0.28rem'
-        }}>
-          {/* Barra de controle de ordenação dinâmica */}
-          <div style={{ 
-            fontSize: '0.65rem', 
-            fontWeight: 800, 
-            textTransform: 'uppercase', 
-            color: 'rgba(255, 255, 255, 0.45)', 
-            letterSpacing: '0.05em',
-            padding: '0.2rem 0.3rem',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
-            paddingBottom: '0.35rem',
-            marginBottom: '0.25rem'
-          }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-              <span style={{ color: '#38bdf8' }}>⚡</span>
-              <span>ORDENADO PELO ÚLTIMO ACESSO</span>
-            </div>
-            {recentUsage.length > 0 && (
-              <button
-                onClick={resetUsageOrder}
-                style={{
-                  background: 'none',
-                  border: 'none',
-                  color: 'rgba(255, 255, 255, 0.45)',
-                  fontSize: '0.62rem',
-                  fontWeight: 700,
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '0.25rem',
-                  padding: '2px 4px',
-                  borderRadius: '3px'
-                }}
-                title="Restaurar ordem alfabética padrão"
-              >
-                <RotateCcw size={10} />
-                <span>Resetar A-Z</span>
-              </button>
-            )}
-          </div>
-
-          {displayMenuItems.map((item, index) => {
-            const ItemIcon = item.icon;
-            const isTabActive = item.tabId && (activeTab === item.tabId || (item.tabId === 'home' && activeTab === 'dashboard'));
-            const isMostRecent = index === 0 && recentUsage.length > 0 && recentUsage[0] === item.id;
-
-            return (
-              <div key={item.id}>
-                {/* Tipo: Link Externo / Download (ex: Baixar APK) */}
-                {item.type === 'link' && (
-                  <a
-                    href={item.href}
-                    download={item.download}
-                    onClick={() => recordUsage(item.id)}
-                    className="nav-item-3d"
-                    title={item.title}
-                  >
-                    <ItemIcon size={16} style={{ color: item.iconColor }} />
-                    <div style={{ flex: 1, textAlign: 'left' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                        <span style={{ fontWeight: 600 }}>{item.title}</span>
-                        {isMostRecent && (
-                          <span className="recent-tag-3d">Último Usado</span>
-                        )}
-                      </div>
-                      {item.subtitle && (
-                        <div style={{ fontSize: '0.65rem', color: 'rgba(255, 255, 255, 0.5)' }}>
-                          {item.subtitle}
-                        </div>
-                      )}
-                    </div>
-                    <Download size={13} style={{ color: item.iconColor, opacity: 0.8 }} />
-                  </a>
-                )}
-
-                {/* Tipo: Ação Especial (ex: Fila de Sincronização) */}
-                {item.type === 'action' && (
-                  <button
-                    onClick={() => {
-                      recordUsage(item.id);
-                      item.action();
-                    }}
-                    className="nav-item-3d"
-                    title={item.title}
-                  >
-                    <ItemIcon size={16} style={{ color: item.iconColor }} />
-                    <div style={{ flex: 1, textAlign: 'left', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                      <span style={{ fontWeight: 600 }}>{item.title}</span>
-                      {isMostRecent && (
-                        <span className="recent-tag-3d">Último Usado</span>
-                      )}
-                    </div>
-                    {item.badge !== null && item.badge !== undefined && (
-                      <span style={{
-                        backgroundColor: `${item.badgeColor}25`,
-                        color: item.badgeColor,
-                        fontSize: '0.68rem',
-                        fontWeight: 700,
-                        padding: '0.1rem 0.4rem',
-                        borderRadius: '3px',
-                        border: `1px solid ${item.badgeColor}45`
-                      }}>
-                        {item.badge}
-                      </span>
-                    )}
-                  </button>
-                )}
-
-                {/* Tipo: Coletas com Sub-abas Retráteis */}
-                {item.type === 'collapsible_coletas' && (
-                  <div>
-                    <div 
-                      onClick={() => {
-                        recordUsage(item.id);
-                        setColetasExpanded(!coletasExpanded);
-                      }}
-                      className={`nav-item-3d ${activeTab === 'coletas' ? 'active' : ''}`}
-                      style={{ justifyContent: 'space-between' }}
-                    >
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flex: 1 }}>
-                        <ItemIcon size={16} style={{ color: item.iconColor }} />
-                        <span style={{ textAlign: 'left', fontWeight: activeTab === 'coletas' ? 700 : 600 }}>
-                          {item.title}
-                        </span>
-                        {isMostRecent && (
-                          <span className="recent-tag-3d">Último Usado</span>
-                        )}
-                      </div>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                        <span style={{
-                          backgroundColor: 'rgba(251, 191, 36, 0.25)',
-                          color: '#fbbf24',
-                          fontSize: '0.68rem',
-                          fontWeight: 700,
-                          padding: '0.1rem 0.4rem',
-                          borderRadius: '3px'
-                        }}>
-                          {item.badge}
-                        </span>
-                        {coletasExpanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
-                      </div>
-                    </div>
-
-                    {/* Sub-abas de Coletas Menos Arredondadas */}
-                    {coletasExpanded && (
-                      <div style={{ 
-                        paddingLeft: '1.4rem', 
-                        display: 'flex', 
-                        flexDirection: 'column', 
-                        gap: '0.2rem', 
-                        marginTop: '0.2rem',
-                        borderLeft: '2px solid rgba(251, 191, 36, 0.3)',
-                        marginLeft: '0.85rem'
-                      }}>
-                        <button
-                          onClick={() => {
-                            recordUsage(item.id);
-                            handleNav('coletas', 'concluidas');
-                          }}
-                          style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '0.5rem',
-                            padding: '0.38rem 0.65rem',
-                            borderRadius: '4px',
-                            background: 'rgba(255, 255, 255, 0.04)',
-                            border: '1px solid rgba(255, 255, 255, 0.06)',
-                            color: '#ffffff',
-                            fontSize: '0.75rem',
-                            cursor: 'pointer',
-                            width: '100%',
-                            textAlign: 'left'
-                          }}
-                        >
-                          <CheckCircle2 size={13} style={{ color: '#10b981' }} />
-                          <span style={{ flex: 1 }}>Concluídas</span>
-                          <span style={{ fontSize: '0.65rem', color: '#10b981', fontWeight: 700 }}>
-                            {coletasConcluidasCount}
-                          </span>
-                        </button>
-
-                        <button
-                          onClick={() => {
-                            recordUsage(item.id);
-                            handleNav('coletas', 'preenchimento');
-                          }}
-                          style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '0.5rem',
-                            padding: '0.38rem 0.65rem',
-                            borderRadius: '4px',
-                            background: 'rgba(255, 255, 255, 0.04)',
-                            border: '1px solid rgba(255, 255, 255, 0.06)',
-                            color: '#ffffff',
-                            fontSize: '0.75rem',
-                            cursor: 'pointer',
-                            width: '100%',
-                            textAlign: 'left'
-                          }}
-                        >
-                          <Clock size={13} style={{ color: '#fbbf24' }} />
-                          <span style={{ flex: 1 }}>Em Preenchimento</span>
-                          <span style={{ fontSize: '0.65rem', color: '#fbbf24', fontWeight: 700 }}>
-                            {coletasPreenchimentoCount}
-                          </span>
-                        </button>
-
-                        <button
-                          onClick={() => {
-                            recordUsage(item.id);
-                            handleNav('coletas', 'fila');
-                          }}
-                          style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '0.5rem',
-                            padding: '0.38rem 0.65rem',
-                            borderRadius: '4px',
-                            background: 'rgba(255, 255, 255, 0.04)',
-                            border: '1px solid rgba(255, 255, 255, 0.06)',
-                            color: '#ffffff',
-                            fontSize: '0.75rem',
-                            cursor: 'pointer',
-                            width: '100%',
-                            textAlign: 'left'
-                          }}
-                        >
-                          <Send size={13} style={{ color: '#f87171' }} />
-                          <span style={{ flex: 1 }}>Fila de Integração</span>
-                          <span style={{ fontSize: '0.65rem', color: '#f87171', fontWeight: 700 }}>
-                            {coletasFilaCount}
-                          </span>
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                )}
-
-                {/* Tipo: Aba Padrão de Navegação */}
-                {item.type === 'tab' && (
-                  <button
-                    onClick={() => {
-                      recordUsage(item.id);
-                      handleNav(item.tabId);
-                    }}
-                    className={`nav-item-3d ${isTabActive ? 'active' : ''}`}
-                    title={item.title}
-                  >
-                    <ItemIcon size={16} style={{ color: item.iconColor }} />
-                    <div style={{ flex: 1, textAlign: 'left', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                      <span style={{ fontWeight: isTabActive ? 700 : 600 }}>
-                        {item.title}
-                      </span>
-                      {isMostRecent && (
-                        <span className="recent-tag-3d">Último Usado</span>
-                      )}
-                    </div>
-                    {item.badge !== null && item.badge !== undefined && (
-                      <span style={{
-                        backgroundColor: `${item.badgeColor}25`,
-                        color: item.badgeColor,
-                        fontSize: '0.68rem',
-                        fontWeight: 700,
-                        padding: '0.1rem 0.4rem',
-                        borderRadius: '3px',
-                        border: `1px solid ${item.badgeColor}45`
-                      }}>
-                        {item.badge}
-                      </span>
-                    )}
-                  </button>
-                )}
-              </div>
-            );
-          })}
-        </div>
-
-        {/* ============================================================
-            4. RODAPÉ DO MENU LATERAL (CANTO RETO: 0px)
-            ============================================================ */}
-        <div style={{
-          padding: '0.75rem 1.15rem',
-          borderTop: '1px solid rgba(255, 255, 255, 0.1)',
-          background: 'rgba(10, 18, 38, 0.6)',
-          fontSize: '0.7rem',
-          color: 'rgba(255, 255, 255, 0.5)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          boxShadow: 'inset 0 1px 0 rgba(255, 255, 255, 0.05)'
-        }}>
-          <span style={{ fontWeight: 600 }}>MDSync v2.0 GEOTEC</span>
-          <span style={{ color: '#38bdf8', fontWeight: 700 }}>Itaminas Mineração</span>
         </div>
 
       </div>

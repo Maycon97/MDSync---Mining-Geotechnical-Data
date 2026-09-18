@@ -29,14 +29,14 @@ export const Header = ({ onToggleDrawer, onOpenProfile }) => {
       {/* Lado Esquerdo: Botão 3D Tátil de Abrir Menu + Logo Oficial e Título */}
       <div style={{ display: 'flex', alignItems: 'center', gap: '0.85rem' }}>
         
-        {/* Botão de Abrir Menu 3D com Relevo e Efeito Físico de Pressionar */}
+        {/* Botão Clean de Abrir Menu Lateral */}
         <button
           onClick={onToggleDrawer}
-          className="btn-menu-3d"
-          title="Abrir Menu Lateral MDSync (3D)"
+          className="btn-menu-clean"
+          title="Abrir Menu Lateral"
         >
-          <Menu size={20} style={{ filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.5))' }} />
-          <span>MENU MDSYNC</span>
+          <Menu size={17} />
+          <span>Menu</span>
         </button>
 
         {/* Marca & Identificação MDSync */}
