@@ -273,8 +273,10 @@ export const InspectHeroCard = ({
                 </span>
               </div>
               <a
-                href="./mdsync-geotecnia.apk"
+                href="https://github.com/Maycon97/MDSync---Mining-Geotechnical-Data/releases/latest/download/mdsync-geotecnia.apk"
                 download="mdsync-geotecnia.apk"
+                target="_blank"
+                rel="noopener noreferrer"
                 style={{
                   fontSize: '0.68rem',
                   fontWeight: 700,

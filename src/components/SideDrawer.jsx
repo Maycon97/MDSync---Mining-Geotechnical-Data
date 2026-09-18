@@ -304,8 +304,9 @@ export const SideDrawer = ({
           title: 'Baixar APK Android',
           icon: Smartphone,
           type: 'link',
-          href: './mdsync-geotecnia.apk',
-          download: 'mdsync-geotecnia.apk'
+          href: 'https://github.com/Maycon97/MDSync---Mining-Geotechnical-Data/releases/latest/download/mdsync-geotecnia.apk',
+          download: 'mdsync-geotecnia.apk',
+          target: '_blank'
         }
       ]
     }
@@ -460,6 +461,8 @@ export const SideDrawer = ({
                           key={item.id}
                           href={item.href}
                           download={item.download}
+                          target={item.target || '_self'}
+                          rel="noopener noreferrer"
                           className="nav-item-clean"
                           title={item.title}
                         >

@@ -196,8 +196,10 @@ Como posso te ajudar hoje?
     } else if (actionType === 'DOWNLOAD') {
       if (param === 'apk') {
         const link = document.createElement('a');
-        link.href = '/mdsync-geotecnia.apk';
+        link.href = 'https://github.com/Maycon97/MDSync---Mining-Geotechnical-Data/releases/latest/download/mdsync-geotecnia.apk';
         link.download = 'mdsync-geotecnia.apk';
+        link.target = '_blank';
+        link.rel = 'noopener noreferrer';
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
