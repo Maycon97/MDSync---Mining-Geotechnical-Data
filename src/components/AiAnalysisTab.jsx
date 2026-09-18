@@ -427,24 +427,27 @@ Como posso te ajudar hoje?
             </div>
           </div>
 
-          {/* Abas Alternadoras de Modo */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', backgroundColor: 'var(--bg-secondary)', padding: '0.25rem', borderRadius: '10px', border: '1px solid var(--border-subtle)' }}>
-            <button
-              onClick={() => setActiveView('chat')}
-              className={activeView === 'chat' ? 'btn-primary' : 'btn-ghost'}
-              style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.8rem', padding: '0.45rem 0.9rem', borderRadius: '8px' }}
-            >
-              <Bot size={15} />
-              <span>Chatbot Gemini IA</span>
-            </button>
-            <button
-              onClick={() => setActiveView('parecer')}
-              className={activeView === 'parecer' ? 'btn-primary' : 'btn-ghost'}
-              style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.8rem', padding: '0.45rem 0.9rem', borderRadius: '8px' }}
-            >
-              <FileText size={15} />
-              <span>Parecer Técnico Oficial</span>
-            </button>
+          {/* Alternador para Parecer Técnico */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            {activeView === 'chat' ? (
+              <button
+                onClick={() => setActiveView('parecer')}
+                className="btn-secondary"
+                style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.8rem', padding: '0.45rem 0.9rem', borderRadius: '8px' }}
+              >
+                <FileText size={15} />
+                <span>Parecer Técnico Oficial</span>
+              </button>
+            ) : (
+              <button
+                onClick={() => setActiveView('chat')}
+                className="btn-primary"
+                style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.8rem', padding: '0.45rem 0.9rem', borderRadius: '8px' }}
+              >
+                <Sparkles size={15} />
+                <span>Voltar ao Chat</span>
+              </button>
+            )}
           </div>
         </div>
       </div>
