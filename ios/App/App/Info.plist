@@ -66,5 +66,11 @@
 	</array>
 	<key>UIViewControllerBasedStatusBarAppearance</key>
 	<true/>
+	<key>NSCameraUsageDescription</key>
+	<string>O MDSync necessita de acesso à câmera para registrar evidências fotográficas das inspeções geotécnicas e anomalias de campo.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>O MDSync necessita de acesso à galeria para anexar evidências fotográficas às coletas de campo.</string>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>O MDSync necessita de acesso ao GPS para georreferenciar pontos de coleta e localização dos instrumentos geotécnicos.</string>
 </dict>
 </plist>

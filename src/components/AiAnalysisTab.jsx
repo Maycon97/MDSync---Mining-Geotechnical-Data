@@ -3,6 +3,7 @@ import { useGeotechData } from '../context/GeotechDataContext';
 import { useAuth } from '../context/AuthContext';
 import { aiGeotechService } from '../services/aiGeotechService';
 import { geminiService } from '../services/geminiService';
+import { cometApiService, AVAILABLE_MODELS } from '../services/cometApiService';
 import { 
   Cpu, 
   FileText, 
@@ -57,12 +58,12 @@ export const AiAnalysisTab = ({ onNavigateTab }) => {
   // Estados do Parecer Técnico
   const [selectedStruct, setSelectedStruct] = useState(activeStructureId || 'TODAS');
 
-  // Estados do Chatbot Gemini
+  // Estados do Agente Geotinho (CometAPI + Gemini + Motor Local)
   const [messages, setMessages] = useState(() => [
     {
       id: 'welcome',
       sender: 'assistant',
-      text: `Olá, **${currentUser?.nome || 'Engenheiro(a)'}**! Sou o **Assistente Geotécnico com IA do MDSync**, integrado ao **Google Gemini**.
+      text: `Olá, **${currentUser?.nome || 'Engenheiro(a)'}**! Sou o **Geotinho**, o Agente Especialista de Inteligência Artificial e Pesquisa Geotécnica do **MDSync**, operando com o motor **CometAPI (gpt-6-astra)**.
 
 Estou conectado em tempo real aos dados das **8 estruturas** do Complexo Itaminas (**245 instrumentos ativos**, incluindo os **48 instrumentos** de **Jangada** com piezometria e vertedouros).
 
@@ -74,13 +75,16 @@ Como posso te ajudar hoje?
 
 *Escolha uma das sugestões rápidas abaixo ou digite sua pergunta:*`,
       timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-      source: 'gemini'
+      source: 'cometapi'
     }
   ]);
   const [inputText, setInputText] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [apiKeyModalOpen, setApiKeyModalOpen] = useState(false);
-  const [apiKeyInput, setApiKeyInput] = useState(() => geminiService.getApiKey());
+  const [cometKeyInput, setCometKeyInput] = useState(() => cometApiService.getApiKey());
+  const [selectedModel, setSelectedModel] = useState(() => cometApiService.getModel());
+  const [baseUrlInput, setBaseUrlInput] = useState(() => cometApiService.getBaseUrl());
+  const [geminiKeyInput, setGeminiKeyInput] = useState(() => geminiService.getApiKey());
   const [keySavedToast, setKeySavedToast] = useState(false);
 
   const messagesEndRef = useRef(null);
@@ -153,7 +157,7 @@ Como posso te ajudar hoje?
         coletas
       };
 
-      const result = await geminiService.sendMessage({
+      const result = await cometApiService.sendMessage({
         prompt: textToSend,
         history: messages,
         context
@@ -350,9 +354,12 @@ Como posso te ajudar hoje?
     });
   };
 
-  // Salvar Chave API
+  // Salvar Configurações de IA (CometAPI e Gemini)
   const handleSaveApiKey = () => {
-    geminiService.setApiKey(apiKeyInput);
+    cometApiService.setApiKey(cometKeyInput);
+    cometApiService.setModel(selectedModel);
+    cometApiService.setBaseUrl(baseUrlInput);
+    geminiService.setApiKey(geminiKeyInput);
     setKeySavedToast(true);
     setTimeout(() => setKeySavedToast(false), 3000);
     setApiKeyModalOpen(false);
@@ -451,9 +458,13 @@ Como posso te ajudar hoje?
           {/* Faixa de Status do Modelo e Ferramentas */}
           <div className="card-panel" style={{ padding: '0.65rem 1rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.75rem', backgroundColor: 'var(--bg-secondary)' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', fontSize: '0.78rem' }}>
-              <span style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', color: geminiService.hasApiKey() ? 'var(--geo-normal)' : 'var(--text-muted)' }}>
-                <span style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: geminiService.hasApiKey() ? 'var(--geo-normal)' : '#94a3b8' }} />
-                Motor: <strong style={{ color: 'var(--text-main)' }}>{geminiService.hasApiKey() ? 'Google Gemini 2.5 Flash' : 'Motor Heurístico Local Offline'}</strong>
+              <span style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', color: (cometApiService.hasApiKey() || geminiService.hasApiKey()) ? 'var(--geo-normal)' : 'var(--text-muted)' }}>
+                <span style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: (cometApiService.hasApiKey() || geminiService.hasApiKey()) ? 'var(--geo-normal)' : '#94a3b8' }} />
+                Motor: <strong style={{ color: 'var(--text-main)' }}>
+                  {cometApiService.hasApiKey() 
+                    ? `CometAPI (${cometApiService.getModel()})` 
+                    : (geminiService.hasApiKey() ? 'Google Gemini 2.5 Flash' : 'Motor Heurístico Local Offline')}
+                </strong>
               </span>
               <span style={{ color: 'var(--text-faint)' }}>|</span>
               <span style={{ color: 'var(--text-muted)' }}>
@@ -466,10 +477,10 @@ Como posso te ajudar hoje?
                 onClick={() => setApiKeyModalOpen(true)}
                 className="btn-secondary"
                 style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', fontSize: '0.72rem', padding: '0.35rem 0.65rem' }}
-                title="Configurar chave da API do Google Gemini"
+                title="Configurar chave de token da CometAPI e Gemini"
               >
                 <Key size={13} style={{ color: 'var(--primary-accent)' }} />
-                <span>{geminiService.hasApiKey() ? 'Chave API Configurada' : 'Inserir Chave Gemini'}</span>
+                <span>{cometApiService.hasApiKey() ? `Token CometAPI Ativo` : (geminiService.hasApiKey() ? 'Gemini Ativo' : 'Configurar CometAPI (Token)')}</span>
               </button>
               <button
                 onClick={handleClearChat}
@@ -896,72 +907,143 @@ Como posso te ajudar hoje?
       )}
 
       {/* ============================================================ */}
-      {/* 4. MODAL DE CONFIGURAÇÃO DA CHAVE GEMINI API                  */}
+      {/* 4. MODAL DE CONFIGURAÇÃO DA COMETAPI & MOTOR GEOTINHO         */}
       {/* ============================================================ */}
       {apiKeyModalOpen && (
         <div className="modal-backdrop animate-fade-in" onClick={() => setApiKeyModalOpen(false)}>
           <div 
             className="modal-content" 
             onClick={(e) => e.stopPropagation()}
-            style={{ maxWidth: '500px', padding: '1.75rem' }}
+            style={{ maxWidth: '540px', padding: '1.75rem' }}
           >
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1rem' }}>
               <div style={{
-                width: '36px',
-                height: '36px',
-                borderRadius: '8px',
+                width: '40px',
+                height: '40px',
+                borderRadius: '10px',
                 background: 'linear-gradient(135deg, #0284c7, #8b5cf6)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                color: '#ffffff'
+                color: '#ffffff',
+                boxShadow: '0 4px 12px rgba(2, 132, 199, 0.25)'
               }}>
-                <Key size={18} />
+                <Sparkles size={20} />
               </div>
               <div>
-                <h3 style={{ fontSize: '1.1rem', fontWeight: 800, color: 'var(--text-main)' }}>
-                  Configuração da Google Gemini API
+                <h3 style={{ fontSize: '1.15rem', fontWeight: 800, color: 'var(--text-main)', margin: 0 }}>
+                  Motor de Inteligência — Geotinho
                 </h3>
-                <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-                  Conecte sua chave para habilitar o modelo Gemini 2.5 Flash
+                <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', margin: '0.15rem 0 0' }}>
+                  Conecte seu token da <strong>CometAPI</strong> (OpenAI-compatible) ou chave Gemini
                 </p>
               </div>
             </div>
 
             <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', lineHeight: 1.5, marginBottom: '1.25rem' }}>
-              A chave fica gravada com segurança no armazenamento local do seu navegador/dispositivo Android e é utilizada exclusivamente para as consultas técnicas do assistente.
+              As credenciais são armazenadas de forma segura no armazenamento local (localStorage) do seu navegador ou dispositivo Android/iOS e enviadas diretamente aos servidores da API em tempo real.
             </p>
 
-            <div style={{ marginBottom: '1.25rem' }}>
-              <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-main)', marginBottom: '0.4rem' }}>
-                Chave de API (Gemini API Key):
-              </label>
+            {/* 1. Campo Principal: Token da CometAPI */}
+            <div style={{ marginBottom: '1.15rem', padding: '1rem', backgroundColor: 'var(--bg-secondary)', borderRadius: '10px', border: '1px solid var(--border-subtle)' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.4rem' }}>
+                <label style={{ fontSize: '0.78rem', fontWeight: 700, color: 'var(--text-main)' }}>
+                  CometAPI Key / Token (Recomendado):
+                </label>
+                <a 
+                  href="https://www.cometapi.com/console/token" 
+                  target="_blank" 
+                  rel="noreferrer" 
+                  style={{ fontSize: '0.72rem', color: 'var(--primary-accent)', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.25rem' }}
+                >
+                  <span>Obter Token</span>
+                  <ExternalLink size={12} />
+                </a>
+              </div>
               <input
                 type="password"
-                value={apiKeyInput}
-                onChange={(e) => setApiKeyInput(e.target.value)}
-                placeholder="Ex: AIzaSy..."
+                value={cometKeyInput}
+                onChange={(e) => setCometKeyInput(e.target.value)}
+                placeholder="Cole seu token CometAPI aqui..."
                 className="form-input"
                 style={{ width: '100%', fontSize: '0.85rem' }}
               />
-              <span style={{ fontSize: '0.7rem', color: 'var(--text-faint)', marginTop: '0.35rem', display: 'block' }}>
-                Você pode obter uma chave gratuita em <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noreferrer" style={{ color: 'var(--primary-accent)', textDecoration: 'underline' }}>Google AI Studio</a>.
-              </span>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem', marginTop: '0.75rem' }}>
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.7rem', fontWeight: 600, color: 'var(--text-faint)', marginBottom: '0.25rem' }}>
+                    Modelo CometAPI:
+                  </label>
+                  <select
+                    value={selectedModel}
+                    onChange={(e) => setSelectedModel(e.target.value)}
+                    className="form-input"
+                    style={{ width: '100%', fontSize: '0.78rem', padding: '0.4rem 0.6rem' }}
+                  >
+                    {AVAILABLE_MODELS.map(m => (
+                      <option key={m.id} value={m.id}>{m.name}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.7rem', fontWeight: 600, color: 'var(--text-faint)', marginBottom: '0.25rem' }}>
+                    Base URL:
+                  </label>
+                  <input
+                    type="text"
+                    value={baseUrlInput}
+                    onChange={(e) => setBaseUrlInput(e.target.value)}
+                    placeholder="https://api.cometapi.com/v1"
+                    className="form-input"
+                    style={{ width: '100%', fontSize: '0.78rem', padding: '0.4rem 0.6rem' }}
+                  />
+                </div>
+              </div>
             </div>
 
+            {/* 2. Campo Secundário: Fallback Google Gemini */}
+            <div style={{ marginBottom: '1.25rem', padding: '0.85rem 1rem', backgroundColor: 'var(--bg-secondary)', borderRadius: '10px', border: '1px solid var(--border-subtle)' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.35rem' }}>
+                <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-main)' }}>
+                  Chave Gemini API (Fallback de Backup):
+                </label>
+                <a 
+                  href="https://aistudio.google.com/app/apikey" 
+                  target="_blank" 
+                  rel="noreferrer" 
+                  style={{ fontSize: '0.7rem', color: 'var(--primary-accent)', display: 'flex', alignItems: 'center', gap: '0.25rem' }}
+                >
+                  <span>Google AI Studio</span>
+                  <ExternalLink size={11} />
+                </a>
+              </div>
+              <input
+                type="password"
+                value={geminiKeyInput}
+                onChange={(e) => setGeminiKeyInput(e.target.value)}
+                placeholder="Opcional: AIzaSy..."
+                className="form-input"
+                style={{ width: '100%', fontSize: '0.8rem' }}
+              />
+            </div>
+
+            {/* Botões de Ação */}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              {geminiService.hasApiKey() && (
+              {(cometApiService.hasApiKey() || geminiService.hasApiKey()) && (
                 <button
                   type="button"
                   onClick={() => {
+                    cometApiService.clearApiKey();
                     geminiService.clearApiKey();
-                    setApiKeyInput('');
+                    setCometKeyInput('');
+                    setGeminiKeyInput('');
                     setApiKeyModalOpen(false);
                   }}
                   className="btn-ghost"
                   style={{ color: 'var(--geo-emergencia)', fontSize: '0.78rem' }}
                 >
-                  Remover Chave
+                  Limpar Todas
                 </button>
               )}
               
@@ -980,7 +1062,7 @@ Como posso te ajudar hoje?
                   className="btn-primary"
                   style={{ fontSize: '0.82rem' }}
                 >
-                  Salvar Chave
+                  Salvar Configurações
                 </button>
               </div>
             </div>
