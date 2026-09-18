@@ -28,6 +28,7 @@ import {
   TrendingUp,
   Download,
   FolderSync,
+  Sparkles,
   Building2,
   HardHat
 } from 'lucide-react';
@@ -144,14 +145,14 @@ export const HomeTab = ({ onNavigateTab }) => {
     },
     {
       id: 'ia',
-      title: 'IA & Diagnóstico Preditivo',
+      title: 'SUPORTE GEOTINHO',
       category: 'Inteligência Artificial',
-      icon: Cpu,
+      icon: Sparkles,
       color: '#a855f7',
       bgColor: 'rgba(168, 85, 247, 0.12)',
-      desc: 'Algoritmos de detecção de tendências anômalas, avaliação de estabilidade geotécnica e recomendações automáticas de mitigação.',
+      desc: 'Assistente Geotinho: detecção de tendências anômalas, avaliação de estabilidade geotécnica e pareceres oficiais.',
       stat: 'Auditoria Estatística Ativa',
-      action: 'Ver Diagnóstico IA'
+      action: 'Abrir Suporte Geotinho'
     },
     {
       id: 'cadastro',

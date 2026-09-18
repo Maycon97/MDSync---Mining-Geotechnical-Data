@@ -36,7 +36,8 @@ import {
   UserCheck,
   Download,
   UserCog,
-  Check
+  Check,
+  Sparkles
 } from 'lucide-react';
 
 export const SideDrawer = ({ 
@@ -228,8 +229,8 @@ export const SideDrawer = ({
       items: [
         {
           id: 'ia',
-          title: 'IA Geotinho (Estabilidade)',
-          icon: Cpu,
+          title: 'SUPORTE GEOTINHO',
+          icon: Sparkles,
           type: 'tab',
           tabId: 'ia'
         },

@@ -17,7 +17,8 @@ import {
   ClipboardCheck,
   LifeBuoy,
   UserCog,
-  CloudLightning
+  CloudLightning,
+  Sparkles
 } from 'lucide-react';
 
 export const TABS = [
@@ -32,7 +33,7 @@ export const TABS = [
   { id: 'vazao', label: 'Vazão & Vertedouros', icon: Droplets, desc: 'Drenos de pé, vertedouros e pluviometria' },
   { id: 'laudo', label: 'Laudo ANM 95/2022', icon: FileText, desc: 'Emissão e gestão de laudos regulatórios ANM e PNSB' },
   { id: 'historico', label: 'Histórico de Dados', icon: History, desc: 'Consulta, filtros e exportação' },
-  { id: 'ia', label: 'IA & Estabilidade', icon: Cpu, desc: 'Auditoria preditiva e parecer automatizado' },
+  { id: 'ia', label: 'SUPORTE GEOTINHO', icon: Sparkles, desc: 'Assistente Geotinho, auditoria preditiva e parecer automatizado' },
   { id: 'cadastro', label: 'Cadastro & Limites', icon: Database, desc: 'Catálogo de instrumentos, cotas e seções' },
   { id: 'configuracoes_perfil', label: 'Configurações de Perfil', icon: UserCog, desc: 'Gestão de credenciais, dados cadastrais e permissões RBAC' }
 ];

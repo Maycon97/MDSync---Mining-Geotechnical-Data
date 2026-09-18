@@ -414,25 +414,9 @@ Como posso te ajudar hoje?
               <Sparkles size={20} />
             </div>
             <div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <h2 style={{ fontSize: '1.15rem', fontWeight: 800, color: 'var(--text-main)' }}>
-                  IA & Estabilidade Geotécnica
-                </h2>
-                <span style={{
-                  fontSize: '0.68rem',
-                  fontWeight: 700,
-                  backgroundColor: 'rgba(56, 189, 248, 0.15)',
-                  color: 'var(--primary-accent)',
-                  padding: '0.15rem 0.5rem',
-                  borderRadius: '12px',
-                  border: '1px solid rgba(56, 189, 248, 0.3)'
-                }}>
-                  Google Gemini Integrado
-                </span>
-              </div>
-              <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-                Chatbot inteligente para tarefas do site/apk e emissão de parecer de estabilidade (ANM 95/2022)
-              </p>
+              <h2 style={{ fontSize: '1.15rem', fontWeight: 800, color: 'var(--text-main)', margin: 0 }}>
+                SUPORTE GEOTINHO
+              </h2>
             </div>
           </div>
 

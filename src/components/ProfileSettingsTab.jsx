@@ -590,7 +590,7 @@ export const ProfileSettingsTab = ({ onNavigateTab }) => {
                 { key: 'visualizar_dados', label: 'Visualização de Telemetria', desc: 'Gráficos, séries temporais e dados brutos' },
                 { key: 'emitir_laudo', label: 'Emissão de Laudos ANM', desc: 'Conformidade com a Resolução ANM 95/2022' },
                 { key: 'ajustar_limiares', label: 'Ajuste de Limiares Críticos', desc: 'Alteração de cotas de alerta e emergência' },
-                { key: 'analise_ia', label: 'IA Preditiva (Geotinho)', desc: 'Pareceres automáticos e estabilidade' },
+                { key: 'analise_ia', label: 'Suporte Geotinho (IA)', desc: 'Pareceres automáticos e estabilidade' },
                 { key: 'auditoria_completa', label: 'Auditoria & Logs Globais', desc: 'Rastreabilidade de alterações e compliance' }
               ].map(perm => {
                 const isAllowed = currentRole?.permissoes?.includes(perm.key);
