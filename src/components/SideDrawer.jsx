@@ -64,6 +64,33 @@ export const SideDrawer = ({
   const [coletasExpanded, setColetasExpanded] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
 
+  // Controle de montagem e animação fluida retrátil com transparência
+  const [shouldRender, setShouldRender] = useState(isOpen);
+  const [isActive, setIsActive] = useState(false);
+
+  useEffect(() => {
+    let timer;
+    if (isOpen) {
+      setShouldRender(true);
+      const r1 = requestAnimationFrame(() => {
+        const r2 = requestAnimationFrame(() => {
+          setIsActive(true);
+        });
+      });
+      return () => {
+        cancelAnimationFrame(r1);
+      };
+    } else {
+      setIsActive(false);
+      timer = setTimeout(() => {
+        setShouldRender(false);
+      }, 340); // Tempo para completar o movimento retrátil de saída
+    }
+    return () => {
+      if (timer) clearTimeout(timer);
+    };
+  }, [isOpen]);
+
   // Fechar com tecla Escape
   useEffect(() => {
     const handleKeyDown = (e) => {
@@ -298,22 +325,22 @@ export const SideDrawer = ({
     }).filter(cat => cat.items.length > 0);
   }, [menuCategories, searchQuery]);
 
-  if (!isOpen) return null;
+  if (!shouldRender) return null;
 
   return (
     <div 
-      className="drawer-overlay"
+      className={`drawer-overlay ${isActive ? 'is-active' : ''}`}
       onClick={onClose}
       role="dialog"
       aria-modal="true"
       aria-label="Menu Lateral MDSync"
     >
       <div 
-        className="drawer-clean-panel"
+        className={`drawer-clean-panel ${isActive ? 'is-active' : ''}`}
         onClick={e => e.stopPropagation()}
       >
         {/* ============================================================
-            1. CABEÇALHO CLEAN
+            1. CABEÇALHO TRANSLÚCIDO CLEAN
             ============================================================ */}
         <div className="drawer-header-clean">
           <div className="drawer-brand-clean">
@@ -355,7 +382,7 @@ export const SideDrawer = ({
         </div>
 
         {/* ============================================================
-            2. CAMPO DE BUSCA CLEAN
+            2. CAMPO DE BUSCA TRANSLÚCIDO
             ============================================================ */}
         <div className="drawer-search-wrapper">
           <Search 
@@ -569,19 +596,21 @@ export const SideDrawer = ({
         </div>
 
         {/* ============================================================
-            4. SELETOR FLUTUANTE DE CARGOS RBAC (QUANDO ABERTO)
+            4. SELETOR TRANSLÚCIDO DE CARGOS RBAC (QUANDO ABERTO)
             ============================================================ */}
         {roleSelectorOpen && allRoles && (
           <div style={{
             margin: '0 0.65rem 0.4rem',
             padding: '0.35rem',
-            backgroundColor: 'var(--bg-surface)',
-            border: '1px solid var(--border-medium)',
+            backgroundColor: 'rgba(15, 23, 42, 0.75)',
+            backdropFilter: 'blur(16px)',
+            WebkitBackdropFilter: 'blur(16px)',
+            border: '1px solid rgba(255, 255, 255, 0.12)',
             borderRadius: '6px',
             display: 'flex',
             flexDirection: 'column',
             gap: '0.15rem',
-            boxShadow: '0 4px 16px rgba(0, 0, 0, 0.3)'
+            boxShadow: '0 8px 24px rgba(0, 0, 0, 0.4)'
           }}>
             <div style={{ 
               fontSize: '0.62rem', 
@@ -620,7 +649,7 @@ export const SideDrawer = ({
                     transition: 'all 0.12s ease'
                   }}
                   onMouseEnter={e => {
-                    if (!isCur) e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.04)';
+                    if (!isCur) e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.06)';
                   }}
                   onMouseLeave={e => {
                     if (!isCur) e.currentTarget.style.backgroundColor = 'transparent';

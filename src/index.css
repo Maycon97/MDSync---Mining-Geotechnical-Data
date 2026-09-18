@@ -1112,8 +1112,26 @@ button:focus-visible, .btn-action:focus-visible {
   font-weight: 600;
   font-size: 0.8rem;
   letter-spacing: 0.01em;
+/* ============================================================
+   MENU LATERAL (DRAWER) - ESTÉTICA ULTRA-CLEAN & TRANSLÚCIDA
+   ============================================================ */
+
+/* Botão Clean de Abrir Menu no Cabeçalho */
+.btn-menu-clean,
+.btn-menu-3d {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.42rem 0.8rem;
+  border-radius: 7px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-medium);
+  color: var(--text-main);
+  font-weight: 600;
+  font-size: 0.8rem;
+  letter-spacing: 0.01em;
   cursor: pointer;
-  transition: all 0.15s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1);
   user-select: none;
 }
 
@@ -1122,51 +1140,83 @@ button:focus-visible, .btn-action:focus-visible {
   background: var(--bg-surface-hover);
   border-color: var(--primary-accent);
   color: var(--primary-accent);
-  box-shadow: 0 2px 8px rgba(56, 189, 248, 0.15);
+  box-shadow: 0 2px 10px rgba(56, 189, 248, 0.2);
 }
 
 .btn-menu-clean:active,
 .btn-menu-3d:active {
-  transform: scale(0.98);
+  transform: scale(0.97);
 }
 
-/* Overlay com Backdrop Blur Suave */
+/* Overlay com Transparência Suave e Desfoque */
 .drawer-overlay {
   position: fixed;
   inset: 0;
-  background-color: rgba(2, 6, 23, 0.6);
-  backdrop-filter: blur(8px);
+  background-color: rgba(2, 6, 23, 0.55);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
   z-index: 1300;
   display: flex;
-  animation: drawerFadeIn 0.18s ease forwards;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s cubic-bezier(0.16, 1, 0.3, 1), backdrop-filter 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-/* Painel Lateral Clean & Compacto (284px) */
+.drawer-overlay.is-active {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* Painel Lateral Translúcido & Retrátil (Glassmorphism de Alto Nível) */
 .drawer-clean-panel,
 .drawer-3d-panel {
   width: 284px;
   max-width: 85vw;
   height: 100%;
-  background: var(--bg-secondary, #0c1527);
+  background: rgba(12, 20, 36, 0.82);
+  backdrop-filter: blur(24px) saturate(180%);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
   color: var(--text-main, #f8fafc);
   display: flex;
   flex-direction: column;
-  box-shadow: 12px 0 35px -5px rgba(0, 0, 0, 0.45);
-  border-right: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.08));
+  box-shadow: 18px 0 45px -8px rgba(0, 0, 0, 0.55), inset -1px 0 0 rgba(255, 255, 255, 0.08);
+  border-right: 1px solid rgba(255, 255, 255, 0.12);
   position: relative;
   z-index: 1301;
   overflow: hidden;
-  animation: drawerSlideIn 0.22s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  transform: translateX(-100%);
+  opacity: 0;
+  transition: transform 0.32s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: transform, opacity;
 }
 
-/* Cabeçalho do Drawer Clean */
+:root[data-theme='light'] .drawer-clean-panel,
+:root[data-theme='light'] .drawer-3d-panel {
+  background: rgba(255, 255, 255, 0.85);
+  border-right: 1px solid rgba(0, 0, 0, 0.08);
+  box-shadow: 18px 0 45px -8px rgba(0, 0, 0, 0.12), inset -1px 0 0 rgba(0, 0, 0, 0.04);
+}
+
+/* Estado Ativo: Desliza para dentro acompanhado do efeito translúcido */
+.drawer-clean-panel.is-active,
+.drawer-3d-panel.is-active {
+  transform: translateX(0);
+  opacity: 1;
+}
+
+/* Cabeçalho Translúcido */
 .drawer-header-clean {
   padding: 0.8rem 0.9rem;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  border-bottom: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.08));
-  background: var(--bg-surface, #0f172a);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+  background: rgba(15, 23, 42, 0.4);
+}
+
+:root[data-theme='light'] .drawer-header-clean {
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+  background: rgba(255, 255, 255, 0.4);
 }
 
 .drawer-brand-clean {
@@ -1190,12 +1240,18 @@ button:focus-visible, .btn-action:focus-visible {
 }
 
 .drawer-close-btn:hover {
-  background: rgba(255, 255, 255, 0.06);
+  background: rgba(255, 255, 255, 0.08);
   color: var(--text-main, #ffffff);
-  border-color: var(--border-subtle, rgba(255, 255, 255, 0.1));
+  border-color: rgba(255, 255, 255, 0.12);
 }
 
-/* Caixa de Busca Clean */
+:root[data-theme='light'] .drawer-close-btn:hover {
+  background: rgba(0, 0, 0, 0.05);
+  color: var(--text-main, #0f172a);
+  border-color: rgba(0, 0, 0, 0.1);
+}
+
+/* Caixa de Busca Clean com Efeito Translúcido */
 .drawer-search-wrapper {
   position: relative;
   display: flex;
@@ -1208,18 +1264,28 @@ button:focus-visible, .btn-action:focus-visible {
   height: 32px;
   padding: 0 1.8rem 0 1.9rem;
   border-radius: 6px;
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.08));
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
   color: var(--text-main, #ffffff);
   font-size: 0.76rem;
   outline: none;
   transition: all 0.18s ease;
 }
 
+:root[data-theme='light'] .drawer-search-input {
+  background: rgba(0, 0, 0, 0.03);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  color: var(--text-main, #0f172a);
+}
+
 .drawer-search-input:focus {
-  background: rgba(255, 255, 255, 0.06);
+  background: rgba(255, 255, 255, 0.08);
   border-color: var(--primary-accent, #38bdf8);
-  box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.15);
+  box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.18);
+}
+
+:root[data-theme='light'] .drawer-search-input:focus {
+  background: rgba(0, 0, 0, 0.05);
 }
 
 .drawer-search-input::placeholder {
@@ -1284,7 +1350,7 @@ button:focus-visible, .btn-action:focus-visible {
   user-select: none;
 }
 
-/* Itens de Navegação Clean */
+/* Itens de Navegação Clean com Efeito Translúcido no Hover */
 .nav-item-clean,
 .nav-item-3d {
   display: flex;
@@ -1301,7 +1367,7 @@ button:focus-visible, .btn-action:focus-visible {
   cursor: pointer;
   width: 100%;
   text-align: left;
-  transition: background 0.14s ease, color 0.14s ease, border-color 0.14s ease;
+  transition: background 0.14s ease, color 0.14s ease, border-color 0.14s ease, transform 0.14s ease;
   text-decoration: none;
   position: relative;
   user-select: none;
@@ -1309,14 +1375,21 @@ button:focus-visible, .btn-action:focus-visible {
 
 .nav-item-clean:hover,
 .nav-item-3d:hover {
-  background: rgba(255, 255, 255, 0.04);
+  background: rgba(255, 255, 255, 0.06);
   color: var(--text-main, #ffffff);
+  transform: translateX(2px);
+}
+
+:root[data-theme='light'] .nav-item-clean:hover,
+:root[data-theme='light'] .nav-item-3d:hover {
+  background: rgba(0, 0, 0, 0.04);
+  color: var(--text-main, #0f172a);
 }
 
 .nav-item-clean.active,
 .nav-item-3d.active {
-  background: var(--primary-accent-bg, rgba(56, 189, 248, 0.1));
-  border-color: rgba(56, 189, 248, 0.2);
+  background: rgba(56, 189, 248, 0.12);
+  border-color: rgba(56, 189, 248, 0.25);
   color: var(--primary-accent, #38bdf8);
   font-weight: 600;
 }
@@ -1353,7 +1426,11 @@ button:focus-visible, .btn-action:focus-visible {
   flex-direction: column;
   gap: 0.1rem;
   margin: 0.15rem 0 0.25rem 0.75rem;
-  border-left: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.1));
+  border-left: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+:root[data-theme='light'] .drawer-sublist {
+  border-left: 1px solid rgba(0, 0, 0, 0.1);
 }
 
 .drawer-subitem {
@@ -1374,18 +1451,29 @@ button:focus-visible, .btn-action:focus-visible {
 }
 
 .drawer-subitem:hover {
-  background: rgba(255, 255, 255, 0.04);
+  background: rgba(255, 255, 255, 0.06);
   color: var(--text-main, #ffffff);
+  transform: translateX(2px);
 }
 
-/* Rodapé do Menu Lateral */
+:root[data-theme='light'] .drawer-subitem:hover {
+  background: rgba(0, 0, 0, 0.04);
+  color: var(--text-main, #0f172a);
+}
+
+/* Rodapé do Menu Lateral Translúcido */
 .drawer-footer-clean {
   padding: 0.65rem 0.75rem;
-  border-top: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.08));
-  background: var(--bg-surface, #0f172a);
+  border-top: 1px solid rgba(255, 255, 255, 0.07);
+  background: rgba(15, 23, 42, 0.4);
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
+}
+
+:root[data-theme='light'] .drawer-footer-clean {
+  border-top: 1px solid rgba(0, 0, 0, 0.06);
+  background: rgba(255, 255, 255, 0.4);
 }
 
 .drawer-user-row {
@@ -1400,7 +1488,11 @@ button:focus-visible, .btn-action:focus-visible {
 }
 
 .drawer-user-row:hover {
-  background: rgba(255, 255, 255, 0.04);
+  background: rgba(255, 255, 255, 0.06);
+}
+
+:root[data-theme='light'] .drawer-user-row:hover {
+  background: rgba(0, 0, 0, 0.04);
 }
 
 .drawer-action-btn {
@@ -1410,16 +1502,26 @@ button:focus-visible, .btn-action:focus-visible {
   padding: 5px;
   border-radius: 6px;
   background: transparent;
-  border: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.08));
+  border: 1px solid rgba(255, 255, 255, 0.08);
   color: var(--text-muted, #94a3b8);
   cursor: pointer;
   transition: all 0.15s ease;
 }
 
+:root[data-theme='light'] .drawer-action-btn {
+  border: 1px solid rgba(0, 0, 0, 0.08);
+}
+
 .drawer-action-btn:hover {
-  background: rgba(255, 255, 255, 0.05);
+  background: rgba(255, 255, 255, 0.08);
   color: var(--text-main, #ffffff);
-  border-color: var(--border-medium, rgba(255, 255, 255, 0.15));
+  border-color: rgba(255, 255, 255, 0.18);
+}
+
+:root[data-theme='light'] .drawer-action-btn:hover {
+  background: rgba(0, 0, 0, 0.05);
+  color: var(--text-main, #0f172a);
+  border-color: rgba(0, 0, 0, 0.15);
 }
 
 
