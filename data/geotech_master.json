@@ -193,7 +193,14 @@
       "statusCalculado": "NORMAL",
       "ultimaCota": 827.6510000000001,
       "ultimaData": "2026-09-04",
-      "origem": "PCMI_OFICIAL_ITAMINAS"
+      "origem": "PCMI_OFICIAL_ITAMINAS",
+      "fotoRecente": {
+        "url": "/assets/evidence/piezo_detail_trena.jpg",
+        "data": "2026-09-04 11:30",
+        "autor": "Marcos Vinicius (Técnico de Campo)",
+        "tipo": "Verificação Piezométrica",
+        "descricao": "Inspeção preventiva da coluna d'água no maciço da Barragem B1."
+      }
     },
     {
       "uid": "BARRAGEM_B1_INA_107",
@@ -5558,7 +5565,14 @@
       "statusCalculado": "NORMAL",
       "ultimaCota": 1192.98,
       "ultimaData": "2026-08-07",
-      "origem": "PCMI_OFICIAL_ITAMINAS"
+      "origem": "PCMI_OFICIAL_ITAMINAS",
+      "fotoRecente": {
+        "url": "/assets/evidence/piezo_detail_trena.jpg",
+        "data": "2026-09-02 10:15",
+        "autor": "Carlos Eduardo Mendes",
+        "tipo": "Inspeção de Boca de Tubo",
+        "descricao": "Boca do tubo com graduação milimétrica e descida da sonda sonora."
+      }
     },
     {
       "uid": "PDE_MANGABA_PZ_2",
@@ -5616,7 +5630,14 @@
       "statusCalculado": "NORMAL",
       "ultimaCota": 1115.57,
       "ultimaData": "2026-09-03",
-      "origem": "PCMI_OFICIAL_ITAMINAS"
+      "origem": "PCMI_OFICIAL_ITAMINAS",
+      "fotoRecente": {
+        "url": "/assets/evidence/piezo_mangaba_pz3.jpg",
+        "data": "2026-09-03 14:20",
+        "autor": "Carlos Eduardo Mendes (Técnico Geotécnico)",
+        "tipo": "Leitura com Piu Elétrico e Inspeção do Tubo",
+        "descricao": "Tubo de proteção em PVC íntegro, tampa cadeada, espelho d'água medido a 20.78m da cota topo com carretel sonoro."
+      }
     },
     {
       "uid": "PDE_MANGABA_INA_1",
