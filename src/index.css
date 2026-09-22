@@ -513,6 +513,42 @@ button:focus-visible, .btn-action:focus-visible {
 }
 
 /* ============================================================
+   MODAIS & DIÁLOGOS (DESKTOP & RESPONSIVO)
+   ============================================================ */
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.75);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  z-index: 1200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+  animation: fadeIn 0.2s ease-out;
+}
+
+.modal-content {
+  background-color: var(--bg-surface);
+  border: 1px solid var(--border-medium);
+  border-radius: 16px;
+  width: 100%;
+  max-width: 860px;
+  max-height: 92vh;
+  overflow-y: auto;
+  box-shadow: var(--shadow-xl);
+  position: relative;
+  animation: fadeInUp 0.25s ease-out;
+  color: var(--text-main);
+  box-sizing: border-box;
+}
+
+/* ============================================================
    ESTILOS LEAFLET MAP & MARCADORES INTERATIVOS
    ============================================================ */
 .leaflet-container {

@@ -75,6 +75,7 @@ export const ChecklistTab = ({ onNavigateTab }) => {
 
   // Controle de Modal / Formulário de Checklist Veicular
   const [isVehicleFormOpen, setIsVehicleFormOpen] = useState(false);
+  const [vehicleFormInitialMode, setVehicleFormInitialMode] = useState('nativo');
   const [selectedVehicleDetail, setSelectedVehicleDetail] = useState(null);
 
   // Estruturas do Survey123 (Ficha de Inspeção Regular - FIR)
@@ -465,24 +466,31 @@ export const ChecklistTab = ({ onNavigateTab }) => {
               </>
             ) : (
               <>
-                {/* Botão para abrir o link oficial do Survey123 Veicular */}
-                <a
-                  href="https://arcg.is/0DuT4L1"
-                  target="_blank"
-                  rel="noreferrer"
+                {/* Botão para visualizar formulário oficial Survey123 integrado */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setVehicleFormInitialMode('survey123_web');
+                    setIsVehicleFormOpen(true);
+                  }}
                   className="btn-secondary"
                   style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.8rem', padding: '0.5rem 0.85rem', borderColor: 'var(--primary-accent)', color: 'var(--primary-accent)' }}
-                  title="Abrir Formulário Veicular no ArcGIS Survey123 Web (https://arcg.is/0DuT4L1)"
+                  title="Abrir Formulário Survey123 Integrado dentro do MDSync"
                 >
                   <ExternalLink size={14} />
-                  <span>Abrir Survey123 Oficial</span>
-                </a>
+                  <span>Ver Survey123 Integrado</span>
+                </button>
 
                 {/* Botão para Novo Checklist Veicular no MDSync */}
                 <button
-                  onClick={() => setIsVehicleFormOpen(true)}
+                  type="button"
+                  onClick={() => {
+                    setVehicleFormInitialMode('nativo');
+                    setIsVehicleFormOpen(true);
+                  }}
                   className="btn-primary"
                   style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', fontSize: '0.8rem', padding: '0.5rem 1rem', fontWeight: 700, background: 'linear-gradient(135deg, #0284c7, #0369a1)' }}
+                  title="Preencher novo checklist veicular no MDSync"
                 >
                   <Plus size={16} />
                   <span>+ Novo Checklist Veicular</span>
@@ -1483,6 +1491,7 @@ export const ChecklistTab = ({ onNavigateTab }) => {
         onClose={() => setIsVehicleFormOpen(false)}
         onSave={addVehicleChecklist}
         currentUser={currentUser}
+        initialMode={vehicleFormInitialMode}
       />
 
       {/* Modal de Detalhes do Checklist Veicular */}

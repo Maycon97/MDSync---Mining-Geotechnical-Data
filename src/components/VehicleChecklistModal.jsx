@@ -16,11 +16,21 @@ import {
   User,
   ShieldCheck,
   ClipboardList,
-  UploadCloud
+  UploadCloud,
+  Globe,
+  Sparkles,
+  ExternalLink
 } from 'lucide-react';
 
-export const VehicleChecklistModal = ({ isOpen, onClose, onSave, currentUser }) => {
+export const VehicleChecklistModal = ({ isOpen, onClose, onSave, currentUser, initialMode = 'nativo' }) => {
+  const [formMode, setFormMode] = useState(initialMode);
   const [currentPage, setCurrentPage] = useState(1);
+
+  useEffect(() => {
+    if (isOpen) {
+      setFormMode(initialMode);
+    }
+  }, [isOpen, initialMode]);
   const canvasRef = useRef(null);
   const [isDrawing, setIsDrawing] = useState(false);
   const [hasDrawnSignature, setHasDrawnSignature] = useState(false);
@@ -259,11 +269,40 @@ export const VehicleChecklistModal = ({ isOpen, onClose, onSave, currentUser }) 
   if (!isOpen) return null;
 
   return (
-    <div className="modal-backdrop animate-fade-in" onClick={onClose}>
+    <div 
+      className="modal-backdrop animate-fade-in" 
+      onClick={onClose}
+      style={{
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        zIndex: 1300,
+        backgroundColor: 'rgba(0, 0, 0, 0.78)',
+        backdropFilter: 'blur(6px)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: '1rem'
+      }}
+    >
       <div 
         className="modal-content" 
         onClick={(e) => e.stopPropagation()}
-        style={{ maxWidth: '850px', maxHeight: '92vh', overflowY: 'auto', padding: '1.75rem' }}
+        style={{ 
+          maxWidth: '880px', 
+          width: '100%',
+          maxHeight: '92vh', 
+          overflowY: 'auto', 
+          padding: '1.75rem',
+          backgroundColor: 'var(--bg-surface)',
+          border: '1px solid var(--border-medium)',
+          borderRadius: '16px',
+          boxShadow: 'var(--shadow-xl)',
+          color: 'var(--text-main)',
+          position: 'relative'
+        }}
       >
         {/* Header do Modal */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid var(--border-subtle)', paddingBottom: '1rem', marginBottom: '1.25rem' }}>
@@ -276,7 +315,7 @@ export const VehicleChecklistModal = ({ isOpen, onClose, onSave, currentUser }) 
               Checklist Veicular - Diário
             </h2>
             <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-              Formulário oficial integrado ArcGIS Survey123 (Link: https://arcg.is/0DuT4L1)
+              Formulário oficial de segurança veicular e frota operacional integrado no MDSync
             </span>
           </div>
 
@@ -285,50 +324,157 @@ export const VehicleChecklistModal = ({ isOpen, onClose, onSave, currentUser }) 
           </button>
         </div>
 
-        {/* Barra de Progresso das 4 Páginas do Survey123 */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.5rem', marginBottom: '1.5rem', backgroundColor: 'var(--bg-secondary)', padding: '0.6rem 1rem', borderRadius: '10px' }}>
-          {[
-            { num: 1, label: 'Identificação' },
-            { num: 2, label: 'Itens de Segurança' },
-            { num: 3, label: 'Condições Gerais' },
-            { num: 4, label: 'Finalização & Assinatura' }
-          ].map(p => (
-            <button
-              key={p.num}
-              type="button"
-              onClick={() => setCurrentPage(p.num)}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.4rem',
-                border: 'none',
-                background: 'transparent',
-                cursor: 'pointer',
-                color: currentPage === p.num ? 'var(--primary-accent)' : (currentPage > p.num ? 'var(--geo-normal)' : 'var(--text-faint)'),
-                fontWeight: currentPage === p.num ? 700 : 500,
-                fontSize: '0.75rem'
-              }}
-            >
-              <span style={{
-                width: '22px',
-                height: '22px',
-                borderRadius: '50%',
-                display: 'inline-flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                backgroundColor: currentPage === p.num ? 'var(--primary-accent)' : (currentPage > p.num ? 'rgba(16, 185, 129, 0.2)' : 'var(--bg-panel)'),
-                color: currentPage === p.num ? '#fff' : (currentPage > p.num ? 'var(--geo-normal)' : 'var(--text-faint)'),
-                fontSize: '0.7rem',
-                fontWeight: 700
-              }}>
-                {p.num}
-              </span>
-              <span className="hide-mobile">{p.label}</span>
-            </button>
-          ))}
+        {/* Seletor de Modo: Formulário Nativo MDSync vs Survey123 Web Embutido */}
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '0.5rem',
+          backgroundColor: 'var(--bg-secondary)',
+          padding: '0.35rem',
+          borderRadius: '10px',
+          marginBottom: '1.25rem',
+          border: '1px solid var(--border-subtle)'
+        }}>
+          <button
+            type="button"
+            onClick={() => setFormMode('nativo')}
+            style={{
+              flex: 1,
+              padding: '0.5rem 0.85rem',
+              border: 'none',
+              borderRadius: '8px',
+              fontSize: '0.78rem',
+              fontWeight: 700,
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '0.45rem',
+              backgroundColor: formMode === 'nativo' ? 'var(--primary-accent)' : 'transparent',
+              color: formMode === 'nativo' ? '#ffffff' : 'var(--text-muted)',
+              boxShadow: formMode === 'nativo' ? '0 2px 8px rgba(2, 132, 199, 0.35)' : 'none',
+              transition: 'all 0.15s'
+            }}
+          >
+            <Sparkles size={15} />
+            Preenchimento Nativo MDSync (Gravação Automática)
+          </button>
+          <button
+            type="button"
+            onClick={() => setFormMode('survey123_web')}
+            style={{
+              flex: 1,
+              padding: '0.5rem 0.85rem',
+              border: 'none',
+              borderRadius: '8px',
+              fontSize: '0.78rem',
+              fontWeight: 700,
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '0.45rem',
+              backgroundColor: formMode === 'survey123_web' ? 'var(--primary-accent)' : 'transparent',
+              color: formMode === 'survey123_web' ? '#ffffff' : 'var(--text-muted)',
+              boxShadow: formMode === 'survey123_web' ? '0 2px 8px rgba(2, 132, 199, 0.35)' : 'none',
+              transition: 'all 0.15s'
+            }}
+          >
+            <Globe size={15} />
+            Visualizar Survey123 Web (ArcGIS Embutido)
+          </button>
         </div>
 
-        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+        {formMode === 'survey123_web' ? (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              padding: '0.75rem 1rem',
+              backgroundColor: 'var(--bg-secondary)',
+              borderRadius: '8px',
+              border: '1px solid var(--border-subtle)',
+              fontSize: '0.78rem',
+              color: 'var(--text-muted)',
+              flexWrap: 'wrap',
+              gap: '0.5rem'
+            }}>
+              <span>Visualizando formulário oficial da Esri Survey123 incorporado via Web.</span>
+              <a 
+                href="https://arcg.is/0DuT4L1" 
+                target="_blank" 
+                rel="noreferrer"
+                style={{ color: 'var(--primary-accent)', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '0.3rem' }}
+              >
+                Abrir link direto em nova aba <ExternalLink size={13} />
+              </a>
+            </div>
+            
+            <div style={{
+              width: '100%',
+              height: '620px',
+              borderRadius: '12px',
+              overflow: 'hidden',
+              border: '1px solid var(--border-medium)',
+              backgroundColor: '#ffffff'
+            }}>
+              <iframe
+                src="https://survey123.arcgis.com/share/af6c8c59f0654638b6e566793de64618"
+                title="ArcGIS Survey123 Veicular Integrado"
+                width="100%"
+                height="100%"
+                style={{ border: 'none', width: '100%', height: '100%' }}
+                allow="geolocation; camera"
+              />
+            </div>
+          </div>
+        ) : (
+          <>
+            {/* Barra de Progresso das 4 Páginas do Survey123 */}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.5rem', marginBottom: '1.5rem', backgroundColor: 'var(--bg-secondary)', padding: '0.6rem 1rem', borderRadius: '10px' }}>
+              {[
+                { num: 1, label: 'Identificação' },
+                { num: 2, label: 'Itens de Segurança' },
+                { num: 3, label: 'Condições Gerais' },
+                { num: 4, label: 'Finalização & Assinatura' }
+              ].map(p => (
+                <button
+                  key={p.num}
+                  type="button"
+                  onClick={() => setCurrentPage(p.num)}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.4rem',
+                    border: 'none',
+                    background: 'transparent',
+                    cursor: 'pointer',
+                    color: currentPage === p.num ? 'var(--primary-accent)' : (currentPage > p.num ? 'var(--geo-normal)' : 'var(--text-faint)'),
+                    fontWeight: currentPage === p.num ? 700 : 500,
+                    fontSize: '0.75rem'
+                  }}
+                >
+                  <span style={{
+                    width: '22px',
+                    height: '22px',
+                    borderRadius: '50%',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    backgroundColor: currentPage === p.num ? 'var(--primary-accent)' : (currentPage > p.num ? 'rgba(16, 185, 129, 0.2)' : 'var(--bg-panel)'),
+                    color: currentPage === p.num ? '#fff' : (currentPage > p.num ? 'var(--geo-normal)' : 'var(--text-faint)'),
+                    fontSize: '0.7rem',
+                    fontWeight: 700
+                  }}>
+                    {p.num}
+                  </span>
+                  <span className="hide-mobile">{p.label}</span>
+                </button>
+              ))}
+            </div>
+
+            <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
           
           {/* ============================================================ */}
           {/* PÁGINA 1: IDENTIFICAÇÃO                                       */}
@@ -894,6 +1040,8 @@ export const VehicleChecklistModal = ({ isOpen, onClose, onSave, currentUser }) 
             </div>
           </div>
         </form>
+          </>
+        )}
       </div>
     </div>
   );
