@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import confetti from 'canvas-confetti';
 import { useGeotechData } from '../context/GeotechDataContext';
 import { useAuth } from '../context/AuthContext';
@@ -50,7 +50,15 @@ import {
   UserCheck,
   ChevronDown,
   ChevronUp,
-  Sliders
+  Sliders,
+  Building2,
+  ShieldCheck,
+  PenTool,
+  RotateCcw,
+  Globe,
+  Sparkles,
+  ExternalLink,
+  FileText
 } from 'lucide-react';
 
 ChartJS.register(
@@ -70,6 +78,7 @@ export const FieldCollectionTab = ({ preSelectedInstrument }) => {
     instruments, 
     addReading, 
     addAnomaly, 
+    addChecklist,
     activeStructureId,
     readingsPiezometria = [],
     readingsVazao = [],
@@ -101,7 +110,71 @@ export const FieldCollectionTab = ({ preSelectedInstrument }) => {
   const [showHistoryTable, setShowHistoryTable] = useState(false);
   const [selectedPhotoModal, setSelectedPhotoModal] = useState(null); // Lightbox modal
 
-  // Estado para formulário de Anomalia
+  // ============================================================
+  // ESTADOS OFICIAIS SURVEY123 FIR (https://arcg.is/0yOmKX0)
+  // ============================================================
+  const SURVEY123_FIR_STRUCTURES = [
+    'Barragem B1',
+    'Barragem B4',
+    'Cava Jangada',
+    'Contrapilhamento Carrapato',
+    'PDE Mangaba',
+    'PDE Jacó',
+    'PDE ( Engenho Seco I )',
+    'PDE ( Engenho Seco II )',
+    'Pilha de Produto/Sub-Produto',
+    'Cava Antena',
+    'Cava Engenho Seco',
+    'Cava Índia',
+    'Cava Samambaia',
+    'Dique PDE1',
+    'Pilha de Rejeito',
+    'Sump',
+    'Taludes/Encostas'
+  ];
+
+  const [firMode, setFirMode] = useState('nativo'); // 'nativo' | 'survey123_web'
+  const [firEstrutura, setFirEstrutura] = useState('Barragem B1');
+  const [firData, setFirData] = useState(() => new Date().toISOString().split('T')[0]);
+  const [firHora, setFirHora] = useState(() => new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }));
+  const [firProfissional, setFirProfissional] = useState(currentUser?.nome || 'Eng. Marcelo N. Siqueira');
+  const [firRegistro, setFirRegistro] = useState(currentUser?.registro || 'CREA 85.120/D-MG');
+  const [firCondicoesClimaticas, setFirCondicoesClimaticas] = useState('Ensolarado');
+  const [firVolumeAcumulado, setFirVolumeAcumulado] = useState(14.8);
+  const [firVazaoHm, setFirVazaoHm] = useState(2.10);
+  
+  // Acessos e Vias
+  const [firAcessos, setFirAcessos] = useState('Bom');
+  const [firAcessosObs, setFirAcessosObs] = useState('');
+
+  // Maciço e Ombreiras
+  const [firMacicoEstrutural, setFirMacicoEstrutural] = useState('Não detectado');
+  const [firMacicoVisual, setFirMacicoVisual] = useState('Não detectado');
+  const [firMacicoSuperficial, setFirMacicoSuperficial] = useState('Não detectado');
+  const [firMacicoObs, setFirMacicoObs] = useState('');
+
+  // Drenagens e Reservatório
+  const [firDrenagemSuperficial, setFirDrenagemSuperficial] = useState('Não');
+  const [firTipoObstrucao, setFirTipoObstrucao] = useState('Nenhum');
+  const [firEstadoConservacaoDrenagem, setFirEstadoConservacaoDrenagem] = useState('Bom');
+  const [firDrenagemInterna, setFirDrenagemInterna] = useState('Operando Normal');
+  const [firInstrumentacao, setFirInstrumentacao] = useState('Operando Normalmente');
+  const [firCotaEspelho, setFirCotaEspelho] = useState(848.50);
+  const [firBordaLivre, setFirBordaLivre] = useState(3.16);
+  const [firPresencaOndas, setFirPresencaOndas] = useState('Não');
+
+  // Classificação ANM & Finalização
+  const [firClassificacaoGeral, setFirClassificacaoGeral] = useState('Nível 0 - Normal / Conforme');
+  const [firObservacoesFinais, setFirObservacoesFinais] = useState('');
+  const [firAcoesCorretivas, setFirAcoesCorretivas] = useState('');
+  const [firAssinatura, setFirAssinatura] = useState('');
+
+  // Assinatura Digital com Canvas Touch/Mouse
+  const firCanvasRef = useRef(null);
+  const [isFirDrawing, setIsFirDrawing] = useState(false);
+  const [hasFirDrawn, setHasFirDrawn] = useState(false);
+
+  // Estado para campos de Anomalia vinculados à FIR
   const [anomalyStructId, setAnomalyStructId] = useState(activeStructureId !== 'TODAS' ? activeStructureId : (structures[0]?.id || 'BARRAGEM_B1'));
   const [anomalyType, setAnomalyType] = useState('Trinca Longitudinal');
   const [anomalySeverity, setAnomalySeverity] = useState('Médio');
@@ -585,32 +658,131 @@ export const FieldCollectionTab = ({ preSelectedInstrument }) => {
     setTimeout(() => setReadingSuccessToast(null), 5000);
   };
 
-  // Submissão de Anomalia
+  // Funções para Canvas de Assinatura Digital FIR
+  const startFirDrawing = (e) => {
+    const canvas = firCanvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    const rect = canvas.getBoundingClientRect();
+    const x = (e.clientX || e.touches?.[0]?.clientX) - rect.left;
+    const y = (e.clientY || e.touches?.[0]?.clientY) - rect.top;
+
+    ctx.beginPath();
+    ctx.moveTo(x, y);
+    setIsFirDrawing(true);
+    setHasFirDrawn(true);
+  };
+
+  const drawFir = (e) => {
+    if (!isFirDrawing) return;
+    const canvas = firCanvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    const rect = canvas.getBoundingClientRect();
+    const x = (e.clientX || e.touches?.[0]?.clientX) - rect.left;
+    const y = (e.clientY || e.touches?.[0]?.clientY) - rect.top;
+
+    ctx.lineTo(x, y);
+    ctx.strokeStyle = '#0284c7';
+    ctx.lineWidth = 2.5;
+    ctx.lineCap = 'round';
+    ctx.stroke();
+  };
+
+  const stopFirDrawing = () => {
+    if (!isFirDrawing) return;
+    setIsFirDrawing(false);
+    const canvas = firCanvasRef.current;
+    if (canvas) {
+      setFirAssinatura(canvas.toDataURL('image/png'));
+    }
+  };
+
+  const clearFirSignature = () => {
+    const canvas = firCanvasRef.current;
+    if (canvas) {
+      const ctx = canvas.getContext('2d');
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      setHasFirDrawn(false);
+      setFirAssinatura('');
+    }
+  };
+
+  // Submissão Completa do Formulário Survey123 FIR (https://arcg.is/0yOmKX0)
   const handleSubmitAnomaly = (e) => {
     e.preventDefault();
 
     const struct = structures.find(s => s.id === anomalyStructId);
-    const newAnom = {
-      estrutura: struct ? struct.nome : 'BARRAGEM B1',
-      tipo: anomalyType,
-      severidade: anomalySeverity,
-      localizacao: anomalyLocation,
+    const structName = firEstrutura || (struct ? struct.nome : 'Barragem B1');
+
+    // 1. Objeto oficial da Ficha de Inspeção Regular FIR - Survey123
+    const newFirRecord = {
+      id: `FIR-${Date.now().toString().slice(-6)}`,
+      surveyId: '8f6f56e94ec142af90e2ac9084ce716c',
+      titulo: 'Formulário de Inspeção Regular - FIR - R0',
+      linkSurvey: 'https://arcg.is/0yOmKX0',
+      data: firData,
+      hora: firHora,
+      estrutura: structName,
+      profissional: `${firProfissional} (${firRegistro})`,
+      condicoesClimaticas: firCondicoesClimaticas,
+      volumeAcumulado: Number(firVolumeAcumulado) || 0,
+      vazaoHm: Number(firVazaoHm) || 0,
       lat: coords?.lat || -20.063818,
       lon: coords?.lon || -44.114360,
-      responsavel: currentUser.nome,
-      descricao: anomalyDesc || 'Inspeção visual rotineira de campo.',
-      recomendacao: anomalyRecommendation || 'Acompanhamento nas próximas leituras ordinárias.',
+      acessos: firAcessos,
+      acessosObs: firAcessosObs,
+      macicoCondicoesEstruturais: firMacicoEstrutural,
+      macicoCondicoesVisuais: firMacicoVisual,
+      macicoCondicoesSuperficiais: firMacicoSuperficial,
+      macicoObs: firMacicoObs,
+      drenagemSuperficial: firDrenagemSuperficial,
+      tipoObstrucao: firTipoObstrucao,
+      estadoConservacaoDrenagem: firEstadoConservacaoDrenagem,
+      drenagemInterna: firDrenagemInterna,
+      instrumentacao: firInstrumentacao,
+      cotaEspelho: Number(firCotaEspelho) || 0,
+      bordaLivre: Number(firBordaLivre) || 0,
+      presencaOndas: firPresencaOndas,
+      classificacaoGeral: firClassificacaoGeral,
+      observacoesFinais: firObservacoesFinais || firAcoesCorretivas,
+      foto: anomalyPhoto.photoData,
+      assinatura: firAssinatura || `${firProfissional} (Assinatura Digitalizada)`
+    };
+
+    if (addChecklist) {
+      addChecklist(newFirRecord);
+    }
+
+    // 2. Registro no Módulo de Anomalias & Inspeções
+    const newAnom = {
+      estrutura: structName,
+      tipo: anomalyType,
+      severidade: anomalySeverity,
+      localizacao: anomalyLocation || 'Talude Geral / Crista',
+      lat: coords?.lat || -20.063818,
+      lon: coords?.lon || -44.114360,
+      responsavel: firProfissional,
+      descricao: firMacicoObs || anomalyDesc || `Inspeção Regular FIR registrada conforme padrão Survey123 (${firClassificacaoGeral}).`,
+      recomendacao: firAcoesCorretivas || anomalyRecommendation || 'Monitoramento ordinário e vistoria geotécnica de campo.',
       foto: anomalyPhoto.photoData
     };
 
     addAnomaly(newAnom);
 
-    confetti({ particleCount: 60, spread: 70, origin: { y: 0.7 } });
-    setAnomalySuccessToast(`Anomalia [${anomalyType}] registrada no módulo Inspect com sucesso!`);
+    confetti({ particleCount: 70, spread: 75, origin: { y: 0.7 } });
+    setAnomalySuccessToast(`Ficha de Inspeção Regular (Survey123 FIR) e Ocorrência de [${structName}] registradas com sucesso no MDSync!`);
+    
+    // Limpeza parcial
     setAnomalyDesc('');
     setAnomalyRecommendation('');
+    setFirMacicoObs('');
+    setFirAcoesCorretivas('');
+    setFirObservacoesFinais('');
     anomalyPhoto.clearPhoto();
-    setTimeout(() => setAnomalySuccessToast(null), 5000);
+    clearFirSignature();
+
+    setTimeout(() => setAnomalySuccessToast(null), 6000);
   };
 
   return (
@@ -1663,205 +1835,824 @@ export const FieldCollectionTab = ({ preSelectedInstrument }) => {
       )}
 
       {/* ============================================================
-          SUB-ABA 2: REGISTRO DE INSPEÇÃO VISUAL E ANOMALIA (INSPECT)
+          SUB-ABA 2: REGISTRO DE INSPEÇÃO VISUAL E ANOMALIA (SURVEY123 FIR)
+          Base oficial: https://arcg.is/0yOmKX0 (Portaria ANM 95/2022)
           ============================================================ */}
       {activeSubTab === 'anomalia' && (
-        <form onSubmit={handleSubmitAnomaly} className="card-panel" style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+          
+          {/* Banner de Identificação Oficial Survey123 FIR */}
+          <div className="card-panel" style={{
+            padding: '1.25rem',
+            background: 'linear-gradient(135deg, rgba(2, 132, 199, 0.08) 0%, rgba(16, 185, 129, 0.05) 100%)',
+            border: '1px solid var(--border-medium)',
+            borderRadius: '12px'
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '1rem' }}>
+              <div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
+                  <span className="badge-status badge-info" style={{ fontSize: '0.7rem', fontWeight: 800 }}>
+                    PORTARIA ANM Nº 95/2022
+                  </span>
+                  <span className="badge-status badge-normal" style={{ fontSize: '0.7rem' }}>
+                    ArcGIS Survey123 Oficial
+                  </span>
+                  <span style={{ fontSize: '0.72rem', color: 'var(--text-faint)', fontFamily: 'monospace' }}>
+                    ID: 8f6f56e94ec142af90e2ac9084ce716c
+                  </span>
+                </div>
+
+                <h3 style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--text-main)', marginTop: '0.35rem', marginBottom: '0.2rem' }}>
+                  Ficha de Inspeção Regular — FIR - R0
+                </h3>
+                <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', margin: 0 }}>
+                  ITAMINAS COMÉRCIO DE MINÉRIOS S.A • Mina Engenho Seco / Sarzedo-MG
+                </p>
+              </div>
+
+              {/* Botões de Ação do Topo e Alternador de Modo */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
+                <a
+                  href="https://arcg.is/0yOmKX0"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="btn-secondary"
+                  style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', fontSize: '0.78rem', textDecoration: 'none', padding: '0.45rem 0.8rem' }}
+                  title="Abrir pesquisa original no ArcGIS Survey123"
+                >
+                  <ExternalLink size={14} />
+                  <span>Abrir Survey123 Web</span>
+                </a>
+
+                <div style={{
+                  display: 'flex',
+                  backgroundColor: 'var(--bg-secondary)',
+                  padding: '3px',
+                  borderRadius: '8px',
+                  border: '1px solid var(--border-subtle)'
+                }}>
+                  <button
+                    type="button"
+                    onClick={() => setFirMode('nativo')}
+                    style={{
+                      padding: '0.45rem 0.85rem',
+                      fontSize: '0.78rem',
+                      fontWeight: 700,
+                      borderRadius: '6px',
+                      border: 'none',
+                      cursor: 'pointer',
+                      backgroundColor: firMode === 'nativo' ? 'var(--primary-accent)' : 'transparent',
+                      color: firMode === 'nativo' ? '#ffffff' : 'var(--text-muted)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.35rem'
+                    }}
+                  >
+                    <FileText size={14} />
+                    <span>Formulário Nativo</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setFirMode('survey123_web')}
+                    style={{
+                      padding: '0.45rem 0.85rem',
+                      fontSize: '0.78rem',
+                      fontWeight: 700,
+                      borderRadius: '6px',
+                      border: 'none',
+                      cursor: 'pointer',
+                      backgroundColor: firMode === 'survey123_web' ? 'var(--primary-accent)' : 'transparent',
+                      color: firMode === 'survey123_web' ? '#ffffff' : 'var(--text-muted)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.35rem'
+                    }}
+                  >
+                    <Globe size={14} />
+                    <span>Survey123 Embutido</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Feedback de Sucesso Toast */}
           {anomalySuccessToast && (
             <div className="animate-page-enter" style={{
-              padding: '0.75rem 1rem',
-              borderRadius: '8px',
+              padding: '0.9rem 1.25rem',
+              borderRadius: '10px',
               backgroundColor: 'var(--geo-normal-bg)',
               color: 'var(--geo-normal)',
               border: '1px solid var(--geo-normal-border)',
               display: 'flex',
               alignItems: 'center',
-              gap: '0.5rem',
-              fontSize: '0.85rem',
-              fontWeight: 600
+              gap: '0.65rem',
+              fontSize: '0.9rem',
+              fontWeight: 700,
+              boxShadow: 'var(--shadow-sm)'
             }}>
-              <CheckCircle2 size={18} />
+              <CheckCircle2 size={22} />
               <span>{anomalySuccessToast}</span>
             </div>
           )}
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1rem' }}>
-            {/* Estrutura */}
-            <div className="form-group">
-              <label className="form-label">Estrutura Inspecionada *</label>
-              <select
-                value={anomalyStructId}
-                onChange={(e) => setAnomalyStructId(e.target.value)}
-                className="form-select"
-                required
-              >
-                {structures.map(s => (
-                  <option key={s.id} value={s.id}>{s.nome}</option>
-                ))}
-              </select>
+          {/* MODO 1: SURVEY123 ARCGIS WEB EMBUTIDO (IFRAME) */}
+          {firMode === 'survey123_web' && (
+            <div className="card-panel" style={{ padding: '1rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+              <div style={{
+                padding: '0.75rem 1rem',
+                borderRadius: '8px',
+                backgroundColor: 'var(--bg-secondary)',
+                border: '1px solid var(--border-subtle)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                flexWrap: 'wrap',
+                gap: '0.75rem'
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.82rem', color: 'var(--text-main)' }}>
+                  <Info size={16} style={{ color: 'var(--primary-accent)' }} />
+                  <span>
+                    Conexão direta com a nuvem <strong>ArcGIS Online (Esri Survey123)</strong>. Os dados preenchidos serão transmitidos diretamente aos servidores da Itaminas.
+                  </span>
+                </div>
+                <a
+                  href="https://survey123.arcgis.com/share/8f6f56e94ec142af90e2ac9084ce716c"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="btn-secondary"
+                  style={{ fontSize: '0.75rem', padding: '0.35rem 0.65rem' }}
+                >
+                  <ExternalLink size={13} />
+                  <span>Abrir em Tela Cheia</span>
+                </a>
+              </div>
+
+              <div style={{
+                borderRadius: '10px',
+                overflow: 'hidden',
+                border: '1px solid var(--border-medium)',
+                boxShadow: 'var(--shadow-md)',
+                backgroundColor: '#ffffff'
+              }}>
+                <iframe
+                  src="https://survey123.arcgis.com/share/8f6f56e94ec142af90e2ac9084ce716c"
+                  title="ArcGIS Survey123 - Ficha de Inspeção Regular FIR - R0"
+                  width="100%"
+                  height="850px"
+                  frameBorder="0"
+                  marginHeight="0"
+                  marginWidth="0"
+                  style={{ display: 'block', border: 'none' }}
+                  allow="geolocation; camera; microphone"
+                />
+              </div>
             </div>
+          )}
 
-            {/* Tipo de Anomalia */}
-            <div className="form-group">
-              <label className="form-label">Classificação da Anomalia *</label>
-              <select
-                value={anomalyType}
-                onChange={(e) => setAnomalyType(e.target.value)}
-                className="form-select"
-                required
-              >
-                <option value="Trinca Longitudinal">Trinca Longitudinal</option>
-                <option value="Trinca Transversal">Trinca Transversal</option>
-                <option value="Surgência de Água Limpa">Surgência de Água Limpa</option>
-                <option value="Surgência com Finos (Turbidez)">Surgência com Finos (Turbidez) - CRÍTICO</option>
-                <option value="Erosão Superficial">Erosão Superficial / Ravina</option>
-                <option value="Abatimento de Crista/Berma">Abatimento de Crista/Berma</option>
-                <option value="Obstrução de Drenagem">Obstrução de Drenagem ou Vertedouro</option>
-                <option value="Vegetação com Raízes Profundas">Vegetação com Raízes Profundas</option>
-                <option value="Formigueiro / Toca de Animal">Formigueiro / Toca de Animal</option>
-                <option value="Outro">Outro</option>
-              </select>
-            </div>
+          {/* MODO 2: FORMULÁRIO NATIVO MDSYNC (BASE OFICIAL SURVEY123 FIR) */}
+          {firMode === 'nativo' && (
+            <form onSubmit={handleSubmitAnomaly} style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
 
-            {/* Severidade */}
-            <div className="form-group">
-              <label className="form-label">Severidade Inicial *</label>
-              <select
-                value={anomalySeverity}
-                onChange={(e) => setAnomalySeverity(e.target.value)}
-                className="form-select"
-                required
-              >
-                <option value="Baixo">Baixo (Monitorar)</option>
-                <option value="Médio">Médio (Ação em até 7 dias)</option>
-                <option value="Alto">Alto (Ação em até 24h)</option>
-                <option value="Crítico">Crítico (Imediato / PAEBM)</option>
-              </select>
-            </div>
-          </div>
+              {/* SEÇÃO 1: INFORMAÇÕES GERAIS (PÁGINA 1 SURVEY123) */}
+              <div className="card-panel" style={{ padding: '1.25rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid var(--border-subtle)', paddingBottom: '0.65rem' }}>
+                  <h4 style={{ fontSize: '0.95rem', fontWeight: 800, color: 'var(--text-main)', margin: 0, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    <Building2 size={18} style={{ color: 'var(--primary-accent)' }} />
+                    <span>Seção 1 — Informações Gerais da Inspeção</span>
+                  </h4>
+                  <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>Portaria ANM 95/2022 • Resolução Regular</span>
+                </div>
 
-          {/* Localização Específica */}
-          <div className="form-group">
-            <label className="form-label">Localização e Referência no Talude *</label>
-            <input
-              type="text"
-              placeholder="Ex: Berma 2, lado esquerdo próximo ao dreno D-04..."
-              value={anomalyLocation}
-              onChange={(e) => setAnomalyLocation(e.target.value)}
-              className="form-input"
-              required
-            />
-          </div>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '0.9rem' }}>
+                  {/* Estrutura Inspecionada (17 estruturas oficiais do Survey123 da Itaminas) */}
+                  <div className="form-group">
+                    <label className="form-label">Estrutura Inspecionada *</label>
+                    <select
+                      value={firEstrutura}
+                      onChange={(e) => {
+                        setFirEstrutura(e.target.value);
+                        const matched = structures.find(s => s.nome === e.target.value || s.id === e.target.value.replace(/\s+/g, '_'));
+                        if (matched) setAnomalyStructId(matched.id);
+                      }}
+                      className="form-select"
+                      style={{ fontWeight: 700 }}
+                      required
+                    >
+                      {SURVEY123_FIR_STRUCTURES.map((st, idx) => (
+                        <option key={idx} value={st}>{st}</option>
+                      ))}
+                    </select>
+                  </div>
 
-          {/* UPLOAD / CAPTURA DE FOTO DE CAMPO (INSPECT APP FEATURE) */}
-          <div className="form-group">
-            <label className="form-label">Evidência Fotográfica Georreferenciada (Obrigatório em Campo)</label>
-            <div style={{
-              border: '2px dashed var(--border-medium)',
-              borderRadius: '10px',
-              padding: '1.25rem',
-              textAlign: 'center',
-              backgroundColor: 'var(--bg-secondary)',
-              position: 'relative'
-            }}>
-              {anomalyPhoto.photoData ? (
-                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.75rem' }}>
-                  <img
-                    src={anomalyPhoto.photoData}
-                    alt="Evidência de campo"
+                  {/* Data e Hora */}
+                  <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 0.8fr', gap: '0.5rem' }}>
+                    <div className="form-group">
+                      <label className="form-label">Data da Inspeção *</label>
+                      <input
+                        type="date"
+                        value={firData}
+                        onChange={(e) => setFirData(e.target.value)}
+                        className="form-input"
+                        required
+                      />
+                    </div>
+                    <div className="form-group">
+                      <label className="form-label">Hora *</label>
+                      <input
+                        type="time"
+                        value={firHora}
+                        onChange={(e) => setFirHora(e.target.value)}
+                        className="form-input"
+                        required
+                      />
+                    </div>
+                  </div>
+
+                  {/* Profissional e Registro */}
+                  <div className="form-group">
+                    <label className="form-label">Profissional Responsável *</label>
+                    <input
+                      type="text"
+                      value={firProfissional}
+                      onChange={(e) => setFirProfissional(e.target.value)}
+                      className="form-input"
+                      placeholder="Nome do Engenheiro ou Técnico"
+                      required
+                    />
+                  </div>
+
+                  <div className="form-group">
+                    <label className="form-label">Registro Profissional (CREA / CFT) *</label>
+                    <input
+                      type="text"
+                      value={firRegistro}
+                      onChange={(e) => setFirRegistro(e.target.value)}
+                      className="form-input"
+                      placeholder="Ex: CREA 85.120/D-MG"
+                      required
+                    />
+                  </div>
+
+                  {/* Condições Climáticas */}
+                  <div className="form-group">
+                    <label className="form-label">Condições Climáticas no Momento *</label>
+                    <select
+                      value={firCondicoesClimaticas}
+                      onChange={(e) => setFirCondicoesClimaticas(e.target.value)}
+                      className="form-select"
+                    >
+                      <option value="Ensolarado">Ensolarado (Tempo Seco)</option>
+                      <option value="Parcialmente Nublado">Parcialmente Nublado</option>
+                      <option value="Nublado">Nublado</option>
+                      <option value="Chuvoso">Chuvoso (Precipitação ativa)</option>
+                    </select>
+                  </div>
+
+                  {/* Volume Acumulado de Chuva e Vazão HM */}
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
+                    <div className="form-group">
+                      <label className="form-label">Chuva Acum. 24h (mm)</label>
+                      <input
+                        type="number"
+                        step="0.1"
+                        value={firVolumeAcumulado}
+                        onChange={(e) => setFirVolumeAcumulado(parseFloat(e.target.value) || 0)}
+                        className="form-input font-mono"
+                      />
+                    </div>
+                    <div className="form-group">
+                      <label className="form-label">Vazão HM (m³/h)</label>
+                      <input
+                        type="number"
+                        step="0.01"
+                        value={firVazaoHm}
+                        onChange={(e) => setFirVazaoHm(parseFloat(e.target.value) || 0)}
+                        className="form-input font-mono"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Coordenadas GPS Georreferenciadas */}
+                  <div className="form-group" style={{ gridColumn: 'span 2' }}>
+                    <label className="form-label" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                      <span style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                        <MapPin size={15} style={{ color: 'var(--geo-normal)' }} />
+                        Georreferenciamento de Campo (Latitude / Longitude) *
+                      </span>
+                      <span style={{ fontSize: '0.72rem', color: 'var(--text-faint)' }}>Capturado automaticamente via GPS</span>
+                    </label>
+                    <div style={{ display: 'flex', gap: '0.5rem' }}>
+                      <input
+                        type="text"
+                        readOnly
+                        value={coords ? `${coords.lat.toFixed(6)}, ${coords.lon.toFixed(6)} (Precisão: ±${accuracy ? accuracy.toFixed(1) : 5}m)` : '-20.063818, -44.114360 (Mina Engenho Seco)'}
+                        className="form-input font-mono"
+                        style={{ backgroundColor: 'var(--bg-secondary)', fontSize: '0.85rem' }}
+                      />
+                      <button
+                        type="button"
+                        onClick={getPosition}
+                        className="btn-secondary"
+                        style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', whiteSpace: 'nowrap', fontSize: '0.8rem' }}
+                        disabled={gpsLoading}
+                      >
+                        <RefreshCw size={14} className={gpsLoading ? 'spin' : ''} />
+                        <span>Atualizar GPS</span>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* SEÇÃO 2: ACESSOS E VIAS DE TRÁFEGO (PÁGINA 2 SURVEY123) */}
+              <div className="card-panel" style={{ padding: '1.25rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid var(--border-subtle)', paddingBottom: '0.65rem' }}>
+                  <h4 style={{ fontSize: '0.95rem', fontWeight: 800, color: 'var(--text-main)', margin: 0, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    <Navigation size={18} style={{ color: '#0284c7' }} />
+                    <span>Seção 2 — Condições de Acessos e Vias de Tráfego</span>
+                  </h4>
+                  <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>Página 2 da Pesquisa Survey123</span>
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '0.9rem' }}>
+                  <div className="form-group">
+                    <label className="form-label">Avaliação Geral dos Acessos à Estrutura *</label>
+                    <select
+                      value={firAcessos}
+                      onChange={(e) => setFirAcessos(e.target.value)}
+                      className="form-select"
+                      style={{ fontWeight: 600 }}
+                    >
+                      <option value="Bom">Bom — Tráfego livre, pista regular e sem atoleiros</option>
+                      <option value="Regular">Regular — Pequenas irregularidades, pedras ou barro leve</option>
+                      <option value="Ruim">Ruim — Erosões, atoleiros severos ou intransitável</option>
+                    </select>
+                  </div>
+
+                  <div className="form-group">
+                    <label className="form-label">Observações e Detalhes dos Acessos</label>
+                    <input
+                      type="text"
+                      value={firAcessosObs}
+                      onChange={(e) => setFirAcessosObs(e.target.value)}
+                      placeholder="Ex: Pista patrolada recentemente, berma de acesso desobstruída..."
+                      className="form-input"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* SEÇÃO 3: MACIÇO, TALUDES E OMBREIRAS (PÁGINAS 3 & 4 SURVEY123) */}
+              <div className="card-panel" style={{ padding: '1.25rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid var(--border-subtle)', paddingBottom: '0.65rem' }}>
+                  <h4 style={{ fontSize: '0.95rem', fontWeight: 800, color: 'var(--text-main)', margin: 0, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    <Layers size={18} style={{ color: '#10b981' }} />
+                    <span>Seção 3 — Maciço, Taludes, Crista e Ombreiras</span>
+                  </h4>
+                  <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>Páginas 3 e 4 da Pesquisa Survey123</span>
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '0.9rem' }}>
+                  <div className="form-group">
+                    <label className="form-label">Condições Estruturais (Trincas / Recalques) *</label>
+                    <select
+                      value={firMacicoEstrutural}
+                      onChange={(e) => setFirMacicoEstrutural(e.target.value)}
+                      className="form-select"
+                      style={{ fontWeight: 600 }}
+                    >
+                      <option value="Não detectado">Não detectado (Condição Normal / Conforme)</option>
+                      <option value="Trincas superficiais leves">Trincas superficiais leves (Sem abertura relevante)</option>
+                      <option value="Fissuras longitudinais em crista">Fissuras longitudinais em crista / bermas</option>
+                      <option value="Trincas transversais profundas">Trincas transversais profundas (Alerta)</option>
+                      <option value="Recalque / Deformação evidente">Recalque / Deformação evidente no maciço</option>
+                    </select>
+                  </div>
+
+                  <div className="form-group">
+                    <label className="form-label">Condições Visuais (Surgências / Percolação) *</label>
+                    <select
+                      value={firMacicoVisual}
+                      onChange={(e) => setFirMacicoVisual(e.target.value)}
+                      className="form-select"
+                      style={{ fontWeight: 600 }}
+                    >
+                      <option value="Não detectado">Não detectado (Taludes e pé secos)</option>
+                      <option value="Umidade pontual no talude">Umidade pontual no talude (Sem fluxo livre)</option>
+                      <option value="Surgência com água límpida">Surgência de água límpida com fluxo contínuo</option>
+                      <option value="Surgência com carreamento de finos">Surgência com carreamento de finos (CRÍTICO / Piping)</option>
+                    </select>
+                  </div>
+
+                  <div className="form-group">
+                    <label className="form-label">Condições Superficiais (Erosão / Vegetação) *</label>
+                    <select
+                      value={firMacicoSuperficial}
+                      onChange={(e) => setFirMacicoSuperficial(e.target.value)}
+                      className="form-select"
+                      style={{ fontWeight: 600 }}
+                    >
+                      <option value="Não detectado">Não detectado (Proteção vegetal íntegra)</option>
+                      <option value="Erosão laminar leve">Erosão laminar leve / Início de sulco</option>
+                      <option value="Ravinamento / Sulcos profundos">Ravinamento / Sulcos de chuva acentuados</option>
+                      <option value="Escorregamento superficial">Escorregamento superficial localizado</option>
+                      <option value="Formigueiro / Toca de animal">Formigueiro / Toca de animais escavadores</option>
+                      <option value="Vegetação com raízes profundas">Vegetação arbórea de grande porte inadequada</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className="form-group">
+                  <label className="form-label">Detalhamento e Observações do Maciço / Taludes</label>
+                  <textarea
+                    rows={2}
+                    value={firMacicoObs}
+                    onChange={(e) => setFirMacicoObs(e.target.value)}
+                    placeholder="Descreva detalhes de bermas, crista, talude de jusante ou ombreiras observados na vistoria..."
+                    className="form-textarea"
+                  />
+                </div>
+              </div>
+
+              {/* SEÇÃO 4: DRENAGENS, RESERVATÓRIO E INSTRUMENTAÇÃO (PÁGINAS 5 & 6 SURVEY123) */}
+              <div className="card-panel" style={{ padding: '1.25rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid var(--border-subtle)', paddingBottom: '0.65rem' }}>
+                  <h4 style={{ fontSize: '0.95rem', fontWeight: 800, color: 'var(--text-main)', margin: 0, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    <Droplets size={18} style={{ color: '#06b6d4' }} />
+                    <span>Seção 4 — Drenagens, Reservatório e Instrumentação Geotécnica</span>
+                  </h4>
+                  <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>Páginas 5 a 7 da Pesquisa Survey123</span>
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '0.9rem' }}>
+                  <div className="form-group">
+                    <label className="form-label">Obstrução Drenagem Superficial *</label>
+                    <select
+                      value={firDrenagemSuperficial}
+                      onChange={(e) => setFirDrenagemSuperficial(e.target.value)}
+                      className="form-select"
+                    >
+                      <option value="Não">Não (Canaletas e descidas d'água desobstruídas)</option>
+                      <option value="Sim">Sim (Presença de obstrução ou assoreamento)</option>
+                    </select>
+                  </div>
+
+                  <div className="form-group">
+                    <label className="form-label">Tipo de Obstrução / Material</label>
+                    <select
+                      value={firTipoObstrucao}
+                      onChange={(e) => setFirTipoObstrucao(e.target.value)}
+                      className="form-select"
+                    >
+                      <option value="Nenhum">Nenhum / Desobstruído</option>
+                      <option value="Sedimento / Silte">Sedimento / Silte ou Finos</option>
+                      <option value="Vegetação / Galhos">Vegetação / Capim / Galhos</option>
+                      <option value="Pedras / Detritos">Pedras / Blocos rochosos</option>
+                      <option value="Placa de concreto quebrada">Placa de canaleta danificada</option>
+                    </select>
+                  </div>
+
+                  <div className="form-group">
+                    <label className="form-label">Drenagem Interna / Dreno de Pé *</label>
+                    <select
+                      value={firDrenagemInterna}
+                      onChange={(e) => setFirDrenagemInterna(e.target.value)}
+                      className="form-select"
+                    >
+                      <option value="Operando Normal">Operando Normal (Vazão contínua e límpida)</option>
+                      <option value="Vazão Elevada">Vazão Elevada (Acima do padrão histórico)</option>
+                      <option value="Água Turva / Sedimentos">Água Turva / Presença de finos arrastados</option>
+                      <option value="Seco">Seco (Sem surgência ou escoamento)</option>
+                    </select>
+                  </div>
+
+                  <div className="form-group">
+                    <label className="form-label">Estado Geral da Instrumentação (PZ, INA, VT) *</label>
+                    <select
+                      value={firInstrumentacao}
+                      onChange={(e) => setFirInstrumentacao(e.target.value)}
+                      className="form-select"
+                    >
+                      <option value="Operando Normalmente">Operando Normalmente (Tampas íntegras e travadas)</option>
+                      <option value="Necessita Manutenção">Necessita Manutenção / Pintura / Limpeza de boca</option>
+                      <option value="Danificado / Obstruído">Danificado / Amassado ou Inacessível</option>
+                    </select>
+                  </div>
+
+                  <div className="form-group">
+                    <label className="form-label">Cota do Espelho d'Água (m)</label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      value={firCotaEspelho}
+                      onChange={(e) => setFirCotaEspelho(parseFloat(e.target.value) || 0)}
+                      className="form-input font-mono"
+                    />
+                  </div>
+
+                  <div className="form-group">
+                    <label className="form-label">Borda Livre Mínima (m)</label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      value={firBordaLivre}
+                      onChange={(e) => setFirBordaLivre(parseFloat(e.target.value) || 0)}
+                      className="form-input font-mono"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* SEÇÃO 5: EVIDÊNCIA FOTOGRÁFICA GEORREFERENCIADA */}
+              <div className="card-panel" style={{ padding: '1.25rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid var(--border-subtle)', paddingBottom: '0.65rem' }}>
+                  <h4 style={{ fontSize: '0.95rem', fontWeight: 800, color: 'var(--text-main)', margin: 0, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    <Camera size={18} style={{ color: 'var(--primary-accent)' }} />
+                    <span>Seção 5 — Registro Fotográfico Georreferenciado (Evidência Obrigatória)</span>
+                  </h4>
+                  <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>Módulo Inspect • Resolução Otimizada</span>
+                </div>
+
+                <div style={{
+                  border: '2px dashed var(--border-medium)',
+                  borderRadius: '10px',
+                  padding: '1.25rem',
+                  textAlign: 'center',
+                  backgroundColor: 'var(--bg-secondary)',
+                  position: 'relative'
+                }}>
+                  {anomalyPhoto.photoData ? (
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.75rem' }}>
+                      <img
+                        src={anomalyPhoto.photoData}
+                        alt="Evidência fotográfica Survey123"
+                        style={{
+                          maxHeight: '230px',
+                          borderRadius: '8px',
+                          objectFit: 'cover',
+                          border: '1px solid var(--border-medium)',
+                          boxShadow: 'var(--shadow-md)'
+                        }}
+                      />
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                        <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>
+                          {anomalyPhoto.photoName || 'Foto anexada e georreferenciada'}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={anomalyPhoto.clearPhoto}
+                          className="btn-danger"
+                          style={{ padding: '0.3rem 0.65rem', fontSize: '0.75rem' }}
+                        >
+                          <Trash2 size={14} />
+                          <span>Remover Foto</span>
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div>
+                      <Camera size={34} style={{ color: 'var(--primary-accent)', margin: '0 auto 0.5rem' }} />
+                      <p style={{ fontSize: '0.88rem', fontWeight: 700, color: 'var(--text-main)' }}>
+                        Clique para tirar foto com a câmera do dispositivo ou fazer upload
+                      </p>
+                      <p style={{ fontSize: '0.75rem', color: 'var(--text-faint)', marginTop: '2px' }}>
+                        Compressão automática em JPG para relatório de conformidade e envio rápido
+                      </p>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        capture="environment"
+                        onChange={anomalyPhoto.handleFileUpload}
+                        style={{
+                          position: 'absolute',
+                          top: 0,
+                          left: 0,
+                          width: '100%',
+                          height: '100%',
+                          opacity: 0,
+                          cursor: 'pointer'
+                        }}
+                      />
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* SEÇÃO 6: CLASSIFICAÇÃO DA ANOMALIA & MATRIZ DE RISCO ANM (PÁGINAS 8 & 9 SURVEY123) */}
+              <div className="card-panel" style={{ padding: '1.25rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid var(--border-subtle)', paddingBottom: '0.65rem' }}>
+                  <h4 style={{ fontSize: '0.95rem', fontWeight: 800, color: 'var(--text-main)', margin: 0, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    <AlertTriangle size={18} style={{ color: '#f59e0b' }} />
+                    <span>Seção 6 — Classificação da Anomalia & Matriz de Nível de Resposta ANM</span>
+                  </h4>
+                  <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>Portaria ANM 95/2022 • Tabela de Severidade</span>
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '0.9rem' }}>
+                  <div className="form-group">
+                    <label className="form-label">Classificação da Anomalia / Ocorrência *</label>
+                    <select
+                      value={anomalyType}
+                      onChange={(e) => setAnomalyType(e.target.value)}
+                      className="form-select"
+                      required
+                    >
+                      <option value="Trinca Longitudinal">Trinca Longitudinal (Crista / Berma)</option>
+                      <option value="Trinca Transversal">Trinca Transversal (Corpo do Maciço)</option>
+                      <option value="Surgência de Água Limpa">Surgência de Água Limpa no Pé do Talude</option>
+                      <option value="Surgência com Finos (Turbidez)">Surgência com Finos / Turbidez (Piping)</option>
+                      <option value="Erosão Superficial">Erosão Superficial / Ravinamento de Talude</option>
+                      <option value="Abatimento de Crista/Berma">Abatimento / Desnível de Crista ou Berma</option>
+                      <option value="Obstrução de Drenagem">Obstrução de Drenagem, Canaleta ou Vertedouro</option>
+                      <option value="Vegetação com Raízes Profundas">Vegetação Arbórea com Raízes Profundas</option>
+                      <option value="Formigueiro / Toca de Animal">Formigueiro / Toca de Animal Escavador</option>
+                      <option value="Nenhuma Anomalia Detectada">Nenhuma Anomalia Detectada (100% Conforme)</option>
+                      <option value="Outro">Outro Tipo de Ocorrência</option>
+                    </select>
+                  </div>
+
+                  <div className="form-group">
+                    <label className="form-label">Classificação do Estado Geral de Conservação (Matriz ANM) *</label>
+                    <select
+                      value={firClassificacaoGeral}
+                      onChange={(e) => {
+                        setFirClassificacaoGeral(e.target.value);
+                        if (e.target.value.includes('Nível 3')) setAnomalySeverity('Crítico');
+                        else if (e.target.value.includes('Nível 2')) setAnomalySeverity('Alto');
+                        else if (e.target.value.includes('Nível 1')) setAnomalySeverity('Médio');
+                        else setAnomalySeverity('Baixo');
+                      }}
+                      className="form-select"
+                      style={{ fontWeight: 800 }}
+                      required
+                    >
+                      <option value="Nível 0 - Normal / Conforme">Nível 0 — Normal / Conforme (Sem anomalias que comprometam)</option>
+                      <option value="Nível 1 - Atenção Operacional">Nível 1 — Atenção (Anomalia inicial sob monitoramento)</option>
+                      <option value="Nível 2 - Alerta Geotécnico">Nível 2 — Alerta (Anomalia requer intervenção em até 24h)</option>
+                      <option value="Nível 3 - Emergência (PAEBM)">Nível 3 — Emergência (Risco iminente de ruptura / Acionar PAEBM)</option>
+                    </select>
+                  </div>
+
+                  <div className="form-group">
+                    <label className="form-label">Localização Exata e Referência no Talude *</label>
+                    <input
+                      type="text"
+                      value={anomalyLocation}
+                      onChange={(e) => setAnomalyLocation(e.target.value)}
+                      placeholder="Ex: Talude de jusante, berma 2, entre drenos D-03 e D-04..."
+                      className="form-input"
+                      required
+                    />
+                  </div>
+                </div>
+
+                <div className="form-group">
+                  <label className="form-label">Descrição Técnica Detalhada da Inspeção *</label>
+                  <textarea
+                    rows={3}
+                    value={anomalyDesc}
+                    onChange={(e) => setAnomalyDesc(e.target.value)}
+                    placeholder="Descreva extensões estimadas, presença de umidade, características geométricas da trinca, vazão aproximada ou qualquer alteração perceptível..."
+                    className="form-textarea"
+                    required
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label className="form-label">Recomendação Preliminar e Ações Corretivas</label>
+                  <input
+                    type="text"
+                    value={anomalyRecommendation}
+                    onChange={(e) => setAnomalyRecommendation(e.target.value)}
+                    placeholder="Ex: Recomenda-se instalação imediata de testemunhos graduados, limpeza da calha e vistoria do engenheiro geotécnico responsável..."
+                    className="form-input"
+                  />
+                </div>
+              </div>
+
+              {/* SEÇÃO 7: ASSINATURA DIGITAL DO INSPETOR (CANVAS TOUCH/MOUSE) */}
+              <div className="card-panel" style={{ padding: '1.25rem', display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid var(--border-subtle)', paddingBottom: '0.65rem' }}>
+                  <h4 style={{ fontSize: '0.95rem', fontWeight: 800, color: 'var(--text-main)', margin: 0, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    <PenTool size={18} style={{ color: 'var(--primary-accent)' }} />
+                    <span>Seção 7 — Assinatura Digital do Inspetor Geotécnico</span>
+                  </h4>
+                  <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>Validação em Tela Touch ou Mouse</span>
+                </div>
+
+                <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)', margin: 0 }}>
+                  Assine abaixo para validar a veracidade técnica das informações coletadas em campo, nos termos da Portaria ANM nº 95/2022:
+                </p>
+
+                <div style={{
+                  position: 'relative',
+                  border: '2px solid var(--border-medium)',
+                  borderRadius: '10px',
+                  backgroundColor: 'var(--bg-secondary)',
+                  overflow: 'hidden',
+                  touchAction: 'none'
+                }}>
+                  <canvas
+                    ref={firCanvasRef}
+                    width={800}
+                    height={140}
+                    onMouseDown={startFirDrawing}
+                    onMouseMove={drawFir}
+                    onMouseUp={stopFirDrawing}
+                    onMouseLeave={stopFirDrawing}
+                    onTouchStart={startFirDrawing}
+                    onTouchMove={drawFir}
+                    onTouchEnd={stopFirDrawing}
                     style={{
-                      maxHeight: '220px',
-                      borderRadius: '8px',
-                      objectFit: 'cover',
-                      border: '1px solid var(--border-medium)',
-                      boxShadow: 'var(--shadow-md)'
+                      display: 'block',
+                      width: '100%',
+                      height: '140px',
+                      cursor: 'crosshair',
+                      backgroundColor: 'transparent'
                     }}
                   />
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                    <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{anomalyPhoto.photoName || 'Foto de campo anexada'}</span>
+
+                  {!hasFirDrawn && (
+                    <div style={{
+                      position: 'absolute',
+                      top: '50%',
+                      left: '50%',
+                      transform: 'translate(-50%, -50%)',
+                      color: 'var(--text-faint)',
+                      fontSize: '0.85rem',
+                      pointerEvents: 'none',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.4rem'
+                    }}>
+                      <PenTool size={16} />
+                      <span>Desenhe sua assinatura aqui com o dedo ou mouse</span>
+                    </div>
+                  )}
+
+                  <div style={{
+                    position: 'absolute',
+                    bottom: '8px',
+                    right: '8px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.5rem'
+                  }}>
+                    {hasFirDrawn && (
+                      <span style={{ fontSize: '0.72rem', color: '#10b981', fontWeight: 700, backgroundColor: 'var(--bg-surface)', padding: '2px 8px', borderRadius: '4px' }}>
+                        ✓ Assinatura Capturada
+                      </span>
+                    )}
                     <button
                       type="button"
-                      onClick={anomalyPhoto.clearPhoto}
-                      className="btn-danger"
-                      style={{ padding: '0.3rem 0.6rem', fontSize: '0.75rem' }}
+                      onClick={clearFirSignature}
+                      className="btn-secondary"
+                      style={{ fontSize: '0.72rem', padding: '0.25rem 0.55rem', display: 'flex', alignItems: 'center', gap: '0.3rem' }}
                     >
-                      <Trash2 size={14} />
-                      <span>Remover Foto</span>
+                      <RotateCcw size={12} />
+                      <span>Limpar</span>
                     </button>
                   </div>
                 </div>
-              ) : (
-                <div>
-                  <Camera size={32} style={{ color: 'var(--primary-accent)', margin: '0 auto 0.5rem' }} />
-                  <p style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-main)' }}>
-                    Clique para tirar foto com a câmera ou carregar arquivo
-                  </p>
-                  <p style={{ fontSize: '0.75rem', color: 'var(--text-faint)', marginTop: '2px' }}>
-                    Formatos JPG, PNG (otimização e compressão automática para o relatório)
-                  </p>
-                  <input
-                    type="file"
-                    accept="image/*"
-                    capture="environment"
-                    onChange={anomalyPhoto.handleFileUpload}
-                    style={{
-                      position: 'absolute',
-                      top: 0,
-                      left: 0,
-                      width: '100%',
-                      height: '100%',
-                      opacity: 0,
-                      cursor: 'pointer'
-                    }}
-                  />
-                </div>
-              )}
-            </div>
-          </div>
+              </div>
 
-          {/* Descrição Detalhada */}
-          <div className="form-group">
-            <label className="form-label">Descrição Técnica da Ocorrência *</label>
-            <textarea
-              rows={3}
-              placeholder="Descreva extensões estimadas, presença de umidade, características dos bordos da trinca ou vazão aproximada..."
-              value={anomalyDesc}
-              onChange={(e) => setAnomalyDesc(e.target.value)}
-              className="form-textarea"
-              required
-            />
-          </div>
+              {/* BOTÕES DE SUBMISSÃO DA FICHA */}
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', flexWrap: 'wrap' }}>
+                <a
+                  href="https://arcg.is/0yOmKX0"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="btn-secondary"
+                  style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.88rem', textDecoration: 'none', padding: '0.85rem 1.25rem' }}
+                >
+                  <ExternalLink size={16} />
+                  <span>Ver no Survey123 Web</span>
+                </a>
 
-          {/* Recomendação de Campo */}
-          <div className="form-group">
-            <label className="form-label">Recomendação Preliminar</label>
-            <input
-              type="text"
-              placeholder="Ex: Instalação de régua graduada, limpeza de calha, vistoria de engenharia..."
-              value={anomalyRecommendation}
-              onChange={(e) => setAnomalyRecommendation(e.target.value)}
-              className="form-input"
-            />
-          </div>
+                <button
+                  type="submit"
+                  className="btn-primary"
+                  style={{
+                    padding: '0.85rem 1.75rem',
+                    fontSize: '0.95rem',
+                    fontWeight: 800,
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.65rem',
+                    boxShadow: 'var(--shadow-md)'
+                  }}
+                >
+                  <ClipboardCheck size={19} />
+                  <span>Salvar Ficha de Inspeção Regular (Survey123 FIR) & Notificar</span>
+                </button>
+              </div>
 
-          {/* Botão de Envio de Anomalia */}
-          <button
-            type="submit"
-            className="btn-primary"
-            style={{
-              padding: '0.85rem',
-              fontSize: '0.95rem',
-              fontWeight: 700,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: '0.6rem'
-            }}
-          >
-            <Upload size={18} />
-            <span>Registrar Inspeção e Notificar Equipe Geotécnica</span>
-          </button>
-        </form>
+            </form>
+          )}
+
+        </div>
       )}
 
       {/* ============================================================
