@@ -631,6 +631,16 @@ export const storageService = {
       return null;
     }
   },
+  deleteLoteRelatorio(id) {
+    try {
+      const list = this.getLotesRelatorios().filter(l => l.id !== id);
+      localStorage.setItem(STORAGE_KEYS.LOTES_RELATORIOS, JSON.stringify(list));
+      return true;
+    } catch (e) {
+      console.error(e);
+      return false;
+    }
+  },
 
   // Fila Offline de Sincronização
   getOfflineQueue() {

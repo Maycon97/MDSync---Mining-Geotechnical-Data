@@ -44,6 +44,7 @@ export const ChamadosTab = ({ onNavigateTab }) => {
   const { 
     structures, 
     fluigTickets = [], 
+    contratosTerceiros = [],
     addFluigTicket, 
     updateFluigTicket, 
     deleteFluigTicket, 
@@ -131,6 +132,8 @@ export const ChamadosTab = ({ onNavigateTab }) => {
     tipoAnomalia: 'Obstrução de Drenagem / Quebra de Canaleta',
     criticidade: 'Média',
     setorResponsavel: 'Manutenção Civil & Obras Geotécnicas',
+    contratoId: '',
+    empresaExecutora: 'Equipe Interna Itaminas',
     prazoSla: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
     descricao: '',
     acaoRecomendada: '',
@@ -251,7 +254,9 @@ export const ChamadosTab = ({ onNavigateTab }) => {
       badgeClass,
       setorResponsavel: formData.setorResponsavel,
       setorResponsavelSigla: setorObj.id,
-      responsavelExecucao: `Setor ${setorObj.label}`,
+      responsavelExecucao: formData.empresaExecutora || `Setor ${setorObj.label}`,
+      contratoId: formData.contratoId || '',
+      empresaExecutora: formData.empresaExecutora || 'Equipe Interna Itaminas',
       solicitante: formData.solicitante,
       dataAbertura: nowStr,
       prazoSla: formData.prazoSla,
@@ -266,7 +271,7 @@ export const ChamadosTab = ({ onNavigateTab }) => {
         {
           data: nowStr,
           usuario: formData.solicitante,
-          acao: `Chamado aberto via MDSync Geotecnia e enviado ao Fluig BPM (${setorObj.id})`
+          acao: `Chamado aberto via MDSync Geotecnia e enviado ao Fluig BPM (${setorObj.id}) - Executor: ${formData.empresaExecutora || 'Equipe Interna'}`
         }
       ],
       urlFluig: `${fluigConfig.serverUrl}/portal/p/${fluigConfig.empresaId}/workflowview?processId=${fluigConfig.processoId}&numProcess=${numProtocolo.replace('FLUIG-', '')}`
@@ -283,6 +288,8 @@ export const ChamadosTab = ({ onNavigateTab }) => {
       tipoAnomalia: 'Obstrução de Drenagem / Quebra de Canaleta',
       criticidade: 'Média',
       setorResponsavel: 'Manutenção Civil & Obras Geotécnicas',
+      contratoId: '',
+      empresaExecutora: 'Equipe Interna Itaminas',
       prazoSla: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
       descricao: '',
       acaoRecomendada: '',
@@ -920,6 +927,26 @@ export const ChamadosTab = ({ onNavigateTab }) => {
                         </div>
                       </div>
 
+                      {/* Contrato / Empresa Terceira se aplicável */}
+                      {ticket.empresaExecutora && ticket.empresaExecutora !== 'Equipe Interna Itaminas' && (
+                        <div style={{
+                          fontSize: '0.72rem',
+                          color: 'var(--primary-accent)',
+                          backgroundColor: 'rgba(2, 132, 199, 0.08)',
+                          border: '1px solid rgba(2, 132, 199, 0.25)',
+                          padding: '0.2rem 0.5rem',
+                          borderRadius: '6px',
+                          marginBottom: '0.55rem',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '0.35rem',
+                          fontWeight: 600
+                        }}>
+                          <Briefcase size={12} />
+                          <span>{ticket.empresaExecutora}</span>
+                        </div>
+                      )}
+
                       {/* Evidência Fotográfica Thumbnail */}
                       {ticket.evidenciaFoto && (
                         <div 
@@ -1271,6 +1298,39 @@ export const ChamadosTab = ({ onNavigateTab }) => {
                   >
                     {SETORES_RESPONSAVEIS.map(s => (
                       <option key={s.id} value={s.label}>{s.label}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-main)', marginBottom: '0.4rem' }}>
+                    🏢 Empresa / Contrato Executor
+                  </label>
+                  <select
+                    value={formData.contratoId}
+                    onChange={e => {
+                      const selContrato = contratosTerceiros.find(c => c.id === e.target.value);
+                      setFormData({
+                        ...formData,
+                        contratoId: e.target.value,
+                        empresaExecutora: selContrato ? selContrato.empresaTerceirizada : 'Equipe Interna Itaminas'
+                      });
+                    }}
+                    style={{
+                      width: '100%',
+                      padding: '0.6rem 0.85rem',
+                      fontSize: '0.82rem',
+                      borderRadius: '8px',
+                      backgroundColor: 'var(--bg-secondary)',
+                      color: 'var(--text-main)',
+                      border: '1px solid var(--border-subtle)'
+                    }}
+                  >
+                    <option value="">Equipe Própria Itaminas</option>
+                    {contratosTerceiros.map(c => (
+                      <option key={c.id} value={c.id}>
+                        {c.empresaTerceirizada} ({c.numeroContrato || c.id})
+                      </option>
                     ))}
                   </select>
                 </div>

@@ -514,6 +514,16 @@ export const GeotechDataProvider = ({ children }) => {
     return null;
   };
 
+  const deleteLoteRelatorio = (id) => {
+    const success = storageService.deleteLoteRelatorio(id);
+    if (success) {
+      setLotesRelatorios(prev => prev.filter(l => l.id !== id));
+      showToast('Lote de relatório removido com sucesso.', 'info');
+      return true;
+    }
+    return false;
+  };
+
   // Instrumentos filtrados pela estrutura ativa
   const filteredInstruments = activeStructureId === 'TODAS'
     ? instruments
@@ -583,6 +593,7 @@ export const GeotechDataProvider = ({ children }) => {
       addContratoTerceiro,
       addCliente,
       addLoteRelatorio,
+      deleteLoteRelatorio,
       refreshMasterData: loadMasterDatabase,
       exportCorporatePackage: () => {
         const pkg = storageService.exportCorporateStagingPackage();
