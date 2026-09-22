@@ -496,6 +496,10 @@ button:focus-visible, .btn-action:focus-visible {
   padding: 0.65rem 0.85rem;
   border-radius: 8px;
   font-size: 0.875rem;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
   transition: border-color var(--transition-fast), box-shadow var(--transition-fast), background-color var(--transition-fast);
   outline: none;
 }
@@ -1615,14 +1619,14 @@ button:focus-visible, .btn-action:focus-visible {
 .fir-col-3  { grid-column: span 3 / span 3; min-width: 0; max-width: 100%; box-sizing: border-box; }
 .fir-col-2  { grid-column: span 2 / span 2; min-width: 0; max-width: 100%; box-sizing: border-box; }
 
-@media (max-width: 992px) {
+@media (max-width: 1100px) {
   .fir-col-3 { grid-column: span 6 / span 6; }
   .fir-col-4 { grid-column: span 6 / span 6; }
   .fir-col-8 { grid-column: span 12 / span 12; }
   .fir-col-9 { grid-column: span 12 / span 12; }
 }
 
-@media (max-width: 640px) {
+@media (max-width: 720px) {
   .fir-col-6,
   .fir-col-4,
   .fir-col-3,
@@ -1630,6 +1634,13 @@ button:focus-visible, .btn-action:focus-visible {
   .fir-col-9 {
     grid-column: span 12 / span 12;
   }
+}
+
+.fir-form-container input,
+.fir-form-container select,
+.fir-form-container textarea {
+  max-width: 100%;
+  box-sizing: border-box;
 }
 
 /* Survey123 Likert / Matrix Table */

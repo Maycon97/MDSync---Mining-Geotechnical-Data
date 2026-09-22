@@ -17,10 +17,11 @@ import {
   ArrowUpRight, 
   CheckSquare, 
   X, 
-  Flame, 
   ExternalLink,
-  LifeBuoy
+  LifeBuoy,
+  ClipboardCheck
 } from 'lucide-react';
+import { FirSurvey123Form } from './FirSurvey123Form';
 
 export const AnomaliasInspecoesTab = ({ onNavigateTab }) => {
   const { 
@@ -243,9 +244,7 @@ export const AnomaliasInspecoesTab = ({ onNavigateTab }) => {
         {/* Botões de Ação Rápida */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
           <button
-            onClick={() => {
-              if (onNavigateTab) onNavigateTab('campo');
-            }}
+            onClick={() => setActiveSubTab('fir_survey123')}
             className="btn-secondary"
             style={{
               padding: '0.5rem 0.9rem',
@@ -253,14 +252,14 @@ export const AnomaliasInspecoesTab = ({ onNavigateTab }) => {
               display: 'flex',
               alignItems: 'center',
               gap: '0.4rem',
-              backgroundColor: 'rgba(2, 132, 199, 0.1)',
+              backgroundColor: activeSubTab === 'fir_survey123' ? 'var(--primary-accent)' : 'rgba(2, 132, 199, 0.1)',
               borderColor: 'var(--primary-accent)',
-              color: 'var(--primary-accent)',
+              color: activeSubTab === 'fir_survey123' ? '#ffffff' : 'var(--primary-accent)',
               fontWeight: 700
             }}
             title="Abrir Formulário de Inspeção Regular FIR - Survey123 (Portaria ANM 95/2022)"
           >
-            <FileText size={16} />
+            <ClipboardCheck size={16} />
             <span>Ficha FIR Survey123 (ANM 95)</span>
           </button>
 
@@ -394,6 +393,30 @@ export const AnomaliasInspecoesTab = ({ onNavigateTab }) => {
         scrollbarWidth: 'none'
       }}>
         <button
+          onClick={() => setActiveSubTab('fir_survey123')}
+          style={{
+            padding: '0.65rem 1.15rem',
+            border: 'none',
+            borderBottom: activeSubTab === 'fir_survey123' ? '2px solid var(--primary-accent)' : '2px solid transparent',
+            background: 'transparent',
+            color: activeSubTab === 'fir_survey123' ? 'var(--primary-accent)' : 'var(--text-muted)',
+            fontWeight: activeSubTab === 'fir_survey123' ? 800 : 600,
+            fontSize: '0.85rem',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.4rem',
+            whiteSpace: 'nowrap'
+          }}
+        >
+          <ClipboardCheck size={16} />
+          <span>Ficha FIR Survey123 (Portaria ANM 95)</span>
+          <span className="badge-pill-clean" style={{ backgroundColor: 'rgba(2, 132, 199, 0.15)', color: 'var(--primary-accent)' }}>
+            OFICIAL
+          </span>
+        </button>
+
+        <button
           onClick={() => setActiveSubTab('anomalias')}
           style={{
             padding: '0.65rem 1.15rem',
@@ -456,6 +479,11 @@ export const AnomaliasInspecoesTab = ({ onNavigateTab }) => {
           <span>Planos de Ação 5W2H ({planosAcao.length})</span>
         </button>
       </div>
+
+      {/* ABA 0: FICHA FIR SURVEY123 (PORTARIA ANM 95/2022) */}
+      {activeSubTab === 'fir_survey123' && (
+        <FirSurvey123Form />
+      )}
 
       {/* ABA 1: MATRIZ DE ANOMALIAS */}
       {activeSubTab === 'anomalias' && (
