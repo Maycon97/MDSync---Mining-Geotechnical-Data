@@ -22,7 +22,8 @@ import {
   LifeBuoy,
   UserCog,
   CloudLightning,
-  Sparkles
+  Sparkles,
+  Sliders
 } from 'lucide-react';
 
 export const TABS = [
@@ -44,7 +45,7 @@ export const TABS = [
   { id: 'historico', label: 'Histórico de Dados', icon: History, desc: 'Consulta, filtros e exportação' },
   { id: 'ia', label: 'SUPORTE GEOTINHO', icon: Sparkles, desc: 'Assistente Geotinho, auditoria preditiva e parecer automatizado' },
   { id: 'cadastro', label: 'Cadastro & Limites', icon: Database, desc: 'Catálogo de instrumentos, cotas e seções' },
-  { id: 'configuracoes_perfil', label: 'Configurações de Perfil', icon: UserCog, desc: 'Gestão de credenciais, dados cadastrais e permissões RBAC' }
+  { id: 'configuracoes_perfil', label: 'Configurações & Perfil', icon: Sliders, desc: 'Hub corporativo: perfil, senha, idioma i18n, tema, unidades, backup e compliance' }
 ];
 
 export const Navigation = ({ activeTab, onSelectTab }) => {

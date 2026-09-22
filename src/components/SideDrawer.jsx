@@ -108,7 +108,7 @@ export const SideDrawer = ({
   }, [isOpen, onClose]);
 
   const toggleTheme = () => {
-    const nextTheme = theme === 'dark' ? 'light' : 'dark';
+    const nextTheme = theme === 'dark' ? 'light' : theme === 'light' ? 'contrast' : 'dark';
     setTheme(nextTheme);
     storageService.setTheme(nextTheme);
   };
@@ -332,7 +332,7 @@ export const SideDrawer = ({
         },
         {
           id: 'configuracoes_perfil',
-          title: 'Configurações de Perfil',
+          title: 'Configurações & Perfil',
           icon: UserCog,
           type: 'tab',
           tabId: 'configuracoes_perfil'

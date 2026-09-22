@@ -7,6 +7,12 @@ import { securityShield } from './securityShield';
 
 const STORAGE_KEYS = {
   THEME: 'mdsync_theme',
+  ACCENT_COLOR: 'mdsync_accent_color',
+  LANGUAGE: 'mdsync_language',
+  GEOTECH_UNITS: 'mdsync_geotech_units',
+  NOTIFICATION_CONFIG: 'mdsync_notification_config',
+  ACTIVE_SESSIONS: 'mdsync_active_sessions',
+  TERMS_ACCEPTANCE: 'mdsync_terms_accepted',
   USER_ROLE: 'mdsync_user_role',
   LOCAL_READINGS: 'mdsync_local_readings',
   LOCAL_ANOMALIES: 'mdsync_local_anomalies',
@@ -42,9 +48,240 @@ export const storageService = {
       localStorage.setItem(STORAGE_KEYS.THEME, theme);
       document.documentElement.setAttribute('data-theme', theme);
       const meta = document.querySelector('meta[name="color-scheme"]');
-      if (meta) meta.content = theme;
+      if (meta) meta.content = theme === 'contrast' ? 'dark' : theme;
     } catch (e) {
       console.error('Erro ao salvar tema:', e);
+    }
+  },
+
+  // Cor de Destaque / Acento
+  getAccentColor() {
+    try {
+      return localStorage.getItem(STORAGE_KEYS.ACCENT_COLOR) || '#38bdf8';
+    } catch {
+      return '#38bdf8';
+    }
+  },
+  setAccentColor(color) {
+    try {
+      localStorage.setItem(STORAGE_KEYS.ACCENT_COLOR, color);
+      document.documentElement.style.setProperty('--primary-accent', color);
+    } catch (e) {
+      console.error('Erro ao salvar cor de acento:', e);
+    }
+  },
+
+  // Idioma do Sistema
+  getLanguage() {
+    try {
+      return localStorage.getItem(STORAGE_KEYS.LANGUAGE) || 'pt-BR';
+    } catch {
+      return 'pt-BR';
+    }
+  },
+  setLanguage(lang) {
+    try {
+      localStorage.setItem(STORAGE_KEYS.LANGUAGE, lang);
+      document.documentElement.setAttribute('lang', lang);
+    } catch (e) {
+      console.error('Erro ao salvar idioma:', e);
+    }
+  },
+
+  // Unidades Geotécnicas e Datum
+  getGeotechUnits() {
+    try {
+      const data = localStorage.getItem(STORAGE_KEYS.GEOTECH_UNITS);
+      return data ? JSON.parse(data) : {
+        datum: 'SIRGAS 2000 / UTM 23S',
+        cota: 'm a.n.m.',
+        pressao: 'm.c.a.',
+        vazao: 'L/s',
+        chuva: 'mm/h'
+      };
+    } catch {
+      return {
+        datum: 'SIRGAS 2000 / UTM 23S',
+        cota: 'm a.n.m.',
+        pressao: 'm.c.a.',
+        vazao: 'L/s',
+        chuva: 'mm/h'
+      };
+    }
+  },
+  setGeotechUnits(units) {
+    try {
+      localStorage.setItem(STORAGE_KEYS.GEOTECH_UNITS, JSON.stringify(units));
+    } catch (e) {
+      console.error('Erro ao salvar unidades geotécnicas:', e);
+    }
+  },
+
+  // Configurações de Notificação e Alerta
+  getNotificationConfig() {
+    try {
+      const data = localStorage.getItem(STORAGE_KEYS.NOTIFICATION_CONFIG);
+      return data ? JSON.parse(data) : {
+        pushWeb: true,
+        emailRelatorios: true,
+        smsEmergencia: true,
+        somNivel2: true,
+        sireneNivel3: true,
+        emailPlantao: 'geotecnia.plantao@itaminas.com.br',
+        telefonePlantao: '+55 31 99887-6655'
+      };
+    } catch {
+      return {
+        pushWeb: true,
+        emailRelatorios: true,
+        smsEmergencia: true,
+        somNivel2: true,
+        sireneNivel3: true,
+        emailPlantao: 'geotecnia.plantao@itaminas.com.br',
+        telefonePlantao: '+55 31 99887-6655'
+      };
+    }
+  },
+  setNotificationConfig(config) {
+    try {
+      localStorage.setItem(STORAGE_KEYS.NOTIFICATION_CONFIG, JSON.stringify(config));
+    } catch (e) {
+      console.error('Erro ao salvar configuração de notificações:', e);
+    }
+  },
+
+  // Gestão de Sessões Ativas
+  getActiveSessions() {
+    try {
+      const data = localStorage.getItem(STORAGE_KEYS.ACTIVE_SESSIONS);
+      if (data) return JSON.parse(data);
+      const defaultSessions = [
+        {
+          id: 'SES-01',
+          dispositivo: 'Tablet Samsung Galaxy Tab Active 4 Pro (Campo)',
+          ip: '10.14.32.105',
+          localizacao: 'Mina Itaminas - Crista B1',
+          navegador: 'Chrome Mobile PWA',
+          ultimoAcesso: 'Hoje às 08:42',
+          atual: true
+        },
+        {
+          id: 'SES-02',
+          dispositivo: 'Workstation Dell Precision 5820 (COI Sala de Controle)',
+          ip: '10.14.2.18',
+          localizacao: 'Prédio da Engenharia Geotécnica',
+          navegador: 'Chrome Desktop',
+          ultimoAcesso: 'Ontem às 18:15',
+          atual: false
+        },
+        {
+          id: 'SES-03',
+          dispositivo: 'Smartphone iPhone 15 Pro (Coordenador)',
+          ip: '177.136.21.94',
+          localizacao: 'Belo Horizonte / Remoto',
+          navegador: 'Safari Mobile',
+          ultimoAcesso: '20/09 às 11:30',
+          atual: false
+        }
+      ];
+      localStorage.setItem(STORAGE_KEYS.ACTIVE_SESSIONS, JSON.stringify(defaultSessions));
+      return defaultSessions;
+    } catch {
+      return [];
+    }
+  },
+  revokeSession(sessionId) {
+    try {
+      const sessions = this.getActiveSessions().filter(s => s.id !== sessionId);
+      localStorage.setItem(STORAGE_KEYS.ACTIVE_SESSIONS, JSON.stringify(sessions));
+      return sessions;
+    } catch (e) {
+      console.error('Erro ao revogar sessão:', e);
+      return [];
+    }
+  },
+
+  // Monitor de Armazenamento Local
+  getStorageUsage() {
+    try {
+      let totalBytes = 0;
+      let count = 0;
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key && key.startsWith('mdsync_')) {
+          const val = localStorage.getItem(key);
+          totalBytes += (key.length + (val ? val.length : 0)) * 2;
+          count++;
+        }
+      }
+      const kb = (totalBytes / 1024).toFixed(1);
+      const mb = (totalBytes / (1024 * 1024)).toFixed(2);
+      return {
+        usedBytes: totalBytes,
+        usedFormatted: totalBytes > 1048576 ? `${mb} MB` : `${kb} KB`,
+        itemsCount: count,
+        percentEstimated: Math.min(100, Math.max(2, Math.round((totalBytes / (5 * 1024 * 1024)) * 100)))
+      };
+    } catch {
+      return { usedBytes: 0, usedFormatted: '0 KB', itemsCount: 0, percentEstimated: 2 };
+    }
+  },
+
+  // Exportação Completa de Banco de Dados JSON
+  exportFullDatabaseJSON() {
+    try {
+      const exportData = {
+        app: 'MDSync Geotecnia',
+        versao: '2.5.0-PRO',
+        timestamp: new Date().toISOString(),
+        mineradora: 'Itaminas Mineração S/A',
+        dados: {}
+      };
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key && key.startsWith('mdsync_')) {
+          try {
+            exportData.dados[key] = JSON.parse(localStorage.getItem(key));
+          } catch {
+            exportData.dados[key] = localStorage.getItem(key);
+          }
+        }
+      }
+      const jsonStr = JSON.stringify(exportData, null, 2);
+      const blob = new Blob([jsonStr], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      const dateStr = new Date().toISOString().split('T')[0];
+      a.href = url;
+      a.download = `MDSync_Backup_Geotecnia_${dateStr}.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      return true;
+    } catch (e) {
+      console.error('Erro ao exportar backup:', e);
+      return false;
+    }
+  },
+
+  // Importação de Banco de Dados JSON
+  importFullDatabaseJSON(jsonString) {
+    try {
+      const parsed = JSON.parse(jsonString);
+      if (!parsed.dados || typeof parsed.dados !== 'object') {
+        throw new Error('Arquivo de backup inválido ou sem a estrutura de dados correta.');
+      }
+      Object.keys(parsed.dados).forEach(key => {
+        if (key.startsWith('mdsync_')) {
+          const val = parsed.dados[key];
+          localStorage.setItem(key, typeof val === 'object' ? JSON.stringify(val) : val);
+        }
+      });
+      return { success: true, count: Object.keys(parsed.dados).length };
+    } catch (e) {
+      console.error('Erro ao importar backup:', e);
+      return { success: false, error: e.message };
     }
   },
 
