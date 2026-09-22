@@ -63,6 +63,7 @@ export const DashboardTab = ({ onNavigateTab }) => {
   } = useGeotechData();
 
   // Estados dos Filtros
+  const [selectedCategory, setSelectedCategory] = useState('TODAS'); // 'TODAS' | 'Barragens' | 'Pilhas' | 'Taludes' | 'Cavas'
   const [selectedStructure, setSelectedStructure] = useState(activeStructureId || 'TODAS');
   const [selectedType, setSelectedType] = useState('TODOS');
   const [selectedStatus, setSelectedStatus] = useState('TODOS');
@@ -83,6 +84,7 @@ export const DashboardTab = ({ onNavigateTab }) => {
   };
 
   const handleResetFilters = () => {
+    setSelectedCategory('TODAS');
     setSelectedStructure('TODAS');
     setSelectedType('TODOS');
     setSelectedStatus('TODOS');
@@ -91,11 +93,17 @@ export const DashboardTab = ({ onNavigateTab }) => {
     selectStructure('TODAS');
   };
 
-  const isFiltered = selectedStructure !== 'TODAS' || selectedType !== 'TODOS' || selectedStatus !== 'TODOS' || searchQuery !== '' || timeRange !== '30d';
+  const isFiltered = selectedCategory !== 'TODAS' || selectedStructure !== 'TODAS' || selectedType !== 'TODOS' || selectedStatus !== 'TODOS' || searchQuery !== '' || timeRange !== '30d';
 
   // 1. Filtrar instrumentos com base nos controles
   const filteredInstruments = useMemo(() => {
     return instruments.filter(inst => {
+      // Filtro Categoria Sentnel
+      if (selectedCategory !== 'TODAS') {
+        const struct = structures.find(s => s.nome === inst.estrutura || s.id === inst.estrutura.replace(/\s+/g, '_'));
+        if (struct && struct.categoria !== selectedCategory) return false;
+      }
+
       // Filtro Estrutura
       if (selectedStructure !== 'TODAS') {
         const matchesId = inst.estrutura.replace(/\s+/g, '_') === selectedStructure;
@@ -138,7 +146,7 @@ export const DashboardTab = ({ onNavigateTab }) => {
 
       return true;
     });
-  }, [instruments, selectedStructure, selectedType, selectedStatus, searchQuery]);
+  }, [instruments, structures, selectedCategory, selectedStructure, selectedType, selectedStatus, searchQuery]);
 
   // UIDs dos instrumentos filtrados para cruzar com leituras
   const filteredUids = useMemo(() => {
@@ -624,6 +632,72 @@ export const DashboardTab = ({ onNavigateTab }) => {
           </div>
         </div>
 
+        {/* Barra de Categorias Sentnel (Barragens, Pilhas, Taludes, Cavas) */}
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '0.4rem',
+          flexWrap: 'wrap',
+          marginBottom: '0.85rem'
+        }}>
+          <span style={{ fontSize: '0.72rem', fontWeight: 800, color: 'var(--text-faint)', textTransform: 'uppercase', marginRight: '0.2rem' }}>
+            Tipologia de Ativo (Sentnel):
+          </span>
+          {[
+            { id: 'TODAS', label: 'Todas as Estruturas', icone: '🌐' },
+            { id: 'Barragens', label: 'Barragens', icone: '🛡️' },
+            { id: 'Pilhas', label: 'Pilhas', icone: '⛰️' },
+            { id: 'Taludes', label: 'Taludes', icone: '📐' },
+            { id: 'Cavas', label: 'Cavas', icone: '⛏️' }
+          ].map(cat => {
+            const count = cat.id === 'TODAS'
+              ? structures.length
+              : structures.filter(s => s.categoria === cat.id).length;
+            const isSelected = selectedCategory === cat.id;
+
+            return (
+              <button
+                key={cat.id}
+                onClick={() => {
+                  setSelectedCategory(cat.id);
+                  if (cat.id !== 'TODAS') {
+                    const match = structures.find(s => s.id === selectedStructure);
+                    if (match && match.categoria !== cat.id) {
+                      handleStructureChange('TODAS');
+                    }
+                  }
+                }}
+                style={{
+                  padding: '0.35rem 0.75rem',
+                  borderRadius: '20px',
+                  fontSize: '0.75rem',
+                  fontWeight: isSelected ? 800 : 600,
+                  border: `1px solid ${isSelected ? 'var(--primary-accent)' : 'var(--border-subtle)'}`,
+                  backgroundColor: isSelected ? 'var(--primary-accent-bg)' : 'var(--bg-secondary)',
+                  color: isSelected ? 'var(--primary-accent)' : 'var(--text-muted)',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.35rem',
+                  transition: 'all 0.2s'
+                }}
+              >
+                <span>{cat.icone}</span>
+                <span>{cat.label}</span>
+                <span style={{
+                  fontSize: '0.65rem',
+                  backgroundColor: isSelected ? 'var(--primary-accent)' : 'rgba(148, 163, 184, 0.2)',
+                  color: isSelected ? '#ffffff' : 'var(--text-faint)',
+                  padding: '0.05rem 0.35rem',
+                  borderRadius: '10px'
+                }}>
+                  {count}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+
         {/* GRADE DE FILTROS INTERATIVOS */}
         <div style={{
           display: 'grid',
@@ -645,12 +719,16 @@ export const DashboardTab = ({ onNavigateTab }) => {
               className="form-select"
               style={{ width: '100%', fontSize: '0.8rem', padding: '0.4rem 0.6rem', fontWeight: 600 }}
             >
-              <option value="TODAS">TODAS AS ESTRUTURAS ({instruments.length} inst.)</option>
-              {structures.map(s => (
-                <option key={s.id} value={s.id}>
-                  {s.nome} ({s.totalInstrumentos} inst.)
-                </option>
-              ))}
+              <option value="TODAS">
+                TODAS AS ESTRUTURAS ({selectedCategory === 'TODAS' ? instruments.length : filteredInstruments.length} inst.)
+              </option>
+              {structures
+                .filter(s => selectedCategory === 'TODAS' || s.categoria === selectedCategory)
+                .map(s => (
+                  <option key={s.id} value={s.id}>
+                    {s.nome} ({s.totalInstrumentos} inst.) [{s.categoria}]
+                  </option>
+                ))}
             </select>
           </div>
 

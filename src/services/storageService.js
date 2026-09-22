@@ -20,7 +20,12 @@ const STORAGE_KEYS = {
   COLETAS: 'mdsync_coletas_inspect',
   LOTES_RELATORIOS: 'mdsync_lotes_relatorios',
   OFFLINE_QUEUE: 'mdsync_offline_queue',
-  ACTIVE_STRUCTURE: 'mdsync_active_structure'
+  ACTIVE_STRUCTURE: 'mdsync_active_structure',
+  ANOMALIAS_GEOTECNICAS: 'mdsync_anomalias_geotecnicas',
+  INSPECOES_GEOTECNICAS: 'mdsync_inspecoes_geotecnicas',
+  PLANOS_ACAO: 'mdsync_planos_acao',
+  DOCUMENTOS_ESTRUTURAS: 'mdsync_documentos_estruturas',
+  COMUNICADOS_OPERACIONAIS: 'mdsync_comunicados_operacionais'
 };
 
 export const storageService = {
@@ -741,6 +746,523 @@ export const storageService = {
     }
 
     return { count: syncedItems.length, items: syncedItems };
+  },
+
+  // ==========================================================
+  // GESTÃO DE ANOMALIAS GEOTÉCNICAS (PADRÃO SENTNEL / ANM 95/2022)
+  // ==========================================================
+  getAnomaliasGeotecnicas() {
+    try {
+      const data = localStorage.getItem(STORAGE_KEYS.ANOMALIAS_GEOTECNICAS);
+      if (data) return JSON.parse(data);
+
+      // Seed data inicial de anomalias reais de mineração
+      const defaultAnomalies = [
+        {
+          id: 'ANOM-2026-001',
+          codigo: 'ANOM-B1-01',
+          estrutura: 'BARRAGEM B1',
+          categoria: 'Barragens',
+          localizacao: 'Crista - Trecho Central (Estaca 12+10m)',
+          cota: '851.60 m',
+          tipo: 'Trinca Longitudinal',
+          classificacao: 'Nível 1 - Baixa (Atenção)',
+          severidade: 1,
+          descricao: 'Trinca incipiente com 4mm de abertura e 2.80m de extensão após tráfego de caminhão pipa. Sem movimentação nas últimas 72h.',
+          dataIdentificacao: '2026-09-18',
+          status: 'Em Monitoramento',
+          planoAcaoId: 'PA-2026-014',
+          responsavel: 'Eng. Geotécnico Sênior',
+          fotoUrl: null,
+          coordenadas: { lat: -20.063824, lon: -44.114686 }
+        },
+        {
+          id: 'ANOM-2026-002',
+          codigo: 'ANOM-B4-02',
+          estrutura: 'BARRAGEM B4',
+          categoria: 'Barragens',
+          localizacao: 'Pé do Dique de Jusante - Próximo ao Dreno D-03',
+          cota: '1078.20 m',
+          tipo: 'Surgência de Água',
+          classificacao: 'Nível 2 - Média (Alerta)',
+          severidade: 2,
+          descricao: 'Pequena surgência de água límpida (0.15 L/s) sem carreamento de finos. Turbidez analisada em 2.4 NTU (normal). DHP alocado.',
+          dataIdentificacao: '2026-09-16',
+          status: 'Ação em Andamento',
+          planoAcaoId: 'PA-2026-016',
+          responsavel: 'Técnico de Instrumentação',
+          fotoUrl: null,
+          coordenadas: { lat: -20.089000, lon: -44.100584 }
+        },
+        {
+          id: 'ANOM-2026-003',
+          codigo: 'ANOM-PDE-01',
+          estrutura: 'PDE ES1',
+          categoria: 'Pilhas',
+          localizacao: 'Berma Intermediária 3 - Canaleta de Crista',
+          cota: '835.00 m',
+          tipo: 'Erosão de Superfície / Assoreamento',
+          classificacao: 'Nível 1 - Baixa (Atenção)',
+          severidade: 1,
+          descricao: 'Acúmulo de sedimento em 12 metros de canaleta de concreto após chuva de 42mm. Risco de transbordo no talude inferior.',
+          dataIdentificacao: '2026-09-19',
+          status: 'Programado Reparo',
+          planoAcaoId: null,
+          responsavel: 'Equipe de Manutenção Civil',
+          fotoUrl: null,
+          coordenadas: { lat: -20.091028, lon: -44.110613 }
+        },
+        {
+          id: 'ANOM-2026-004',
+          codigo: 'ANOM-JANG-01',
+          estrutura: 'JANGADA',
+          categoria: 'Cavas',
+          localizacao: 'Talude Noroeste - Bancada 960',
+          cota: '960.00 m',
+          tipo: 'Trinca de Alívio / Tração',
+          classificacao: 'Nível 2 - Média (Alerta)',
+          severidade: 2,
+          descricao: 'Trinca de tração subparalela à crista da bancada de 5m de extensão. Prisma P-14 instalado para leitura robótica contínua.',
+          dataIdentificacao: '2026-09-14',
+          status: 'Em Investigação',
+          planoAcaoId: 'PA-2026-015',
+          responsavel: 'Geólogo de Operação de Mina',
+          fotoUrl: null,
+          coordenadas: { lat: -20.097198, lon: -44.092516 }
+        }
+      ];
+      localStorage.setItem(STORAGE_KEYS.ANOMALIAS_GEOTECNICAS, JSON.stringify(defaultAnomalies));
+      return defaultAnomalies;
+    } catch {
+      return [];
+    }
+  },
+  saveAnomaliaGeotecnica(anomalia) {
+    try {
+      const list = this.getAnomaliasGeotecnicas();
+      const newAnom = {
+        ...anomalia,
+        id: anomalia.id || `ANOM-2026-${String(list.length + 1).padStart(3, '0')}`,
+        codigo: anomalia.codigo || `ANOM-GEO-${Math.floor(100 + Math.random() * 900)}`,
+        dataIdentificacao: anomalia.dataIdentificacao || new Date().toISOString().split('T')[0]
+      };
+      const idx = list.findIndex(a => a.id === newAnom.id);
+      if (idx !== -1) list[idx] = newAnom;
+      else list.unshift(newAnom);
+      localStorage.setItem(STORAGE_KEYS.ANOMALIAS_GEOTECNICAS, JSON.stringify(list));
+      return newAnom;
+    } catch (e) {
+      console.error(e);
+      return null;
+    }
+  },
+  updateAnomaliaGeotecnica(id, updates) {
+    try {
+      const list = this.getAnomaliasGeotecnicas();
+      const idx = list.findIndex(a => a.id === id);
+      if (idx !== -1) {
+        list[idx] = { ...list[idx], ...updates };
+        localStorage.setItem(STORAGE_KEYS.ANOMALIAS_GEOTECNICAS, JSON.stringify(list));
+        return list[idx];
+      }
+      return null;
+    } catch (e) {
+      console.error(e);
+      return null;
+    }
+  },
+
+  // ==========================================================
+  // INSPEÇÕES GEOTÉCNICAS REGULARES & ESPECIAIS (ISR / ISE)
+  // ==========================================================
+  getInspecoesGeotecnicas() {
+    try {
+      const data = localStorage.getItem(STORAGE_KEYS.INSPECOES_GEOTECNICAS);
+      if (data) return JSON.parse(data);
+
+      const defaultInspections = [
+        {
+          id: 'INSP-2026-038',
+          tipo: 'ISR', // Inspeção de Segurança Regular
+          titulo: 'Inspeção Regular Quinzenal - Barragem B1',
+          estrutura: 'BARRAGEM B1',
+          categoria: 'Barragens',
+          data: '2026-09-18',
+          inspetor: 'Eng. Maycon Nascimento (CREA-MG)',
+          status: 'Concluída',
+          resultadoGeral: 'Estável com Observações (Nível 1)',
+          itensInspecionados: {
+            crista: 'Regular (trinca superficial identificada)',
+            taludeJusante: 'Conforme (sem deformações)',
+            taludeMontante: 'Conforme (enrocamento íntegro)',
+            sistemaDrenagem: 'Operacional (vazão límpida)',
+            instrumentacao: '100% lida e validada'
+          },
+          proximaInspecao: '2026-10-02',
+          parecerTecnico: 'Maciço apresenta condições satisfatórias de estabilidade. Proceder ao selamento preventivo da trinca na crista.'
+        },
+        {
+          id: 'INSP-2026-039',
+          tipo: 'ISR',
+          titulo: 'Inspeção Regular Quinzenal - Barragem B4 & Vertedouro',
+          estrutura: 'BARRAGEM B4',
+          categoria: 'Barragens',
+          data: '2026-09-19',
+          inspetor: 'Téc. Instrumentação Geotécnica',
+          status: 'Concluída',
+          resultadoGeral: 'Conforme / Normal',
+          itensInspecionados: {
+            crista: 'Conforme',
+            taludeJusante: 'Pequena surgência monitorada',
+            taludeMontante: 'Conforme',
+            sistemaDrenagem: 'Conforme',
+            instrumentacao: 'Conforme'
+          },
+          proximaInspecao: '2026-10-03',
+          parecerTecnico: 'Vertedouro desobstruído com lâmina d água normal. Piezometria estável.'
+        },
+        {
+          id: 'INSP-2026-004',
+          tipo: 'ISE', // Inspeção Especial
+          titulo: 'Inspeção Especial Pós-Chuva Intensa (62mm em 24h)',
+          estrutura: 'BARRAGEM B1',
+          categoria: 'Barragens',
+          data: '2026-09-12',
+          inspetor: 'Comitê de Segurança de Barragens',
+          status: 'Concluída',
+          resultadoGeral: 'Conforme / Resposta Hidráulica Adequada',
+          itensInspecionados: {
+            crista: 'Sem empoçamento',
+            taludeJusante: 'Drenagem fluindo normalmente',
+            taludeMontante: 'Borda livre de 3.20m',
+            sistemaDrenagem: 'Vazão máxima atingida de 4.8 L/s',
+            instrumentacao: 'NA elevado em 0.18m, retornando à curva'
+          },
+          proximaInspecao: 'Sob demanda',
+          parecerTecnico: 'Estrutura respondeu de forma elástica e segura à precipitação atípica.'
+        },
+        {
+          id: 'INSP-2026-040',
+          tipo: 'ISR',
+          titulo: 'Inspeção Regular Programada - Pilhas PDE ES1 e PDE Oeste',
+          estrutura: 'PDE ES1',
+          categoria: 'Pilhas',
+          data: '2026-09-25',
+          inspetor: 'Eng. Geotécnico de Minas',
+          status: 'Agendada',
+          resultadoGeral: 'Aguardando Execução',
+          itensInspecionados: {},
+          proximaInspecao: '2026-09-25',
+          parecerTecnico: 'Foco na vistoria dos drenos de pé e canaletas de desvio de águas pluviais.'
+        }
+      ];
+      localStorage.setItem(STORAGE_KEYS.INSPECOES_GEOTECNICAS, JSON.stringify(defaultInspections));
+      return defaultInspections;
+    } catch {
+      return [];
+    }
+  },
+  saveInspecaoGeotecnica(inspecao) {
+    try {
+      const list = this.getInspecoesGeotecnicas();
+      const newInsp = {
+        ...inspecao,
+        id: inspecao.id || `INSP-2026-${String(list.length + 1).padStart(3, '0')}`,
+        data: inspecao.data || new Date().toISOString().split('T')[0]
+      };
+      const idx = list.findIndex(i => i.id === newInsp.id);
+      if (idx !== -1) list[idx] = newInsp;
+      else list.unshift(newInsp);
+      localStorage.setItem(STORAGE_KEYS.INSPECOES_GEOTECNICAS, JSON.stringify(list));
+      return newInsp;
+    } catch (e) {
+      console.error(e);
+      return null;
+    }
+  },
+
+  // ==========================================================
+  // PLANOS DE AÇÃO 5W2H (CAPA - AÇÕES CORRETIVAS E PREVENTIVAS)
+  // ==========================================================
+  getPlanosAcao() {
+    try {
+      const data = localStorage.getItem(STORAGE_KEYS.PLANOS_ACAO);
+      if (data) return JSON.parse(data);
+
+      const defaultPlans = [
+        {
+          id: 'PA-2026-014',
+          titulo: 'Selamento de trinca em crista da B1 com argila plástica compactada',
+          estrutura: 'BARRAGEM B1',
+          categoria: 'Barragens',
+          anomaliaId: 'ANOM-2026-001',
+          oQue: 'Escarificar e preencher a fissura superficial com solo argiloso compactado manualmente em camadas.',
+          porQue: 'Impedir a infiltração direta de água pluvial no corpo do maciço terroso.',
+          quem: 'Equipe de Manutenção Civil & Geotecnia Itaminas',
+          onde: 'Barragem B1, Crista, Estaca 12+10m',
+          quando: '2026-09-25',
+          como: 'Escarificação em V, aplicação de argila compactada com soquete e impermeabilização superficial.',
+          quanto: 'R$ 3.500,00 (mão de obra interna)',
+          status: 'Em Execução',
+          progresso: 65,
+          prioridade: 'Alta'
+        },
+        {
+          id: 'PA-2026-015',
+          titulo: 'Instalação de Drenos Sub-horizontais Profundos (DHP) na Cava Jangada',
+          estrutura: 'JANGADA',
+          categoria: 'Cavas',
+          anomaliaId: 'ANOM-2026-004',
+          oQue: 'Perfuração e instalação de 4 drenos sub-horizontais de 30 metros de profundidade.',
+          porQue: 'Aliviar poro-pressões induzidas no maciço rochoso fraturado.',
+          quem: 'Geosonda Engenharia & Perfurações Ltda',
+          onde: 'Cava Jangada - Bancada 960 Noroeste',
+          quando: '2026-10-10',
+          como: 'Sonda roto-percussiva montada sobre esteiras com tubo PVC geomecânico ranhurado.',
+          quanto: 'R$ 48.000,00',
+          status: 'Em Andamento',
+          progresso: 30,
+          prioridade: 'Crítica'
+        },
+        {
+          id: 'PA-2026-016',
+          titulo: 'Desassoreamento de canaleta trapezoidal da Berma 4 - Barragem B4',
+          estrutura: 'BARRAGEM B4',
+          categoria: 'Barragens',
+          anomaliaId: 'ANOM-2026-003',
+          oQue: 'Limpeza e remoção de 4m³ de sedimento acumulado na calha de drenagem.',
+          porQue: 'Garantir escoamento pluvial sem transbordamento para o talude.',
+          quem: 'Equipe Operacional de Limpeza',
+          onde: 'Barragem B4 - Berma 4 Jusante',
+          quando: '2026-09-22',
+          como: 'Remoção manual com pá e caçamba, com transporte para bota-fora autorizado.',
+          quanto: 'R$ 1.800,00',
+          status: 'Concluído',
+          progresso: 100,
+          prioridade: 'Média'
+        }
+      ];
+      localStorage.setItem(STORAGE_KEYS.PLANOS_ACAO, JSON.stringify(defaultPlans));
+      return defaultPlans;
+    } catch {
+      return [];
+    }
+  },
+  savePlanoAcao(plano) {
+    try {
+      const list = this.getPlanosAcao();
+      const newPlan = {
+        ...plano,
+        id: plano.id || `PA-2026-${String(list.length + 1).padStart(3, '0')}`,
+        status: plano.status || 'Não Iniciado',
+        progresso: plano.progresso || 0
+      };
+      const idx = list.findIndex(p => p.id === newPlan.id);
+      if (idx !== -1) list[idx] = newPlan;
+      else list.unshift(newPlan);
+      localStorage.setItem(STORAGE_KEYS.PLANOS_ACAO, JSON.stringify(list));
+      return newPlan;
+    } catch (e) {
+      console.error(e);
+      return null;
+    }
+  },
+  updatePlanoAcao(id, updates) {
+    try {
+      const list = this.getPlanosAcao();
+      const idx = list.findIndex(p => p.id === id);
+      if (idx !== -1) {
+        list[idx] = { ...list[idx], ...updates };
+        localStorage.setItem(STORAGE_KEYS.PLANOS_ACAO, JSON.stringify(list));
+        return list[idx];
+      }
+      return null;
+    } catch (e) {
+      console.error(e);
+      return null;
+    }
+  },
+
+  // ==========================================================
+  // GESTÃO DOCUMENTAL & LEGISLAÇÃO APLICADA (PADRÃO SENTNEL)
+  // ==========================================================
+  getDocumentosEstruturas() {
+    try {
+      const data = localStorage.getItem(STORAGE_KEYS.DOCUMENTOS_ESTRUTURAS);
+      if (data) return JSON.parse(data);
+
+      const defaultDocs = [
+        {
+          id: 'DOC-2026-001',
+          titulo: 'Plano de Segurança de Barragens (PSB) - Volume I & II',
+          estrutura: 'BARRAGEM B1',
+          categoria: 'Barragens',
+          tipo: 'PSB',
+          versao: 'Rev. 05',
+          dataPublicacao: '2026-07-15',
+          validade: '2027-07-15',
+          status: 'Vigente',
+          responsavelTecnico: 'Eng. Geotécnico Sênior (CREA/MG 148.920)',
+          art: 'ART-MG-2026-089123',
+          tamanhoMb: 18.4,
+          formato: 'PDF Assinado Digitalmente'
+        },
+        {
+          id: 'DOC-2026-002',
+          titulo: 'Declaração de Condição de Estabilidade (DCE / DCR Semestral ANM)',
+          estrutura: 'BARRAGEM B1',
+          categoria: 'Barragens',
+          tipo: 'DCE',
+          versao: 'Ciclo Set/2026',
+          dataPublicacao: '2026-09-10',
+          validade: '2027-03-31',
+          status: 'Atestada Estabilidade',
+          responsavelTecnico: 'Auditoria Externa Geotécnica Ltda',
+          art: 'ART-MG-2026-112034',
+          tamanhoMb: 6.2,
+          formato: 'PDF Assinado ICP-Brasil'
+        },
+        {
+          id: 'DOC-2026-003',
+          titulo: 'Plano de Ação de Emergência para Barragens de Mineração (PAEBM)',
+          estrutura: 'BARRAGEM B4',
+          categoria: 'Barragens',
+          tipo: 'PAEBM',
+          versao: 'Rev. 04',
+          dataPublicacao: '2026-08-01',
+          validade: '2027-08-01',
+          status: 'Aprovado Defesa Civil',
+          responsavelTecnico: 'Comitê Corporativo de Emergência',
+          art: 'ART-MG-2026-077431',
+          tamanhoMb: 24.8,
+          formato: 'PDF com Mapas de Inundação'
+        },
+        {
+          id: 'DOC-2026-004',
+          titulo: 'Projeto Como Construído (As-Built) - Enrocamento e Filtro',
+          estrutura: 'BARRAGEM B1',
+          categoria: 'Barragens',
+          tipo: 'PROJETO_AS_BUILT',
+          versao: 'Final Aprovada',
+          dataPublicacao: '2025-11-20',
+          validade: 'Permanente',
+          status: 'Vigente',
+          responsavelTecnico: 'Consórcio Projetista Geotécnico',
+          art: 'ART-MG-2025-998812',
+          tamanhoMb: 42.1,
+          formato: 'DWG / PDF Vetorial'
+        },
+        {
+          id: 'DOC-2026-005',
+          titulo: 'Levantamento Topográfico e Ortofoto Drone LiDAR 3D',
+          estrutura: 'JANGADA',
+          categoria: 'Cavas',
+          tipo: 'TOPOGRAFIA_DRONE',
+          versao: 'Campanha Set/2026',
+          dataPublicacao: '2026-09-15',
+          validade: '2026-12-15',
+          status: 'Vigente',
+          responsavelTecnico: 'Equipe de Topografia de Minas',
+          art: 'ART-MG-2026-144021',
+          tamanhoMb: 115.0,
+          formato: 'Nuvem de Pontos LAS / Geotiff'
+        }
+      ];
+      localStorage.setItem(STORAGE_KEYS.DOCUMENTOS_ESTRUTURAS, JSON.stringify(defaultDocs));
+      return defaultDocs;
+    } catch {
+      return [];
+    }
+  },
+  saveDocumentoEstrutura(doc) {
+    try {
+      const list = this.getDocumentosEstruturas();
+      const newDoc = {
+        ...doc,
+        id: doc.id || `DOC-2026-${String(list.length + 1).padStart(3, '0')}`,
+        dataPublicacao: doc.dataPublicacao || new Date().toISOString().split('T')[0]
+      };
+      const idx = list.findIndex(d => d.id === newDoc.id);
+      if (idx !== -1) list[idx] = newDoc;
+      else list.unshift(newDoc);
+      localStorage.setItem(STORAGE_KEYS.DOCUMENTOS_ESTRUTURAS, JSON.stringify(list));
+      return newDoc;
+    } catch (e) {
+      console.error(e);
+      return null;
+    }
+  },
+
+  // ==========================================================
+  // CENTRAL DE COMUNICAÇÃO & DIÁRIO OPERACIONAL DE CAMPO
+  // ==========================================================
+  getComunicadosOperacionais() {
+    try {
+      const data = localStorage.getItem(STORAGE_KEYS.COMUNICADOS_OPERACIONAIS);
+      if (data) return JSON.parse(data);
+
+      const defaultFeed = [
+        {
+          id: 'COM-2026-001',
+          autor: 'Eng. Maycon Nascimento',
+          cargo: 'Engenheiro Geotécnico Sênior',
+          dataHora: '2026-09-22 08:15',
+          tipo: 'PASSAGEM_TURNO',
+          titulo: 'Passagem de Turno Geotécnico - Status Geral Estável',
+          conteudo: 'Todas as leituras dos 218 instrumentos da campanha do PCMI foram finalizadas e estão 100% íntegras. Nenhum instrumento superou a cota de emergência. Acompanhamento focado nos piezômetros PZ-04 e PZ-07 da B1.',
+          estrutura: 'BARRAGEM B1',
+          categoria: 'Barragens',
+          badge: 'Turno A',
+          urgencia: 'Normal'
+        },
+        {
+          id: 'COM-2026-002',
+          autor: 'Centro de Controle Meteorológico',
+          cargo: 'Monitoramento Ambiental',
+          dataHora: '2026-09-21 16:30',
+          tipo: 'CLIMA',
+          titulo: 'Alerta Preventivo de Precipitação Convectiva',
+          conteudo: 'Previsão de 30 a 50mm de chuva isolada no Quadrilátero Ferrífero nas próximas 18 horas. Equipes de inspeção e fiscais de drenagem devem manter rádio aberto na frequência 4.',
+          estrutura: 'TODAS',
+          categoria: 'Geral',
+          badge: 'Meteo',
+          urgencia: 'Atenção'
+        },
+        {
+          id: 'COM-2026-003',
+          autor: 'Engenharia de Desmonte de Rocha',
+          cargo: 'Operação de Mina Itaminas',
+          dataHora: '2026-09-20 11:45',
+          tipo: 'DETONACAO',
+          titulo: 'Detonação Programada de Bancada 940 - Cava Jangada',
+          conteudo: 'Fogo realizado com sucesso às 11:30. Acelerômetros e sismógrafos triaxiais registraram PPV de 1.7 mm/s no talude noroeste, bem abaixo do limite seguro de 5.0 mm/s. Sem danos estruturais observados.',
+          estrutura: 'JANGADA',
+          categoria: 'Cavas',
+          badge: 'Mina',
+          urgencia: 'Normal'
+        }
+      ];
+      localStorage.setItem(STORAGE_KEYS.COMUNICADOS_OPERACIONAIS, JSON.stringify(defaultFeed));
+      return defaultFeed;
+    } catch {
+      return [];
+    }
+  },
+  saveComunicadoOperacional(comunicado) {
+    try {
+      const list = this.getComunicadosOperacionais();
+      const newCom = {
+        ...comunicado,
+        id: comunicado.id || `COM-2026-${String(list.length + 1).padStart(3, '0')}`,
+        dataHora: comunicado.dataHora || new Date().toLocaleString('pt-BR')
+      };
+      list.unshift(newCom);
+      localStorage.setItem(STORAGE_KEYS.COMUNICADOS_OPERACIONAIS, JSON.stringify(list));
+      return newCom;
+    } catch (e) {
+      console.error(e);
+      return null;
+    }
   },
 
   // Gerar Pacote de Staging para a Pasta Corporativa ITAMINAS (00) Leituras\MDSync_Integracao_Campo)

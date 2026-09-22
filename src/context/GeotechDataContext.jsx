@@ -26,6 +26,11 @@ export const GeotechDataProvider = ({ children }) => {
   const [lotesRelatorios, setLotesRelatorios] = useState([]);
   const [importacoesPcmi, setImportacoesPcmi] = useState([]);
   const [limites, setLimites] = useState({});
+  const [anomaliasGeotecnicas, setAnomaliasGeotecnicas] = useState(() => storageService.getAnomaliasGeotecnicas());
+  const [inspecoesGeotecnicas, setInspecoesGeotecnicas] = useState(() => storageService.getInspecoesGeotecnicas());
+  const [planosAcao, setPlanosAcao] = useState(() => storageService.getPlanosAcao());
+  const [documentosEstruturas, setDocumentosEstruturas] = useState(() => storageService.getDocumentosEstruturas());
+  const [comunicadosOperacionais, setComunicadosOperacionais] = useState(() => storageService.getComunicadosOperacionais());
 
   const [activeStructureId, setActiveStructureId] = useState(() => storageService.getActiveStructure());
   
@@ -163,7 +168,18 @@ export const GeotechDataProvider = ({ children }) => {
         }
       }
       setMasterData(data);
-        setStructures(data.estruturas || []);
+        const enrichedStructures = (data.estruturas || []).map(s => {
+          let categoria = s.categoria;
+          if (!categoria) {
+            const upper = (s.nome || s.id || '').toUpperCase();
+            if (upper.includes('BARRAGEM') || upper.includes('DIQUE')) categoria = 'Barragens';
+            else if (upper.includes('PDE') || upper.includes('PILHA')) categoria = 'Pilhas';
+            else if (upper.includes('CAVA') || upper.includes('JANGADA') || upper.includes('ENGENHO')) categoria = 'Cavas';
+            else categoria = 'Taludes';
+          }
+          return { ...s, categoria };
+        });
+        setStructures(enrichedStructures);
         setLimites(data.limites || {});
         setReadingsPiezometria(data.leiturasPiezometricas || []);
         setReadingsVazao(data.leiturasVazao || []);
@@ -524,6 +540,77 @@ export const GeotechDataProvider = ({ children }) => {
     return false;
   };
 
+  // Funções Sentnel (Anomalias, Inspeções, Planos de Ação, Documentos, Feed)
+  const addAnomaliaGeotecnica = (anomalia) => {
+    const saved = storageService.saveAnomaliaGeotecnica(anomalia);
+    if (saved) {
+      setAnomaliasGeotecnicas(prev => [saved, ...prev.filter(a => a.id !== saved.id)]);
+      showToast(`Anomalia ${saved.codigo} registrada com sucesso.`, 'success');
+      return saved;
+    }
+    return null;
+  };
+
+  const updateAnomaliaGeotecnica = (id, updates) => {
+    const updated = storageService.updateAnomaliaGeotecnica(id, updates);
+    if (updated) {
+      setAnomaliasGeotecnicas(prev => prev.map(a => a.id === id ? updated : a));
+      showToast('Anomalia atualizada com sucesso.', 'info');
+      return updated;
+    }
+    return null;
+  };
+
+  const addInspecaoGeotecnica = (inspecao) => {
+    const saved = storageService.saveInspecaoGeotecnica(inspecao);
+    if (saved) {
+      setInspecoesGeotecnicas(prev => [saved, ...prev.filter(i => i.id !== saved.id)]);
+      showToast(`Inspeção ${saved.id} registrada com sucesso.`, 'success');
+      return saved;
+    }
+    return null;
+  };
+
+  const addPlanoAcao = (plano) => {
+    const saved = storageService.savePlanoAcao(plano);
+    if (saved) {
+      setPlanosAcao(prev => [saved, ...prev.filter(p => p.id !== saved.id)]);
+      showToast(`Plano de Ação ${saved.id} criado com sucesso.`, 'success');
+      return saved;
+    }
+    return null;
+  };
+
+  const updatePlanoAcao = (id, updates) => {
+    const updated = storageService.updatePlanoAcao(id, updates);
+    if (updated) {
+      setPlanosAcao(prev => prev.map(p => p.id === id ? updated : p));
+      showToast('Plano de Ação atualizado com sucesso.', 'info');
+      return updated;
+    }
+    return null;
+  };
+
+  const addDocumentoEstrutura = (doc) => {
+    const saved = storageService.saveDocumentoEstrutura(doc);
+    if (saved) {
+      setDocumentosEstruturas(prev => [saved, ...prev.filter(d => d.id !== saved.id)]);
+      showToast(`Documento ${saved.titulo} arquivado com sucesso.`, 'success');
+      return saved;
+    }
+    return null;
+  };
+
+  const addComunicadoOperacional = (com) => {
+    const saved = storageService.saveComunicadoOperacional(com);
+    if (saved) {
+      setComunicadosOperacionais(prev => [saved, ...prev.filter(c => c.id !== saved.id)]);
+      showToast('Comunicado publicado no feed operacional.', 'success');
+      return saved;
+    }
+    return null;
+  };
+
   // Instrumentos filtrados pela estrutura ativa
   const filteredInstruments = activeStructureId === 'TODAS'
     ? instruments
@@ -537,7 +624,9 @@ export const GeotechDataProvider = ({ children }) => {
     atencao: instruments.filter(i => i.statusCalculado === 'ATENÇÃO').length,
     alerta: instruments.filter(i => i.statusCalculado === 'ALERTA').length,
     emergencia: instruments.filter(i => i.statusCalculado === 'EMERGÊNCIA').length,
-    anomaliasAbertas: anomalies.length,
+    anomaliasAbertas: anomaliasGeotecnicas.filter(a => a.status !== 'Mitigada / Fechada').length,
+    inspecoesPendentes: inspecoesGeotecnicas.filter(i => i.status === 'Agendada').length,
+    planosAcaoAtivos: planosAcao.filter(p => p.status !== 'Concluído').length,
     chuva7Dias: pluviometria.length > 0 ? (pluviometria[pluviometria.length - 1].acumulado7Dias || 0) : 0
   };
 
@@ -567,6 +656,18 @@ export const GeotechDataProvider = ({ children }) => {
       importacoesPcmi,
       limites,
       stats,
+      anomaliasGeotecnicas,
+      inspecoesGeotecnicas,
+      planosAcao,
+      documentosEstruturas,
+      comunicadosOperacionais,
+      addAnomaliaGeotecnica,
+      updateAnomaliaGeotecnica,
+      addInspecaoGeotecnica,
+      addPlanoAcao,
+      updatePlanoAcao,
+      addDocumentoEstrutura,
+      addComunicadoOperacional,
       isOnline,
       simulatedOffline,
       toggleSimulatedOffline,

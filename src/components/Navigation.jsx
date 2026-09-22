@@ -4,15 +4,19 @@ import {
   Home,
   LayoutDashboard, 
   MapPin, 
+  Layers,
+  Box,
   ClipboardEdit, 
+  ShieldAlert,
   LineChart, 
   Droplets, 
+  FolderArchive,
+  Radio,
   History, 
   Cpu, 
   Database,
   Flame,
   AlertTriangle,
-  Box,
   FileText,
   ClipboardCheck,
   LifeBuoy,
@@ -25,12 +29,17 @@ export const TABS = [
   { id: 'home', label: 'Home', icon: Home, desc: 'Visão geral e informações consolidadas de todos os campos' },
   { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, desc: 'Visão executiva e KPIs' },
   { id: 'mapa', label: 'Georreferenciamento', icon: MapPin, desc: 'Satélite, estruturas e localização espacial dos instrumentos' },
+  { id: 'secoes', label: 'Seções (Cortes 2D)', icon: Layers, desc: 'Perfis geotécnicos transversais com linha freática piezométrica dinâmica' },
+  { id: '3d', label: 'Modelo 3D', icon: Box, desc: 'Visualização tridimensional Spline 3D da estrutura e cava' },
+  { id: 'anomalias_inspecoes', label: 'Anomalias & ISR', icon: ShieldAlert, desc: 'Gestão de anomalias, inspeções regulares e especiais (ANM 95/2022)' },
   { id: 'campo', label: 'Coleta de Campo', icon: ClipboardEdit, desc: 'Módulo Inspect: fotos, GPS e leituras' },
   { id: 'fila_sync', label: 'Fila de Sincronização Offline', icon: CloudLightning, desc: 'Gestão de coletas offline e envio à nuvem central' },
   { id: 'checklist', label: 'CheckList', icon: ClipboardCheck, desc: 'Ficha de Inspeção Regular - FIR (Survey123 Itaminas)' },
   { id: 'chamados', label: 'Chamados', icon: LifeBuoy, desc: 'Abertura e gestão de chamados com integração direta ao TOTVS Fluig' },
   { id: 'piezometria', label: 'Piezometria & NA', icon: LineChart, desc: 'Curvas de INA/PZ com limites de alerta' },
   { id: 'vazao', label: 'Vazão & Vertedouros', icon: Droplets, desc: 'Drenos de pé, vertedouros e pluviometria' },
+  { id: 'documentos', label: 'Gestão Documental', icon: FolderArchive, desc: 'Acervo técnico (PSB, PAEBM, DCE, As-Built) e legislações aplicadas' },
+  { id: 'comunicacao', label: 'Comunicação', icon: Radio, desc: 'Central de comunicação operacional, feed e diário de bordo' },
   { id: 'laudo', label: 'Laudo ANM 95/2022', icon: FileText, desc: 'Emissão e gestão de laudos regulatórios ANM e PNSB' },
   { id: 'historico', label: 'Histórico de Dados', icon: History, desc: 'Consulta, filtros e exportação' },
   { id: 'ia', label: 'SUPORTE GEOTINHO', icon: Sparkles, desc: 'Assistente Geotinho, auditoria preditiva e parecer automatizado' },
@@ -39,7 +48,7 @@ export const TABS = [
 ];
 
 export const Navigation = ({ activeTab, onSelectTab }) => {
-  const { stats, anomalies, fluigTickets = [], offlineCount = 0 } = useGeotechData();
+  const { stats, anomalies, anomaliasGeotecnicas = [], fluigTickets = [], offlineCount = 0 } = useGeotechData();
 
   return (
     <nav style={{
@@ -113,6 +122,20 @@ export const Navigation = ({ activeTab, onSelectTab }) => {
                 borderRadius: '9999px'
               }}>
                 {anomalies.length}
+              </span>
+            )}
+
+            {tab.id === 'anomalias_inspecoes' && anomaliasGeotecnicas.length > 0 && (
+              <span style={{
+                backgroundColor: 'var(--geo-emergencia-bg)',
+                color: 'var(--geo-emergencia)',
+                border: '1px solid var(--geo-emergencia-border)',
+                fontSize: '0.7rem',
+                fontWeight: 700,
+                padding: '0.1rem 0.4rem',
+                borderRadius: '9999px'
+              }}>
+                {anomaliasGeotecnicas.filter(a => a.status !== 'Mitigada / Fechada').length}
               </span>
             )}
 

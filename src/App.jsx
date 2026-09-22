@@ -31,6 +31,12 @@ import { LotesRelatoriosTab } from './components/LotesRelatoriosTab';
 import { ClientesTab } from './components/ClientesTab';
 import { ContratosTerceirosTab } from './components/ContratosTerceirosTab';
 import { ProfileSettingsTab } from './components/ProfileSettingsTab';
+
+// Módulos Especializados Sentnel Mineração
+import { GeotechCrossSectionTab } from './components/GeotechCrossSectionTab';
+import { AnomaliasInspecoesTab } from './components/AnomaliasInspecoesTab';
+import { GestaoDocumentalTab } from './components/GestaoDocumentalTab';
+import { CentralComunicacaoTab } from './components/CentralComunicacaoTab';
 import { 
   Activity, 
   AlertCircle, 
@@ -249,12 +255,20 @@ export function App() {
           />
         )}
 
+        {activeTab === 'secoes' && (
+          <GeotechCrossSectionTab onNavigateTab={handleNavigateTab} />
+        )}
+
         {activeTab === 'campo' && (
           <FieldCollectionTab preSelectedInstrument={selectedInstrumentForReading} />
         )}
 
         {activeTab === 'fila_sync' && (
           <SyncQueueTab onNavigateTab={handleNavigateTab} />
+        )}
+
+        {activeTab === 'anomalias_inspecoes' && (
+          <AnomaliasInspecoesTab onNavigateTab={handleNavigateTab} />
         )}
 
         {activeTab === 'checklist' && (
@@ -275,6 +289,14 @@ export function App() {
 
         {activeTab === 'vazao' && (
           <FlowRateTab />
+        )}
+
+        {activeTab === 'documentos' && (
+          <GestaoDocumentalTab onNavigateTab={handleNavigateTab} />
+        )}
+
+        {activeTab === 'comunicacao' && (
+          <CentralComunicacaoTab onNavigateTab={handleNavigateTab} />
         )}
 
         {activeTab === 'laudo' && (

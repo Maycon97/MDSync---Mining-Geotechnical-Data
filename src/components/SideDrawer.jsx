@@ -37,7 +37,10 @@ import {
   Download,
   UserCog,
   Check,
-  Sparkles
+  Sparkles,
+  ShieldAlert,
+  FolderArchive,
+  Radio
 } from 'lucide-react';
 
 export const SideDrawer = ({ 
@@ -55,6 +58,7 @@ export const SideDrawer = ({
     ordensServico = [], 
     contratosTerceiros = [], 
     fluigTickets = [], 
+    anomaliasGeotecnicas = [],
     offlineCount = 0,
     isOnline,
     toggleSimulatedOffline
@@ -117,6 +121,8 @@ export const SideDrawer = ({
   const contratosVigentesCount = contratosTerceiros.length;
   const chamadosAbertosCount = fluigTickets.filter(t => t.status !== 'CONCLUIDO').length;
 
+  const anomaliasAbertasCount = anomaliasGeotecnicas.filter(a => a.status !== 'Mitigada / Fechada').length;
+
   const handleNav = (tabId, subTab = null) => {
     if (tabId === 'laudo' && onOpenReport) {
       onOpenReport();
@@ -131,7 +137,7 @@ export const SideDrawer = ({
   /* Catálogo de Módulos Categorizados */
   const menuCategories = useMemo(() => [
     {
-      category: 'Monitoramento',
+      category: 'Monitoramento & Multiperspectiva',
       items: [
         {
           id: 'dashboard',
@@ -142,10 +148,26 @@ export const SideDrawer = ({
         },
         {
           id: 'mapa',
-          title: 'Georreferenciamento',
+          title: '1. Planta (GIS / Satélite)',
           icon: MapPin,
           type: 'tab',
           tabId: 'mapa'
+        },
+        {
+          id: 'secoes',
+          title: '2. Seções (Cortes 2D Dinâmicos)',
+          icon: Layers,
+          type: 'tab',
+          tabId: 'secoes',
+          badge: 'NOVO',
+          badgeColor: '#38bdf8'
+        },
+        {
+          id: '3d',
+          title: '3. Visualizador 3D Spline',
+          icon: Box,
+          type: 'tab',
+          tabId: '3d'
         },
         {
           id: 'piezometria',
@@ -160,19 +182,21 @@ export const SideDrawer = ({
           icon: Droplets,
           type: 'tab',
           tabId: 'vazao'
-        },
-        {
-          id: '3d',
-          title: 'Visualizador 3D Spline',
-          icon: Box,
-          type: 'tab',
-          tabId: '3d'
         }
       ]
     },
     {
-      category: 'Operação de Campo',
+      category: 'Operação de Campo & Anomalias',
       items: [
+        {
+          id: 'anomalias_inspecoes',
+          title: 'Anomalias & Inspeções (ISR/ISE)',
+          icon: ShieldAlert,
+          type: 'tab',
+          tabId: 'anomalias_inspecoes',
+          badge: anomaliasAbertasCount > 0 ? anomaliasAbertasCount : 'ANM 95',
+          badgeColor: '#ef4444'
+        },
         {
           id: 'coletas',
           title: 'Coletas de Campo',
@@ -225,8 +249,24 @@ export const SideDrawer = ({
       ]
     },
     {
-      category: 'Engenharia & Relatórios',
+      category: 'Engenharia, Governança & Documentos',
       items: [
+        {
+          id: 'documentos',
+          title: 'Gestão Documental & Legislação',
+          icon: FolderArchive,
+          type: 'tab',
+          tabId: 'documentos',
+          badge: 'PSB/DCE',
+          badgeColor: '#10b981'
+        },
+        {
+          id: 'comunicacao',
+          title: 'Central de Comunicação (Diário)',
+          icon: Radio,
+          type: 'tab',
+          tabId: 'comunicacao'
+        },
         {
           id: 'ia',
           title: 'SUPORTE GEOTINHO',
@@ -312,6 +352,7 @@ export const SideDrawer = ({
     coletas.length, 
     osAbertasCount, 
     chamadosAbertosCount, 
+    anomaliasAbertasCount,
     offlineCount, 
     contratosVigentesCount, 
     onOpenSync, 
