@@ -243,6 +243,28 @@ export const AnomaliasInspecoesTab = ({ onNavigateTab }) => {
         {/* Botões de Ação Rápida */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
           <button
+            onClick={() => {
+              if (onNavigateTab) onNavigateTab('campo');
+            }}
+            className="btn-secondary"
+            style={{
+              padding: '0.5rem 0.9rem',
+              fontSize: '0.8rem',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.4rem',
+              backgroundColor: 'rgba(2, 132, 199, 0.1)',
+              borderColor: 'var(--primary-accent)',
+              color: 'var(--primary-accent)',
+              fontWeight: 700
+            }}
+            title="Abrir Formulário de Inspeção Regular FIR - Survey123 (Portaria ANM 95/2022)"
+          >
+            <FileText size={16} />
+            <span>Ficha FIR Survey123 (ANM 95)</span>
+          </button>
+
+          <button
             onClick={() => setModalAnomaliaOpen(true)}
             className="btn-primary"
             style={{

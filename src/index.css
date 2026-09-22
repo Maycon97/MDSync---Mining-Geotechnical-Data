@@ -1588,7 +1588,141 @@ button:focus-visible, .btn-action:focus-visible {
   border-color: rgba(0, 0, 0, 0.15);
 }
 
+/* ============================================================
+   SISTEMA DE GRID & ALINHAMENTO DO FORMULÁRIO SURVEY123 FIR
+   ============================================================ */
+.fir-form-container {
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  overflow: hidden;
+}
 
+.fir-grid-12 {
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  gap: 0.85rem;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+}
 
+.fir-col-12 { grid-column: span 12 / span 12; min-width: 0; max-width: 100%; box-sizing: border-box; }
+.fir-col-9  { grid-column: span 9 / span 9; min-width: 0; max-width: 100%; box-sizing: border-box; }
+.fir-col-8  { grid-column: span 8 / span 8; min-width: 0; max-width: 100%; box-sizing: border-box; }
+.fir-col-6  { grid-column: span 6 / span 6; min-width: 0; max-width: 100%; box-sizing: border-box; }
+.fir-col-4  { grid-column: span 4 / span 4; min-width: 0; max-width: 100%; box-sizing: border-box; }
+.fir-col-3  { grid-column: span 3 / span 3; min-width: 0; max-width: 100%; box-sizing: border-box; }
+.fir-col-2  { grid-column: span 2 / span 2; min-width: 0; max-width: 100%; box-sizing: border-box; }
 
+@media (max-width: 992px) {
+  .fir-col-3 { grid-column: span 6 / span 6; }
+  .fir-col-4 { grid-column: span 6 / span 6; }
+  .fir-col-8 { grid-column: span 12 / span 12; }
+  .fir-col-9 { grid-column: span 12 / span 12; }
+}
 
+@media (max-width: 640px) {
+  .fir-col-6,
+  .fir-col-4,
+  .fir-col-3,
+  .fir-col-8,
+  .fir-col-9 {
+    grid-column: span 12 / span 12;
+  }
+}
+
+/* Survey123 Likert / Matrix Table */
+.fir-matrix-container {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: auto;
+  border-radius: 8px;
+  border: 1px solid var(--border-medium);
+  box-sizing: border-box;
+}
+
+.fir-matrix-table {
+  width: 100%;
+  min-width: 480px;
+  border-collapse: collapse;
+  margin: 0;
+}
+
+.fir-matrix-table th {
+  background-color: var(--bg-secondary);
+  color: var(--text-main);
+  padding: 0.65rem 0.85rem;
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-align: center;
+  border-bottom: 1px solid var(--border-medium);
+  border-right: 1px solid var(--border-subtle);
+  white-space: nowrap;
+}
+
+.fir-matrix-table th:first-child {
+  text-align: left;
+  min-width: 220px;
+}
+
+.fir-matrix-table td {
+  padding: 0.6rem 0.75rem;
+  font-size: 0.82rem;
+  color: var(--text-main);
+  border-bottom: 1px solid var(--border-subtle);
+  border-right: 1px solid var(--border-subtle);
+  text-align: center;
+}
+
+.fir-matrix-table td:first-child {
+  text-align: left;
+  font-weight: 600;
+  color: var(--text-main);
+}
+
+.fir-matrix-table tr:hover td {
+  background-color: rgba(2, 132, 199, 0.05);
+}
+
+.fir-matrix-cell-active {
+  background-color: rgba(2, 132, 199, 0.12) !important;
+}
+
+.fir-matrix-radio {
+  cursor: pointer;
+  accent-color: var(--primary-accent);
+  width: 18px;
+  height: 18px;
+  margin: 0 auto;
+  display: block;
+}
+
+/* Stepper para páginas do Survey123 */
+.fir-stepper-btn {
+  padding: 0.45rem 0.75rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  border-radius: 6px;
+  border: 1px solid var(--border-subtle);
+  background-color: var(--bg-secondary);
+  color: var(--text-muted);
+  cursor: pointer;
+  white-space: nowrap;
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  transition: all 0.2s ease;
+}
+
+.fir-stepper-btn:hover {
+  color: var(--text-main);
+  border-color: var(--primary-accent);
+}
+
+.fir-stepper-btn.active {
+  background-color: var(--primary-accent);
+  color: #ffffff;
+  border-color: var(--primary-accent);
+  box-shadow: 0 2px 6px rgba(2, 132, 199, 0.35);
+}

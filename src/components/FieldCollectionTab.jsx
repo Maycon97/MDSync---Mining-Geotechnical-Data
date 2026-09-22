@@ -58,7 +58,10 @@ import {
   Globe,
   Sparkles,
   ExternalLink,
-  FileText
+  FileText,
+  ChevronLeft,
+  ChevronRight,
+  Check
 } from 'lucide-react';
 
 ChartJS.register(
@@ -134,42 +137,107 @@ export const FieldCollectionTab = ({ preSelectedInstrument }) => {
   ];
 
   const [firMode, setFirMode] = useState('nativo'); // 'nativo' | 'survey123_web'
+  const [firViewMode, setFirViewMode] = useState('paginado'); // 'paginado' | 'completo'
+  const [currentFirPage, setCurrentFirPage] = useState(1); // 1 a 10
+
+  // PÁGINA 1: Informações Gerais
   const [firEstrutura, setFirEstrutura] = useState('Barragem B1');
   const [firData, setFirData] = useState(() => new Date().toISOString().split('T')[0]);
   const [firHora, setFirHora] = useState(() => new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }));
-  const [firProfissional, setFirProfissional] = useState(currentUser?.nome || 'Eng. Marcelo N. Siqueira');
+  const [firProfissional, setFirProfissional] = useState(currentUser?.nome || 'Maycon Douglas Nascimento');
   const [firRegistro, setFirRegistro] = useState(currentUser?.registro || 'CREA 85.120/D-MG');
-  const [firCondicoesClimaticas, setFirCondicoesClimaticas] = useState('Ensolarado');
+  const [firCondicoesClimaticas, setFirCondicoesClimaticas] = useState('Parcialmente Nublado');
   const [firVolumeAcumulado, setFirVolumeAcumulado] = useState(14.8);
   const [firVazaoHm, setFirVazaoHm] = useState(2.10);
-  
-  // Acessos e Vias
-  const [firAcessos, setFirAcessos] = useState('Bom');
+
+  // PÁGINA 2: Acessos (Avaliação dos Acessos - Tabela)
+  const [firAcessoRevestimento, setFirAcessoRevestimento] = useState('Bom');
+  const [firAcessoEmpocamento, setFirAcessoEmpocamento] = useState('Bom');
+  const [firAcessoGreide, setFirAcessoGreide] = useState('Bom');
+  const [firAcessoDrenagem, setFirAcessoDrenagem] = useState('Bom');
+  const [firAcessoConservacao, setFirAcessoConservacao] = useState('Bom');
   const [firAcessosObs, setFirAcessosObs] = useState('');
 
-  // Maciço e Ombreiras
-  const [firMacicoEstrutural, setFirMacicoEstrutural] = useState('Não detectado');
-  const [firMacicoVisual, setFirMacicoVisual] = useState('Não detectado');
-  const [firMacicoSuperficial, setFirMacicoSuperficial] = useState('Não detectado');
-  const [firMacicoObs, setFirMacicoObs] = useState('');
+  // PÁGINA 3: Maciço e Ombreiras
+  // 3.1 Condições Estruturais (Sim / Não / N/A)
+  const [firMacicoAbatimento, setFirMacicoAbatimento] = useState('Não');
+  const [firMacicoDeslocamento, setFirMacicoDeslocamento] = useState('Não');
+  const [firMacicoErosoes, setFirMacicoErosoes] = useState('Não');
+  const [firMacicoEscorregamento, setFirMacicoEscorregamento] = useState('Não');
+  const [firMacicoRecalque, setFirMacicoRecalque] = useState('Não');
+  const [firMacicoSaturacao, setFirMacicoSaturacao] = useState('Não');
+  const [firMacicoTrincas, setFirMacicoTrincas] = useState('Não');
+  const [firMacicoObsEstrutural, setFirMacicoObsEstrutural] = useState('');
 
-  // Drenagens e Reservatório
-  const [firDrenagemSuperficial, setFirDrenagemSuperficial] = useState('Não');
-  const [firTipoObstrucao, setFirTipoObstrucao] = useState('Nenhum');
-  const [firEstadoConservacaoDrenagem, setFirEstadoConservacaoDrenagem] = useState('Bom');
-  const [firDrenagemInterna, setFirDrenagemInterna] = useState('Operando Normal');
-  const [firInstrumentacao, setFirInstrumentacao] = useState('Operando Normalmente');
+  // 3.2 Condições Visuais (Bom / Regular / Deficiente / N/A)
+  const [firMacicoBermas, setFirMacicoBermas] = useState('Bom');
+  const [firMacicoCrista, setFirMacicoCrista] = useState('Bom');
+  const [firMacicoOmbreiras, setFirMacicoOmbreiras] = useState('Bom');
+  const [firMacicoRevestVegetalVis, setFirMacicoRevestVegetalVis] = useState('Bom');
+  const [firMacicoTaludesJusanteVis, setFirMacicoTaludesJusanteVis] = useState('Bom');
+  const [firMacicoObsVisual, setFirMacicoObsVisual] = useState('');
+
+  // 3.4 Condições Superficiais (Sim / Não / N/A)
+  const [firMacicoAnimais, setFirMacicoAnimais] = useState('Não');
+  const [firMacicoCupinzeiros, setFirMacicoCupinzeiros] = useState('Não');
+  const [firMacicoFormigueiros, setFirMacicoFormigueiros] = useState('Não');
+  const [firMacicoRevestVegetalSup, setFirMacicoRevestVegetalSup] = useState('Não');
+  const [firMacicoTaludesJusanteSup, setFirMacicoTaludesJusanteSup] = useState('Não');
+  const [firMacicoObsSuperficial, setFirMacicoObsSuperficial] = useState('');
+
+  // PÁGINA 4: Dispositivos de Drenagem Superficial
+  const [firDrenagemSuperficial, setFirDrenagemSuperficial] = useState('Sim');
+  const [firDrenagemObstrucao, setFirDrenagemObstrucao] = useState('Não');
+  const [firDrenagemTipoObstrucao, setFirDrenagemTipoObstrucao] = useState('N/A');
+  const [firDrenagemConservacao, setFirDrenagemConservacao] = useState('Bom');
+  const [firDrenagemObs, setFirDrenagemObs] = useState('');
+
+  // PÁGINA 5: Reservatório
+  const [firReservatorioQualidade, setFirReservatorioQualidade] = useState('Bom');
+  const [firReservatorioAssoreamento, setFirReservatorioAssoreamento] = useState('Baixo');
+  const [firReservatorioTaludeMontante, setFirReservatorioTaludeMontante] = useState('Bom');
+  const [firReservatorioConservacao, setFirReservatorioConservacao] = useState('Bom');
   const [firCotaEspelho, setFirCotaEspelho] = useState(848.50);
   const [firBordaLivre, setFirBordaLivre] = useState(3.16);
-  const [firPresencaOndas, setFirPresencaOndas] = useState('Não');
+  const [firReservatorioObs, setFirReservatorioObs] = useState('');
 
-  // Classificação ANM & Finalização
+  // PÁGINA 6: Drenagem Interna
+  const [firDrenagemInterna, setFirDrenagemInterna] = useState('Sim');
+  const [firDrenagemMedidorVazao, setFirDrenagemMedidorVazao] = useState('Sim');
+  const [firDrenagemQualidadeAgua, setFirDrenagemQualidadeAgua] = useState('Límpida');
+  const [firDrenagemAltVazao, setFirDrenagemAltVazao] = useState('Não');
+  const [firDrenagemAssoreamentoSaida, setFirDrenagemAssoreamentoSaida] = useState('Não');
+  const [firDrenagemCarreamentoSolidos, setFirDrenagemCarreamentoSolidos] = useState('Não');
+  const [firDrenagemPresencaVegetacao, setFirDrenagemPresencaVegetacao] = useState('Não');
+  const [firDrenagemInternaObs, setFirDrenagemInternaObs] = useState('');
+
+  // PÁGINA 7: Instrumentação
+  const [firInstrumentacaoMonitoramento, setFirInstrumentacaoMonitoramento] = useState('Sim');
+  const [firInstAcessoLeitura, setFirInstAcessoLeitura] = useState('Bom');
+  const [firInstIdentificacao, setFirInstIdentificacao] = useState('Bom');
+  const [firInstIntegridade, setFirInstIntegridade] = useState('Bom');
+  const [firInstTipos, setFirInstTipos] = useState(['Piezômetro_-_PZ', 'Indicador_de_Nível_D\'água']);
+  const [firInstObs, setFirInstObs] = useState('');
+
+  // PÁGINA 8: Sistema Extravasor
+  const [firExtravasorObstrucoes, setFirExtravasorObstrucoes] = useState('Não');
+  const [firExtravasorTipoObstrucao, setFirExtravasorTipoObstrucao] = useState('N/A');
+  const [firExtravasorFluxo, setFirExtravasorFluxo] = useState('Normal');
+  const [firExtravasorConservacao, setFirExtravasorConservacao] = useState('Bom');
+  const [firExtravasorObs, setFirExtravasorObs] = useState('');
+
+  // PÁGINA 9: Estado de Conservação da Estrutura - EC & Matriz de Classificação ANM
+  const [firMatrizK, setFirMatrizK] = useState(0); // 0, 3, 6, 10
+  const [firMatrizL, setFirMatrizL] = useState(0); // 0, 3, 6, 10
+  const [firMatrizM, setFirMatrizM] = useState(0); // 0, 2, 6, 10
+  const [firMatrizN, setFirMatrizN] = useState(0); // 0, 2, 6, 10
+  const [firMatrizO, setFirMatrizO] = useState(0); // 0, 2, 4, 5
+  const [firMatrizDrenadaObs, setFirMatrizDrenadaObs] = useState('');
+  const [firMatrizNaoDrenadaObs, setFirMatrizNaoDrenadaObs] = useState('');
   const [firClassificacaoGeral, setFirClassificacaoGeral] = useState('Nível 0 - Normal / Conforme');
-  const [firObservacoesFinais, setFirObservacoesFinais] = useState('');
-  const [firAcoesCorretivas, setFirAcoesCorretivas] = useState('');
-  const [firAssinatura, setFirAssinatura] = useState('');
 
-  // Assinatura Digital com Canvas Touch/Mouse
+  // PÁGINA 10: Assinatura Digital com Canvas Touch/Mouse
+  const [firAssinatura, setFirAssinatura] = useState('');
   const firCanvasRef = useRef(null);
   const [isFirDrawing, setIsFirDrawing] = useState(false);
   const [hasFirDrawn, setHasFirDrawn] = useState(false);
@@ -715,12 +783,13 @@ export const FieldCollectionTab = ({ preSelectedInstrument }) => {
     const struct = structures.find(s => s.id === anomalyStructId);
     const structName = firEstrutura || (struct ? struct.nome : 'Barragem B1');
 
-    // 1. Objeto oficial da Ficha de Inspeção Regular FIR - Survey123
+    // 1. Objeto oficial da Ficha de Inspeção Regular FIR - Survey123 (10 Páginas)
     const newFirRecord = {
       id: `FIR-${Date.now().toString().slice(-6)}`,
       surveyId: '8f6f56e94ec142af90e2ac9084ce716c',
       titulo: 'Formulário de Inspeção Regular - FIR - R0',
       linkSurvey: 'https://arcg.is/0yOmKX0',
+      // PÁGINA 1
       data: firData,
       hora: firHora,
       estrutura: structName,
@@ -730,23 +799,93 @@ export const FieldCollectionTab = ({ preSelectedInstrument }) => {
       vazaoHm: Number(firVazaoHm) || 0,
       lat: coords?.lat || -20.063818,
       lon: coords?.lon || -44.114360,
-      acessos: firAcessos,
+      // PÁGINA 2
+      acessoRevestimento: firAcessoRevestimento,
+      acessoEmpocamento: firAcessoEmpocamento,
+      acessoGreide: firAcessoGreide,
+      acessoDrenagem: firAcessoDrenagem,
+      acessoConservacao: firAcessoConservacao,
       acessosObs: firAcessosObs,
-      macicoCondicoesEstruturais: firMacicoEstrutural,
-      macicoCondicoesVisuais: firMacicoVisual,
-      macicoCondicoesSuperficiais: firMacicoSuperficial,
-      macicoObs: firMacicoObs,
+      // PÁGINA 3
+      macicoEstruturais: {
+        abatimento: firMacicoAbatimento,
+        deslocamento: firMacicoDeslocamento,
+        erosoes: firMacicoErosoes,
+        escorregamento: firMacicoEscorregamento,
+        recalque: firMacicoRecalque,
+        saturacao: firMacicoSaturacao,
+        trincas: firMacicoTrincas
+      },
+      macicoObsEstrutural: firMacicoObsEstrutural,
+      macicoVisuais: {
+        bermas: firMacicoBermas,
+        crista: firMacicoCrista,
+        ombreiras: firMacicoOmbreiras,
+        revestimentoVegetal: firMacicoRevestVegetalVis,
+        taludesJusante: firMacicoTaludesJusanteVis
+      },
+      macicoObsVisual: firMacicoObsVisual,
+      macicoSuperficiais: {
+        animais: firMacicoAnimais,
+        cupinzeiros: firMacicoCupinzeiros,
+        formigueiros: firMacicoFormigueiros,
+        revestimentoVegetal: firMacicoRevestVegetalSup,
+        taludesJusante: firMacicoTaludesJusanteSup
+      },
+      macicoObsSuperficial: firMacicoObsSuperficial,
+      // PÁGINA 4
       drenagemSuperficial: firDrenagemSuperficial,
-      tipoObstrucao: firTipoObstrucao,
-      estadoConservacaoDrenagem: firEstadoConservacaoDrenagem,
-      drenagemInterna: firDrenagemInterna,
-      instrumentacao: firInstrumentacao,
+      drenagemObstrucao: firDrenagemObstrucao,
+      drenagemTipoObstrucao: firDrenagemTipoObstrucao,
+      drenagemConservacao: firDrenagemConservacao,
+      drenagemObs: firDrenagemObs,
+      // PÁGINA 5
+      reservatorioQualidade: firReservatorioQualidade,
+      reservatorioAssoreamento: firReservatorioAssoreamento,
+      reservatorioTaludeMontante: firReservatorioTaludeMontante,
+      reservatorioConservacao: firReservatorioConservacao,
       cotaEspelho: Number(firCotaEspelho) || 0,
       bordaLivre: Number(firBordaLivre) || 0,
-      presencaOndas: firPresencaOndas,
+      reservatorioObs: firReservatorioObs,
+      // PÁGINA 6
+      drenagemInterna: firDrenagemInterna,
+      drenagemMedidorVazao: firDrenagemMedidorVazao,
+      drenagemQualidadeAgua: firDrenagemQualidadeAgua,
+      drenagemCondicoes: {
+        alteracaoVazao: firDrenagemAltVazao,
+        assoreamentoSaida: firDrenagemAssoreamentoSaida,
+        carreamentoSolidos: firDrenagemCarreamentoSolidos,
+        presencaVegetacao: firDrenagemPresencaVegetacao
+      },
+      drenagemInternaObs: firDrenagemInternaObs,
+      // PÁGINA 7
+      instrumentacaoMonitoramento: firInstrumentacaoMonitoramento,
+      instrumentacaoCondicoes: {
+        acessoLeitura: firInstAcessoLeitura,
+        identificacao: firInstIdentificacao,
+        integridade: firInstIntegridade
+      },
+      instrumentacaoTipos: firInstTipos,
+      instrumentacaoObs: firInstObs,
+      // PÁGINA 8
+      extravasorObstrucoes: firExtravasorObstrucoes,
+      extravasorTipoObstrucao: firExtravasorTipoObstrucao,
+      extravasorFluxo: firExtravasorFluxo,
+      extravasorConservacao: firExtravasorConservacao,
+      extravasorObs: firExtravasorObs,
+      // PÁGINA 9
+      matrizANM: {
+        k: firMatrizK,
+        l: firMatrizL,
+        m: firMatrizM,
+        n: firMatrizN,
+        o: firMatrizO
+      },
+      matrizDrenadaObs: firMatrizDrenadaObs,
+      matrizNaoDrenadaObs: firMatrizNaoDrenadaObs,
       classificacaoGeral: firClassificacaoGeral,
-      observacoesFinais: firObservacoesFinais || firAcoesCorretivas,
       foto: anomalyPhoto.photoData,
+      // PÁGINA 10
       assinatura: firAssinatura || `${firProfissional} (Assinatura Digitalizada)`
     };
 
@@ -2011,108 +2150,184 @@ export const FieldCollectionTab = ({ preSelectedInstrument }) => {
             </div>
           )}
 
-          {/* MODO 2: FORMULÁRIO NATIVO MDSYNC (BASE OFICIAL SURVEY123 FIR) */}
+          {/* MODO 2: FORMULÁRIO NATIVO MDSYNC (BASE OFICIAL SURVEY123 FIR - 10 PÁGINAS) */}
           {firMode === 'nativo' && (
-            <form onSubmit={handleSubmitAnomaly} style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+            <form onSubmit={handleSubmitAnomaly} className="fir-form-container" style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
 
-              {/* SEÇÃO 1: INFORMAÇÕES GERAIS (PÁGINA 1 SURVEY123) */}
-              <div className="card-panel" style={{ padding: '1.25rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid var(--border-subtle)', paddingBottom: '0.65rem' }}>
-                  <h4 style={{ fontSize: '0.95rem', fontWeight: 800, color: 'var(--text-main)', margin: 0, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                    <Building2 size={18} style={{ color: 'var(--primary-accent)' }} />
-                    <span>Seção 1 — Informações Gerais da Inspeção</span>
-                  </h4>
-                  <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>Portaria ANM 95/2022 • Resolução Regular</span>
-                </div>
-
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '0.9rem' }}>
-                  {/* Estrutura Inspecionada (17 estruturas oficiais do Survey123 da Itaminas) */}
-                  <div className="form-group">
-                    <label className="form-label">Estrutura Inspecionada *</label>
-                    <select
-                      value={firEstrutura}
-                      onChange={(e) => {
-                        setFirEstrutura(e.target.value);
-                        const matched = structures.find(s => s.nome === e.target.value || s.id === e.target.value.replace(/\s+/g, '_'));
-                        if (matched) setAnomalyStructId(matched.id);
-                      }}
-                      className="form-select"
-                      style={{ fontWeight: 700 }}
-                      required
-                    >
-                      {SURVEY123_FIR_STRUCTURES.map((st, idx) => (
-                        <option key={idx} value={st}>{st}</option>
-                      ))}
-                    </select>
+              {/* Barra de Controle de Navegação: Stepper de 10 Páginas & Modo de Visualização */}
+              <div className="card-panel" style={{ padding: '0.85rem 1rem', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.75rem' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    <span style={{ fontSize: '0.85rem', fontWeight: 800, color: 'var(--text-main)' }}>
+                      Estrutura da Pesquisa Survey123:
+                    </span>
+                    <span className="badge-status badge-info" style={{ fontSize: '0.72rem' }}>
+                      {firViewMode === 'paginado' ? `Página ${currentFirPage} de 10` : 'Visão Completa Contínua'}
+                    </span>
                   </div>
 
-                  {/* Data e Hora */}
-                  <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 0.8fr', gap: '0.5rem' }}>
-                    <div className="form-group">
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                    <button
+                      type="button"
+                      onClick={() => setFirViewMode('paginado')}
+                      className={`btn-secondary ${firViewMode === 'paginado' ? 'active-preset' : ''}`}
+                      style={{ fontSize: '0.74rem', padding: '0.35rem 0.7rem', borderRadius: '6px' }}
+                    >
+                      Navegação em Páginas
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setFirViewMode('completo')}
+                      className={`btn-secondary ${firViewMode === 'completo' ? 'active-preset' : ''}`}
+                      style={{ fontSize: '0.74rem', padding: '0.35rem 0.7rem', borderRadius: '6px' }}
+                    >
+                      Todas as Seções (Contínuo)
+                    </button>
+                  </div>
+                </div>
+
+                {/* Stepper Buttons (1 a 10) */}
+                <div style={{
+                  display: 'flex',
+                  gap: '0.4rem',
+                  overflowX: 'auto',
+                  paddingBottom: '0.25rem',
+                  scrollbarWidth: 'thin'
+                }}>
+                  {[
+                    { num: 1, label: '1. Geral' },
+                    { num: 2, label: '2. Acessos' },
+                    { num: 3, label: '3. Maciço' },
+                    { num: 4, label: '4. Dren. Sup.' },
+                    { num: 5, label: '5. Reservatório' },
+                    { num: 6, label: '6. Dren. Int.' },
+                    { num: 7, label: '7. Instrumentos' },
+                    { num: 8, label: '8. Extravasor' },
+                    { num: 9, label: '9. Matriz ANM' },
+                    { num: 10, label: '10. Assinatura' }
+                  ].map(step => (
+                    <button
+                      key={step.num}
+                      type="button"
+                      onClick={() => {
+                        setCurrentFirPage(step.num);
+                        setFirViewMode('paginado');
+                      }}
+                      className={`fir-stepper-btn ${currentFirPage === step.num && firViewMode === 'paginado' ? 'active' : ''}`}
+                    >
+                      <span>{step.label}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* ============================================================
+                  PÁGINA 1: INFORMAÇÕES GERAIS DA INSPEÇÃO
+                  ============================================================ */}
+              {(firViewMode === 'completo' || currentFirPage === 1) && (
+                <div className="card-panel" style={{ padding: '1.25rem', display: 'flex', flexDirection: 'column', gap: '1rem', width: '100%', boxSizing: 'border-box' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid var(--border-subtle)', paddingBottom: '0.65rem' }}>
+                    <h4 style={{ fontSize: '0.95rem', fontWeight: 800, color: 'var(--text-main)', margin: 0, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                      <Building2 size={18} style={{ color: 'var(--primary-accent)' }} />
+                      <span>Seção 1 — Informações Gerais da Inspeção</span>
+                    </h4>
+                    <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>Portaria ANM 95/2022 • Resolução Regular</span>
+                  </div>
+
+                  {/* GRID 12 COLUNAS PERFEITAMENTE ALINHADO: 4 colunas na linha 1 + 4 colunas na linha 2 + 1 coluna full na linha 3 */}
+                  <div className="fir-grid-12">
+                    {/* Linha 1 - Coluna 1 (span 3) */}
+                    <div className="fir-col-3 form-group">
+                      <label className="form-label">Estrutura Inspecionada *</label>
+                      <select
+                        value={firEstrutura}
+                        onChange={(e) => {
+                          setFirEstrutura(e.target.value);
+                          const matched = structures.find(s => s.nome === e.target.value || s.id === e.target.value.replace(/\s+/g, '_'));
+                          if (matched) setAnomalyStructId(matched.id);
+                        }}
+                        className="form-select"
+                        style={{ fontWeight: 700, width: '100%', boxSizing: 'border-box' }}
+                        required
+                      >
+                        {SURVEY123_FIR_STRUCTURES.map((st, idx) => (
+                          <option key={idx} value={st}>{st}</option>
+                        ))}
+                      </select>
+                    </div>
+
+                    {/* Linha 1 - Coluna 2 (span 3) */}
+                    <div className="fir-col-3 form-group">
                       <label className="form-label">Data da Inspeção *</label>
                       <input
                         type="date"
                         value={firData}
                         onChange={(e) => setFirData(e.target.value)}
                         className="form-input"
+                        style={{ width: '100%', boxSizing: 'border-box' }}
                         required
                       />
                     </div>
-                    <div className="form-group">
+
+                    {/* Linha 1 - Coluna 3 (span 3) */}
+                    <div className="fir-col-3 form-group">
                       <label className="form-label">Hora *</label>
                       <input
                         type="time"
                         value={firHora}
                         onChange={(e) => setFirHora(e.target.value)}
                         className="form-input"
+                        style={{ width: '100%', boxSizing: 'border-box' }}
                         required
                       />
                     </div>
-                  </div>
 
-                  {/* Profissional e Registro */}
-                  <div className="form-group">
-                    <label className="form-label">Profissional Responsável *</label>
-                    <input
-                      type="text"
-                      value={firProfissional}
-                      onChange={(e) => setFirProfissional(e.target.value)}
-                      className="form-input"
-                      placeholder="Nome do Engenheiro ou Técnico"
-                      required
-                    />
-                  </div>
+                    {/* Linha 1 - Coluna 4 (span 3) */}
+                    <div className="fir-col-3 form-group">
+                      <label className="form-label">Profissional Responsável *</label>
+                      <input
+                        type="text"
+                        value={firProfissional}
+                        onChange={(e) => setFirProfissional(e.target.value)}
+                        className="form-input"
+                        placeholder="Nome do Engenheiro ou Técnico"
+                        style={{ width: '100%', boxSizing: 'border-box' }}
+                        required
+                      />
+                    </div>
 
-                  <div className="form-group">
-                    <label className="form-label">Registro Profissional (CREA / CFT) *</label>
-                    <input
-                      type="text"
-                      value={firRegistro}
-                      onChange={(e) => setFirRegistro(e.target.value)}
-                      className="form-input"
-                      placeholder="Ex: CREA 85.120/D-MG"
-                      required
-                    />
-                  </div>
+                    {/* Linha 2 - Coluna 1 (span 3) */}
+                    <div className="fir-col-3 form-group">
+                      <label className="form-label">Registro Profissional (CREA / CFT) *</label>
+                      <input
+                        type="text"
+                        value={firRegistro}
+                        onChange={(e) => setFirRegistro(e.target.value)}
+                        className="form-input"
+                        placeholder="Ex: CREA 85.120/D-MG"
+                        style={{ width: '100%', boxSizing: 'border-box' }}
+                        required
+                      />
+                    </div>
 
-                  {/* Condições Climáticas */}
-                  <div className="form-group">
-                    <label className="form-label">Condições Climáticas no Momento *</label>
-                    <select
-                      value={firCondicoesClimaticas}
-                      onChange={(e) => setFirCondicoesClimaticas(e.target.value)}
-                      className="form-select"
-                    >
-                      <option value="Ensolarado">Ensolarado (Tempo Seco)</option>
-                      <option value="Parcialmente Nublado">Parcialmente Nublado</option>
-                      <option value="Nublado">Nublado</option>
-                      <option value="Chuvoso">Chuvoso (Precipitação ativa)</option>
-                    </select>
-                  </div>
+                    {/* Linha 2 - Coluna 2 (span 3) */}
+                    <div className="fir-col-3 form-group">
+                      <label className="form-label">Condições Climáticas no Momento *</label>
+                      <select
+                        value={firCondicoesClimaticas}
+                        onChange={(e) => setFirCondicoesClimaticas(e.target.value)}
+                        className="form-select"
+                        style={{ width: '100%', boxSizing: 'border-box' }}
+                      >
+                        <option value="Ensolarado">Ensolarado (Tempo Seco)</option>
+                        <option value="Parcialmente Nublado">Parcialmente Nublado</option>
+                        <option value="Nublado">Nublado</option>
+                        <option value="Chuvoso">Chuvoso (Precipitação ativa)</option>
+                      </select>
+                    </div>
 
-                  {/* Volume Acumulado de Chuva e Vazão HM */}
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
-                    <div className="form-group">
+                    {/* Linha 2 - Coluna 3 (span 3) */}
+                    <div className="fir-col-3 form-group">
                       <label className="form-label">Chuva Acum. 24h (mm)</label>
                       <input
                         type="number"
@@ -2120,9 +2335,12 @@ export const FieldCollectionTab = ({ preSelectedInstrument }) => {
                         value={firVolumeAcumulado}
                         onChange={(e) => setFirVolumeAcumulado(parseFloat(e.target.value) || 0)}
                         className="form-input font-mono"
+                        style={{ width: '100%', boxSizing: 'border-box' }}
                       />
                     </div>
-                    <div className="form-group">
+
+                    {/* Linha 2 - Coluna 4 (span 3) - REDIMENSIONADO E ALINHADO PERFEITAMENTE */}
+                    <div className="fir-col-3 form-group">
                       <label className="form-label">Vazão HM (m³/h)</label>
                       <input
                         type="number"
@@ -2130,523 +2348,1229 @@ export const FieldCollectionTab = ({ preSelectedInstrument }) => {
                         value={firVazaoHm}
                         onChange={(e) => setFirVazaoHm(parseFloat(e.target.value) || 0)}
                         className="form-input font-mono"
+                        style={{ width: '100%', boxSizing: 'border-box' }}
                       />
                     </div>
-                  </div>
 
-                  {/* Coordenadas GPS Georreferenciadas */}
-                  <div className="form-group" style={{ gridColumn: 'span 2' }}>
-                    <label className="form-label" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                      <span style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
-                        <MapPin size={15} style={{ color: 'var(--geo-normal)' }} />
-                        Georreferenciamento de Campo (Latitude / Longitude) *
-                      </span>
-                      <span style={{ fontSize: '0.72rem', color: 'var(--text-faint)' }}>Capturado automaticamente via GPS</span>
-                    </label>
-                    <div style={{ display: 'flex', gap: '0.5rem' }}>
-                      <input
-                        type="text"
-                        readOnly
-                        value={coords ? `${coords.lat.toFixed(6)}, ${coords.lon.toFixed(6)} (Precisão: ±${accuracy ? accuracy.toFixed(1) : 5}m)` : '-20.063818, -44.114360 (Mina Engenho Seco)'}
-                        className="form-input font-mono"
-                        style={{ backgroundColor: 'var(--bg-secondary)', fontSize: '0.85rem' }}
-                      />
-                      <button
-                        type="button"
-                        onClick={getPosition}
-                        className="btn-secondary"
-                        style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', whiteSpace: 'nowrap', fontSize: '0.8rem' }}
-                        disabled={gpsLoading}
-                      >
-                        <RefreshCw size={14} className={gpsLoading ? 'spin' : ''} />
-                        <span>Atualizar GPS</span>
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* SEÇÃO 2: ACESSOS E VIAS DE TRÁFEGO (PÁGINA 2 SURVEY123) */}
-              <div className="card-panel" style={{ padding: '1.25rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid var(--border-subtle)', paddingBottom: '0.65rem' }}>
-                  <h4 style={{ fontSize: '0.95rem', fontWeight: 800, color: 'var(--text-main)', margin: 0, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                    <Navigation size={18} style={{ color: '#0284c7' }} />
-                    <span>Seção 2 — Condições de Acessos e Vias de Tráfego</span>
-                  </h4>
-                  <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>Página 2 da Pesquisa Survey123</span>
-                </div>
-
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '0.9rem' }}>
-                  <div className="form-group">
-                    <label className="form-label">Avaliação Geral dos Acessos à Estrutura *</label>
-                    <select
-                      value={firAcessos}
-                      onChange={(e) => setFirAcessos(e.target.value)}
-                      className="form-select"
-                      style={{ fontWeight: 600 }}
-                    >
-                      <option value="Bom">Bom — Tráfego livre, pista regular e sem atoleiros</option>
-                      <option value="Regular">Regular — Pequenas irregularidades, pedras ou barro leve</option>
-                      <option value="Ruim">Ruim — Erosões, atoleiros severos ou intransitável</option>
-                    </select>
-                  </div>
-
-                  <div className="form-group">
-                    <label className="form-label">Observações e Detalhes dos Acessos</label>
-                    <input
-                      type="text"
-                      value={firAcessosObs}
-                      onChange={(e) => setFirAcessosObs(e.target.value)}
-                      placeholder="Ex: Pista patrolada recentemente, berma de acesso desobstruída..."
-                      className="form-input"
-                    />
-                  </div>
-                </div>
-              </div>
-
-              {/* SEÇÃO 3: MACIÇO, TALUDES E OMBREIRAS (PÁGINAS 3 & 4 SURVEY123) */}
-              <div className="card-panel" style={{ padding: '1.25rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid var(--border-subtle)', paddingBottom: '0.65rem' }}>
-                  <h4 style={{ fontSize: '0.95rem', fontWeight: 800, color: 'var(--text-main)', margin: 0, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                    <Layers size={18} style={{ color: '#10b981' }} />
-                    <span>Seção 3 — Maciço, Taludes, Crista e Ombreiras</span>
-                  </h4>
-                  <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>Páginas 3 e 4 da Pesquisa Survey123</span>
-                </div>
-
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '0.9rem' }}>
-                  <div className="form-group">
-                    <label className="form-label">Condições Estruturais (Trincas / Recalques) *</label>
-                    <select
-                      value={firMacicoEstrutural}
-                      onChange={(e) => setFirMacicoEstrutural(e.target.value)}
-                      className="form-select"
-                      style={{ fontWeight: 600 }}
-                    >
-                      <option value="Não detectado">Não detectado (Condição Normal / Conforme)</option>
-                      <option value="Trincas superficiais leves">Trincas superficiais leves (Sem abertura relevante)</option>
-                      <option value="Fissuras longitudinais em crista">Fissuras longitudinais em crista / bermas</option>
-                      <option value="Trincas transversais profundas">Trincas transversais profundas (Alerta)</option>
-                      <option value="Recalque / Deformação evidente">Recalque / Deformação evidente no maciço</option>
-                    </select>
-                  </div>
-
-                  <div className="form-group">
-                    <label className="form-label">Condições Visuais (Surgências / Percolação) *</label>
-                    <select
-                      value={firMacicoVisual}
-                      onChange={(e) => setFirMacicoVisual(e.target.value)}
-                      className="form-select"
-                      style={{ fontWeight: 600 }}
-                    >
-                      <option value="Não detectado">Não detectado (Taludes e pé secos)</option>
-                      <option value="Umidade pontual no talude">Umidade pontual no talude (Sem fluxo livre)</option>
-                      <option value="Surgência com água límpida">Surgência de água límpida com fluxo contínuo</option>
-                      <option value="Surgência com carreamento de finos">Surgência com carreamento de finos (CRÍTICO / Piping)</option>
-                    </select>
-                  </div>
-
-                  <div className="form-group">
-                    <label className="form-label">Condições Superficiais (Erosão / Vegetação) *</label>
-                    <select
-                      value={firMacicoSuperficial}
-                      onChange={(e) => setFirMacicoSuperficial(e.target.value)}
-                      className="form-select"
-                      style={{ fontWeight: 600 }}
-                    >
-                      <option value="Não detectado">Não detectado (Proteção vegetal íntegra)</option>
-                      <option value="Erosão laminar leve">Erosão laminar leve / Início de sulco</option>
-                      <option value="Ravinamento / Sulcos profundos">Ravinamento / Sulcos de chuva acentuados</option>
-                      <option value="Escorregamento superficial">Escorregamento superficial localizado</option>
-                      <option value="Formigueiro / Toca de animal">Formigueiro / Toca de animais escavadores</option>
-                      <option value="Vegetação com raízes profundas">Vegetação arbórea de grande porte inadequada</option>
-                    </select>
-                  </div>
-                </div>
-
-                <div className="form-group">
-                  <label className="form-label">Detalhamento e Observações do Maciço / Taludes</label>
-                  <textarea
-                    rows={2}
-                    value={firMacicoObs}
-                    onChange={(e) => setFirMacicoObs(e.target.value)}
-                    placeholder="Descreva detalhes de bermas, crista, talude de jusante ou ombreiras observados na vistoria..."
-                    className="form-textarea"
-                  />
-                </div>
-              </div>
-
-              {/* SEÇÃO 4: DRENAGENS, RESERVATÓRIO E INSTRUMENTAÇÃO (PÁGINAS 5 & 6 SURVEY123) */}
-              <div className="card-panel" style={{ padding: '1.25rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid var(--border-subtle)', paddingBottom: '0.65rem' }}>
-                  <h4 style={{ fontSize: '0.95rem', fontWeight: 800, color: 'var(--text-main)', margin: 0, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                    <Droplets size={18} style={{ color: '#06b6d4' }} />
-                    <span>Seção 4 — Drenagens, Reservatório e Instrumentação Geotécnica</span>
-                  </h4>
-                  <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>Páginas 5 a 7 da Pesquisa Survey123</span>
-                </div>
-
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '0.9rem' }}>
-                  <div className="form-group">
-                    <label className="form-label">Obstrução Drenagem Superficial *</label>
-                    <select
-                      value={firDrenagemSuperficial}
-                      onChange={(e) => setFirDrenagemSuperficial(e.target.value)}
-                      className="form-select"
-                    >
-                      <option value="Não">Não (Canaletas e descidas d'água desobstruídas)</option>
-                      <option value="Sim">Sim (Presença de obstrução ou assoreamento)</option>
-                    </select>
-                  </div>
-
-                  <div className="form-group">
-                    <label className="form-label">Tipo de Obstrução / Material</label>
-                    <select
-                      value={firTipoObstrucao}
-                      onChange={(e) => setFirTipoObstrucao(e.target.value)}
-                      className="form-select"
-                    >
-                      <option value="Nenhum">Nenhum / Desobstruído</option>
-                      <option value="Sedimento / Silte">Sedimento / Silte ou Finos</option>
-                      <option value="Vegetação / Galhos">Vegetação / Capim / Galhos</option>
-                      <option value="Pedras / Detritos">Pedras / Blocos rochosos</option>
-                      <option value="Placa de concreto quebrada">Placa de canaleta danificada</option>
-                    </select>
-                  </div>
-
-                  <div className="form-group">
-                    <label className="form-label">Drenagem Interna / Dreno de Pé *</label>
-                    <select
-                      value={firDrenagemInterna}
-                      onChange={(e) => setFirDrenagemInterna(e.target.value)}
-                      className="form-select"
-                    >
-                      <option value="Operando Normal">Operando Normal (Vazão contínua e límpida)</option>
-                      <option value="Vazão Elevada">Vazão Elevada (Acima do padrão histórico)</option>
-                      <option value="Água Turva / Sedimentos">Água Turva / Presença de finos arrastados</option>
-                      <option value="Seco">Seco (Sem surgência ou escoamento)</option>
-                    </select>
-                  </div>
-
-                  <div className="form-group">
-                    <label className="form-label">Estado Geral da Instrumentação (PZ, INA, VT) *</label>
-                    <select
-                      value={firInstrumentacao}
-                      onChange={(e) => setFirInstrumentacao(e.target.value)}
-                      className="form-select"
-                    >
-                      <option value="Operando Normalmente">Operando Normalmente (Tampas íntegras e travadas)</option>
-                      <option value="Necessita Manutenção">Necessita Manutenção / Pintura / Limpeza de boca</option>
-                      <option value="Danificado / Obstruído">Danificado / Amassado ou Inacessível</option>
-                    </select>
-                  </div>
-
-                  <div className="form-group">
-                    <label className="form-label">Cota do Espelho d'Água (m)</label>
-                    <input
-                      type="number"
-                      step="0.01"
-                      value={firCotaEspelho}
-                      onChange={(e) => setFirCotaEspelho(parseFloat(e.target.value) || 0)}
-                      className="form-input font-mono"
-                    />
-                  </div>
-
-                  <div className="form-group">
-                    <label className="form-label">Borda Livre Mínima (m)</label>
-                    <input
-                      type="number"
-                      step="0.01"
-                      value={firBordaLivre}
-                      onChange={(e) => setFirBordaLivre(parseFloat(e.target.value) || 0)}
-                      className="form-input font-mono"
-                    />
-                  </div>
-                </div>
-              </div>
-
-              {/* SEÇÃO 5: EVIDÊNCIA FOTOGRÁFICA GEORREFERENCIADA */}
-              <div className="card-panel" style={{ padding: '1.25rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid var(--border-subtle)', paddingBottom: '0.65rem' }}>
-                  <h4 style={{ fontSize: '0.95rem', fontWeight: 800, color: 'var(--text-main)', margin: 0, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                    <Camera size={18} style={{ color: 'var(--primary-accent)' }} />
-                    <span>Seção 5 — Registro Fotográfico Georreferenciado (Evidência Obrigatória)</span>
-                  </h4>
-                  <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>Módulo Inspect • Resolução Otimizada</span>
-                </div>
-
-                <div style={{
-                  border: '2px dashed var(--border-medium)',
-                  borderRadius: '10px',
-                  padding: '1.25rem',
-                  textAlign: 'center',
-                  backgroundColor: 'var(--bg-secondary)',
-                  position: 'relative'
-                }}>
-                  {anomalyPhoto.photoData ? (
-                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.75rem' }}>
-                      <img
-                        src={anomalyPhoto.photoData}
-                        alt="Evidência fotográfica Survey123"
-                        style={{
-                          maxHeight: '230px',
-                          borderRadius: '8px',
-                          objectFit: 'cover',
-                          border: '1px solid var(--border-medium)',
-                          boxShadow: 'var(--shadow-md)'
-                        }}
-                      />
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                        <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>
-                          {anomalyPhoto.photoName || 'Foto anexada e georreferenciada'}
+                    {/* Linha 3 - Full Width (span 12) - Coordenadas GPS Georreferenciadas */}
+                    <div className="fir-col-12 form-group">
+                      <label className="form-label" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.25rem' }}>
+                        <span style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                          <MapPin size={15} style={{ color: 'var(--geo-normal)' }} />
+                          Georreferenciamento de Campo (Latitude / Longitude) *
                         </span>
+                        <span style={{ fontSize: '0.72rem', color: 'var(--text-faint)' }}>Capturado automaticamente via GPS</span>
+                      </label>
+                      <div style={{ display: 'flex', gap: '0.5rem', width: '100%', boxSizing: 'border-box' }}>
+                        <input
+                          type="text"
+                          readOnly
+                          value={coords ? `${coords.lat.toFixed(6)}, ${coords.lon.toFixed(6)} (Precisão: ±${accuracy ? accuracy.toFixed(1) : 5}m)` : '-20.083601, -44.103632 (Mina Engenho Seco)'}
+                          className="form-input font-mono"
+                          style={{ backgroundColor: 'var(--bg-secondary)', fontSize: '0.85rem', flex: 1, minWidth: 0, boxSizing: 'border-box' }}
+                        />
                         <button
                           type="button"
-                          onClick={anomalyPhoto.clearPhoto}
-                          className="btn-danger"
-                          style={{ padding: '0.3rem 0.65rem', fontSize: '0.75rem' }}
+                          onClick={getPosition}
+                          className="btn-secondary"
+                          style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', whiteSpace: 'nowrap', fontSize: '0.8rem', flexShrink: 0 }}
+                          disabled={gpsLoading}
                         >
-                          <Trash2 size={14} />
-                          <span>Remover Foto</span>
+                          <RefreshCw size={14} className={gpsLoading ? 'spin' : ''} />
+                          <span>Atualizar GPS</span>
                         </button>
                       </div>
                     </div>
-                  ) : (
-                    <div>
-                      <Camera size={34} style={{ color: 'var(--primary-accent)', margin: '0 auto 0.5rem' }} />
-                      <p style={{ fontSize: '0.88rem', fontWeight: 700, color: 'var(--text-main)' }}>
-                        Clique para tirar foto com a câmera do dispositivo ou fazer upload
-                      </p>
-                      <p style={{ fontSize: '0.75rem', color: 'var(--text-faint)', marginTop: '2px' }}>
-                        Compressão automática em JPG para relatório de conformidade e envio rápido
-                      </p>
-                      <input
-                        type="file"
-                        accept="image/*"
-                        capture="environment"
-                        onChange={anomalyPhoto.handleFileUpload}
-                        style={{
-                          position: 'absolute',
-                          top: 0,
-                          left: 0,
-                          width: '100%',
-                          height: '100%',
-                          opacity: 0,
-                          cursor: 'pointer'
-                        }}
-                      />
-                    </div>
-                  )}
+                  </div>
                 </div>
-              </div>
+              )}
 
-              {/* SEÇÃO 6: CLASSIFICAÇÃO DA ANOMALIA & MATRIZ DE RISCO ANM (PÁGINAS 8 & 9 SURVEY123) */}
-              <div className="card-panel" style={{ padding: '1.25rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid var(--border-subtle)', paddingBottom: '0.65rem' }}>
-                  <h4 style={{ fontSize: '0.95rem', fontWeight: 800, color: 'var(--text-main)', margin: 0, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                    <AlertTriangle size={18} style={{ color: '#f59e0b' }} />
-                    <span>Seção 6 — Classificação da Anomalia & Matriz de Nível de Resposta ANM</span>
-                  </h4>
-                  <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>Portaria ANM 95/2022 • Tabela de Severidade</span>
-                </div>
-
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '0.9rem' }}>
-                  <div className="form-group">
-                    <label className="form-label">Classificação da Anomalia / Ocorrência *</label>
-                    <select
-                      value={anomalyType}
-                      onChange={(e) => setAnomalyType(e.target.value)}
-                      className="form-select"
-                      required
-                    >
-                      <option value="Trinca Longitudinal">Trinca Longitudinal (Crista / Berma)</option>
-                      <option value="Trinca Transversal">Trinca Transversal (Corpo do Maciço)</option>
-                      <option value="Surgência de Água Limpa">Surgência de Água Limpa no Pé do Talude</option>
-                      <option value="Surgência com Finos (Turbidez)">Surgência com Finos / Turbidez (Piping)</option>
-                      <option value="Erosão Superficial">Erosão Superficial / Ravinamento de Talude</option>
-                      <option value="Abatimento de Crista/Berma">Abatimento / Desnível de Crista ou Berma</option>
-                      <option value="Obstrução de Drenagem">Obstrução de Drenagem, Canaleta ou Vertedouro</option>
-                      <option value="Vegetação com Raízes Profundas">Vegetação Arbórea com Raízes Profundas</option>
-                      <option value="Formigueiro / Toca de Animal">Formigueiro / Toca de Animal Escavador</option>
-                      <option value="Nenhuma Anomalia Detectada">Nenhuma Anomalia Detectada (100% Conforme)</option>
-                      <option value="Outro">Outro Tipo de Ocorrência</option>
-                    </select>
+              {/* ============================================================
+                  PÁGINA 2: AVALIAÇÃO DOS ACESSOS
+                  ============================================================ */}
+              {(firViewMode === 'completo' || currentFirPage === 2) && (
+                <div className="card-panel" style={{ padding: '1.25rem', display: 'flex', flexDirection: 'column', gap: '1rem', width: '100%', boxSizing: 'border-box' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid var(--border-subtle)', paddingBottom: '0.65rem' }}>
+                    <h4 style={{ fontSize: '0.95rem', fontWeight: 800, color: 'var(--text-main)', margin: 0, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                      <Navigation size={18} style={{ color: '#0284c7' }} />
+                      <span>Seção 2 — Avaliação dos Acessos à Estrutura</span>
+                    </h4>
+                    <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>Página 2 • Formulário Oficial</span>
                   </div>
 
-                  <div className="form-group">
-                    <label className="form-label">Classificação do Estado Geral de Conservação (Matriz ANM) *</label>
-                    <select
-                      value={firClassificacaoGeral}
-                      onChange={(e) => {
-                        setFirClassificacaoGeral(e.target.value);
-                        if (e.target.value.includes('Nível 3')) setAnomalySeverity('Crítico');
-                        else if (e.target.value.includes('Nível 2')) setAnomalySeverity('Alto');
-                        else if (e.target.value.includes('Nível 1')) setAnomalySeverity('Médio');
-                        else setAnomalySeverity('Baixo');
-                      }}
-                      className="form-select"
-                      style={{ fontWeight: 800 }}
-                      required
-                    >
-                      <option value="Nível 0 - Normal / Conforme">Nível 0 — Normal / Conforme (Sem anomalias que comprometam)</option>
-                      <option value="Nível 1 - Atenção Operacional">Nível 1 — Atenção (Anomalia inicial sob monitoramento)</option>
-                      <option value="Nível 2 - Alerta Geotécnico">Nível 2 — Alerta (Anomalia requer intervenção em até 24h)</option>
-                      <option value="Nível 3 - Emergência (PAEBM)">Nível 3 — Emergência (Risco iminente de ruptura / Acionar PAEBM)</option>
-                    </select>
+                  <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', margin: 0 }}>
+                    Avalie as condições de tráfego, drenagem e conservação das vias de acesso à estrutura:
+                  </p>
+
+                  <div className="fir-matrix-container">
+                    <table className="fir-matrix-table">
+                      <thead>
+                        <tr>
+                          <th>Item Avaliado</th>
+                          <th>Bom</th>
+                          <th>Regular</th>
+                          <th>Deficiente</th>
+                          <th>N/A</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {[
+                          { key: 'revestimento', label: 'Revestimento do Acesso', val: firAcessoRevestimento, set: setFirAcessoRevestimento },
+                          { key: 'empocamento', label: 'Empoçamento', val: firAcessoEmpocamento, set: setFirAcessoEmpocamento },
+                          { key: 'greide', label: 'Greide', val: firAcessoGreide, set: setFirAcessoGreide },
+                          { key: 'drenagem', label: 'Dispositivos de Drenagem Superficial', val: firAcessoDrenagem, set: setFirAcessoDrenagem },
+                          { key: 'conservacao', label: 'Conservação Geral', val: firAcessoConservacao, set: setFirAcessoConservacao }
+                        ].map(row => (
+                          <tr key={row.key}>
+                            <td>{row.label}</td>
+                            {['Bom', 'Regular', 'Deficiente', 'N/A'].map(opt => (
+                              <td key={opt} className={row.val === opt ? 'fir-matrix-cell-active' : ''}>
+                                <input
+                                  type="radio"
+                                  name={`acesso_${row.key}`}
+                                  value={opt}
+                                  checked={row.val === opt}
+                                  onChange={() => row.set(opt)}
+                                  className="fir-matrix-radio"
+                                />
+                              </td>
+                            ))}
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
                   </div>
 
-                  <div className="form-group">
-                    <label className="form-label">Localização Exata e Referência no Talude *</label>
-                    <input
-                      type="text"
-                      value={anomalyLocation}
-                      onChange={(e) => setAnomalyLocation(e.target.value)}
-                      placeholder="Ex: Talude de jusante, berma 2, entre drenos D-03 e D-04..."
-                      className="form-input"
-                      required
+                  <div className="form-group" style={{ marginTop: '0.5rem' }}>
+                    <label className="form-label">2.1 - Observações e Detalhes dos Acessos</label>
+                    <textarea
+                      rows={2}
+                      value={firAcessosObs}
+                      onChange={(e) => setFirAcessosObs(e.target.value)}
+                      placeholder="Ex: Pista patrolada recentemente, berma de acesso desobstruída..."
+                      className="form-textarea"
+                      style={{ width: '100%', boxSizing: 'border-box' }}
                     />
                   </div>
                 </div>
+              )}
 
-                <div className="form-group">
-                  <label className="form-label">Descrição Técnica Detalhada da Inspeção *</label>
-                  <textarea
-                    rows={3}
-                    value={anomalyDesc}
-                    onChange={(e) => setAnomalyDesc(e.target.value)}
-                    placeholder="Descreva extensões estimadas, presença de umidade, características geométricas da trinca, vazão aproximada ou qualquer alteração perceptível..."
-                    className="form-textarea"
-                    required
-                  />
-                </div>
+              {/* ============================================================
+                  PÁGINA 3: MACIÇO E OMBREIRAS
+                  ============================================================ */}
+              {(firViewMode === 'completo' || currentFirPage === 3) && (
+                <div className="card-panel" style={{ padding: '1.25rem', display: 'flex', flexDirection: 'column', gap: '1.25rem', width: '100%', boxSizing: 'border-box' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid var(--border-subtle)', paddingBottom: '0.65rem' }}>
+                    <h4 style={{ fontSize: '0.95rem', fontWeight: 800, color: 'var(--text-main)', margin: 0, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                      <Layers size={18} style={{ color: '#10b981' }} />
+                      <span>Seção 3 — Maciço e Ombreiras</span>
+                    </h4>
+                    <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>Página 3 • Formulário Oficial</span>
+                  </div>
 
-                <div className="form-group">
-                  <label className="form-label">Recomendação Preliminar e Ações Corretivas</label>
-                  <input
-                    type="text"
-                    value={anomalyRecommendation}
-                    onChange={(e) => setAnomalyRecommendation(e.target.value)}
-                    placeholder="Ex: Recomenda-se instalação imediata de testemunhos graduados, limpeza da calha e vistoria do engenheiro geotécnico responsável..."
-                    className="form-input"
-                  />
-                </div>
-              </div>
-
-              {/* SEÇÃO 7: ASSINATURA DIGITAL DO INSPETOR (CANVAS TOUCH/MOUSE) */}
-              <div className="card-panel" style={{ padding: '1.25rem', display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid var(--border-subtle)', paddingBottom: '0.65rem' }}>
-                  <h4 style={{ fontSize: '0.95rem', fontWeight: 800, color: 'var(--text-main)', margin: 0, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                    <PenTool size={18} style={{ color: 'var(--primary-accent)' }} />
-                    <span>Seção 7 — Assinatura Digital do Inspetor Geotécnico</span>
-                  </h4>
-                  <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>Validação em Tela Touch ou Mouse</span>
-                </div>
-
-                <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)', margin: 0 }}>
-                  Assine abaixo para validar a veracidade técnica das informações coletadas em campo, nos termos da Portaria ANM nº 95/2022:
-                </p>
-
-                <div style={{
-                  position: 'relative',
-                  border: '2px solid var(--border-medium)',
-                  borderRadius: '10px',
-                  backgroundColor: 'var(--bg-secondary)',
-                  overflow: 'hidden',
-                  touchAction: 'none'
-                }}>
-                  <canvas
-                    ref={firCanvasRef}
-                    width={800}
-                    height={140}
-                    onMouseDown={startFirDrawing}
-                    onMouseMove={drawFir}
-                    onMouseUp={stopFirDrawing}
-                    onMouseLeave={stopFirDrawing}
-                    onTouchStart={startFirDrawing}
-                    onTouchMove={drawFir}
-                    onTouchEnd={stopFirDrawing}
-                    style={{
-                      display: 'block',
-                      width: '100%',
-                      height: '140px',
-                      cursor: 'crosshair',
-                      backgroundColor: 'transparent'
-                    }}
-                  />
-
-                  {!hasFirDrawn && (
-                    <div style={{
-                      position: 'absolute',
-                      top: '50%',
-                      left: '50%',
-                      transform: 'translate(-50%, -50%)',
-                      color: 'var(--text-faint)',
-                      fontSize: '0.85rem',
-                      pointerEvents: 'none',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '0.4rem'
-                    }}>
-                      <PenTool size={16} />
-                      <span>Desenhe sua assinatura aqui com o dedo ou mouse</span>
+                  {/* 3.1 Condições Estruturais */}
+                  <div>
+                    <h5 style={{ fontSize: '0.86rem', fontWeight: 700, color: 'var(--text-main)', marginBottom: '0.5rem' }}>
+                      3 — Condições Estruturais (Sim / Não / N/A)
+                    </h5>
+                    <div className="fir-matrix-container">
+                      <table className="fir-matrix-table">
+                        <thead>
+                          <tr>
+                            <th>Evidência Estrutural</th>
+                            <th>Sim</th>
+                            <th>Não</th>
+                            <th>N/A</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {[
+                            { key: 'abatimento', label: 'Evidência de Abatimento', val: firMacicoAbatimento, set: setFirMacicoAbatimento },
+                            { key: 'deslocamento', label: 'Evidência de Deslocamento', val: firMacicoDeslocamento, set: setFirMacicoDeslocamento },
+                            { key: 'erosoes', label: 'Evidência de Erosões Superficiais', val: firMacicoErosoes, set: setFirMacicoErosoes },
+                            { key: 'escorregamento', label: 'Evidência de Escorregamento', val: firMacicoEscorregamento, set: setFirMacicoEscorregamento },
+                            { key: 'recalque', label: 'Evidência de Recalque', val: firMacicoRecalque, set: setFirMacicoRecalque },
+                            { key: 'saturacao', label: 'Evidência de Saturação/Surgência', val: firMacicoSaturacao, set: setFirMacicoSaturacao },
+                            { key: 'trincas', label: 'Evidência de Trincas', val: firMacicoTrincas, set: setFirMacicoTrincas }
+                          ].map(row => (
+                            <tr key={row.key}>
+                              <td>{row.label}</td>
+                              {['Sim', 'Não', 'N/A'].map(opt => (
+                                <td key={opt} className={row.val === opt ? 'fir-matrix-cell-active' : ''}>
+                                  <input
+                                    type="radio"
+                                    name={`macico_est_${row.key}`}
+                                    value={opt}
+                                    checked={row.val === opt}
+                                    onChange={() => row.set(opt)}
+                                    className="fir-matrix-radio"
+                                  />
+                                </td>
+                              ))}
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
                     </div>
-                  )}
+                    <div className="form-group" style={{ marginTop: '0.5rem' }}>
+                      <label className="form-label">3.1 - Observações das Condições Estruturais</label>
+                      <input
+                        type="text"
+                        value={firMacicoObsEstrutural}
+                        onChange={(e) => setFirMacicoObsEstrutural(e.target.value)}
+                        placeholder="Observações complementares..."
+                        className="form-input"
+                        style={{ width: '100%', boxSizing: 'border-box' }}
+                      />
+                    </div>
+                  </div>
 
-                  <div style={{
-                    position: 'absolute',
-                    bottom: '8px',
-                    right: '8px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '0.5rem'
-                  }}>
-                    {hasFirDrawn && (
-                      <span style={{ fontSize: '0.72rem', color: '#10b981', fontWeight: 700, backgroundColor: 'var(--bg-surface)', padding: '2px 8px', borderRadius: '4px' }}>
-                        ✓ Assinatura Capturada
-                      </span>
-                    )}
-                    <button
-                      type="button"
-                      onClick={clearFirSignature}
-                      className="btn-secondary"
-                      style={{ fontSize: '0.72rem', padding: '0.25rem 0.55rem', display: 'flex', alignItems: 'center', gap: '0.3rem' }}
-                    >
-                      <RotateCcw size={12} />
-                      <span>Limpar</span>
-                    </button>
+                  {/* 3.2 Condições Visuais */}
+                  <div style={{ borderTop: '1px solid var(--border-subtle)', paddingTop: '0.85rem' }}>
+                    <h5 style={{ fontSize: '0.86rem', fontWeight: 700, color: 'var(--text-main)', marginBottom: '0.5rem' }}>
+                      3.2 — Condições Visuais
+                    </h5>
+                    <div className="fir-matrix-container">
+                      <table className="fir-matrix-table">
+                        <thead>
+                          <tr>
+                            <th>Elemento Visual</th>
+                            <th>Bom</th>
+                            <th>Regular</th>
+                            <th>Deficiente</th>
+                            <th>N/A</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {[
+                            { key: 'bermas', label: 'Bermas', val: firMacicoBermas, set: setFirMacicoBermas },
+                            { key: 'crista', label: 'Crista', val: firMacicoCrista, set: setFirMacicoCrista },
+                            { key: 'ombreiras', label: 'Ombreiras', val: firMacicoOmbreiras, set: setFirMacicoOmbreiras },
+                            { key: 'revestimento', label: 'Revestimento Vegetal', val: firMacicoRevestVegetalVis, set: setFirMacicoRevestVegetalVis },
+                            { key: 'taludes_jusante', label: 'Taludes de Jusante', val: firMacicoTaludesJusanteVis, set: setFirMacicoTaludesJusanteVis }
+                          ].map(row => (
+                            <tr key={row.key}>
+                              <td>{row.label}</td>
+                              {['Bom', 'Regular', 'Deficiente', 'N/A'].map(opt => (
+                                <td key={opt} className={row.val === opt ? 'fir-matrix-cell-active' : ''}>
+                                  <input
+                                    type="radio"
+                                    name={`macico_vis_${row.key}`}
+                                    value={opt}
+                                    checked={row.val === opt}
+                                    onChange={() => row.set(opt)}
+                                    className="fir-matrix-radio"
+                                  />
+                                </td>
+                              ))}
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                    <div className="form-group" style={{ marginTop: '0.5rem' }}>
+                      <label className="form-label">3.3 - Observações das Condições Visuais</label>
+                      <input
+                        type="text"
+                        value={firMacicoObsVisual}
+                        onChange={(e) => setFirMacicoObsVisual(e.target.value)}
+                        placeholder="Observações complementares..."
+                        className="form-input"
+                        style={{ width: '100%', boxSizing: 'border-box' }}
+                      />
+                    </div>
+                  </div>
+
+                  {/* 3.4 Condições Superficiais */}
+                  <div style={{ borderTop: '1px solid var(--border-subtle)', paddingTop: '0.85rem' }}>
+                    <h5 style={{ fontSize: '0.86rem', fontWeight: 700, color: 'var(--text-main)', marginBottom: '0.5rem' }}>
+                      3.4 — Condições Superficiais (Sim / Não / N/A)
+                    </h5>
+                    <div className="fir-matrix-container">
+                      <table className="fir-matrix-table">
+                        <thead>
+                          <tr>
+                            <th>Evidência Superficial</th>
+                            <th>Sim</th>
+                            <th>Não</th>
+                            <th>N/A</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {[
+                            { key: 'animais', label: 'Presença de Animais', val: firMacicoAnimais, set: setFirMacicoAnimais },
+                            { key: 'cupinzeiros', label: 'Presença de Cupinzeiros', val: firMacicoCupinzeiros, set: setFirMacicoCupinzeiros },
+                            { key: 'formigueiros', label: 'Presença de Formigueiros', val: firMacicoFormigueiros, set: setFirMacicoFormigueiros },
+                            { key: 'revest_veg', label: 'Revestimento Vegetal Inadequado', val: firMacicoRevestVegetalSup, set: setFirMacicoRevestVegetalSup },
+                            { key: 'taludes_jus', label: 'Taludes de Jusante', val: firMacicoTaludesJusanteSup, set: setFirMacicoTaludesJusanteSup }
+                          ].map(row => (
+                            <tr key={row.key}>
+                              <td>{row.label}</td>
+                              {['Sim', 'Não', 'N/A'].map(opt => (
+                                <td key={opt} className={row.val === opt ? 'fir-matrix-cell-active' : ''}>
+                                  <input
+                                    type="radio"
+                                    name={`macico_sup_${row.key}`}
+                                    value={opt}
+                                    checked={row.val === opt}
+                                    onChange={() => row.set(opt)}
+                                    className="fir-matrix-radio"
+                                  />
+                                </td>
+                              ))}
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                    <div className="form-group" style={{ marginTop: '0.5rem' }}>
+                      <label className="form-label">3.5 - Observações das Condições Superficiais</label>
+                      <input
+                        type="text"
+                        value={firMacicoObsSuperficial}
+                        onChange={(e) => setFirMacicoObsSuperficial(e.target.value)}
+                        placeholder="Observações complementares..."
+                        className="form-input"
+                        style={{ width: '100%', boxSizing: 'border-box' }}
+                      />
+                    </div>
                   </div>
                 </div>
-              </div>
+              )}
 
-              {/* BOTÕES DE SUBMISSÃO DA FICHA */}
-              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', flexWrap: 'wrap' }}>
-                <a
-                  href="https://arcg.is/0yOmKX0"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="btn-secondary"
-                  style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.88rem', textDecoration: 'none', padding: '0.85rem 1.25rem' }}
-                >
-                  <ExternalLink size={16} />
-                  <span>Ver no Survey123 Web</span>
-                </a>
+              {/* ============================================================
+                  PÁGINA 4: DISPOSITIVOS DE DRENAGEM SUPERFICIAL
+                  ============================================================ */}
+              {(firViewMode === 'completo' || currentFirPage === 4) && (
+                <div className="card-panel" style={{ padding: '1.25rem', display: 'flex', flexDirection: 'column', gap: '1rem', width: '100%', boxSizing: 'border-box' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid var(--border-subtle)', paddingBottom: '0.65rem' }}>
+                    <h4 style={{ fontSize: '0.95rem', fontWeight: 800, color: 'var(--text-main)', margin: 0, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                      <Droplets size={18} style={{ color: '#06b6d4' }} />
+                      <span>Seção 4 — Dispositivos de Drenagem Superficial</span>
+                    </h4>
+                    <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>Página 4 • Formulário Oficial</span>
+                  </div>
 
-                <button
-                  type="submit"
-                  className="btn-primary"
-                  style={{
-                    padding: '0.85rem 1.75rem',
-                    fontSize: '0.95rem',
-                    fontWeight: 800,
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '0.65rem',
-                    boxShadow: 'var(--shadow-md)'
-                  }}
-                >
-                  <ClipboardCheck size={19} />
-                  <span>Salvar Ficha de Inspeção Regular (Survey123 FIR) & Notificar</span>
-                </button>
+                  <div className="fir-grid-12">
+                    <div className="fir-col-3 form-group">
+                      <label className="form-label">4 - Drenagem Superficial *</label>
+                      <select
+                        value={firDrenagemSuperficial}
+                        onChange={(e) => setFirDrenagemSuperficial(e.target.value)}
+                        className="form-select"
+                        style={{ width: '100%', boxSizing: 'border-box' }}
+                      >
+                        <option value="Sim">Sim (Existente e operante)</option>
+                        <option value="Não">Não (Ausente ou inoperante)</option>
+                      </select>
+                    </div>
+
+                    <div className="fir-col-3 form-group">
+                      <label className="form-label">4.1 - Obstrução *</label>
+                      <select
+                        value={firDrenagemObstrucao}
+                        onChange={(e) => setFirDrenagemObstrucao(e.target.value)}
+                        className="form-select"
+                        style={{ width: '100%', boxSizing: 'border-box' }}
+                      >
+                        <option value="Não">Não (Desobstruída)</option>
+                        <option value="Sim">Sim (Presença de obstrução)</option>
+                      </select>
+                    </div>
+
+                    <div className="fir-col-3 form-group">
+                      <label className="form-label">4.2 - Tipo de Obstrução *</label>
+                      <select
+                        value={firDrenagemTipoObstrucao}
+                        onChange={(e) => setFirDrenagemTipoObstrucao(e.target.value)}
+                        className="form-select"
+                        style={{ width: '100%', boxSizing: 'border-box' }}
+                      >
+                        <option value="N/A">N/A (Nenhuma)</option>
+                        <option value="Sedimentos">Sedimentos / Silte</option>
+                        <option value="Vegetação">Vegetação / Capim</option>
+                        <option value="Outros">Outros Detritos</option>
+                      </select>
+                    </div>
+
+                    <div className="fir-col-3 form-group">
+                      <label className="form-label">4.3 - Estado de Conservação Geral *</label>
+                      <select
+                        value={firDrenagemConservacao}
+                        onChange={(e) => setFirDrenagemConservacao(e.target.value)}
+                        className="form-select"
+                        style={{ width: '100%', boxSizing: 'border-box' }}
+                      >
+                        <option value="Bom">Bom</option>
+                        <option value="Regular">Regular</option>
+                        <option value="Deficiente">Deficiente</option>
+                        <option value="N/A">N/A</option>
+                      </select>
+                    </div>
+
+                    <div className="fir-col-12 form-group">
+                      <label className="form-label">4.4 - Observações da Drenagem Superficial</label>
+                      <input
+                        type="text"
+                        value={firDrenagemObs}
+                        onChange={(e) => setFirDrenagemObs(e.target.value)}
+                        placeholder="Ex: Canaletas limpas, descidas d'água sem rachaduras..."
+                        className="form-input"
+                        style={{ width: '100%', boxSizing: 'border-box' }}
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* ============================================================
+                  PÁGINA 5: RESERVATÓRIO
+                  ============================================================ */}
+              {(firViewMode === 'completo' || currentFirPage === 5) && (
+                <div className="card-panel" style={{ padding: '1.25rem', display: 'flex', flexDirection: 'column', gap: '1rem', width: '100%', boxSizing: 'border-box' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid var(--border-subtle)', paddingBottom: '0.65rem' }}>
+                    <h4 style={{ fontSize: '0.95rem', fontWeight: 800, color: 'var(--text-main)', margin: 0, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                      <Droplet size={18} style={{ color: '#0284c7' }} />
+                      <span>Seção 5 — Reservatório</span>
+                    </h4>
+                    <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>Página 5 • Formulário Oficial</span>
+                  </div>
+
+                  <div className="fir-grid-12">
+                    <div className="fir-col-3 form-group">
+                      <label className="form-label">5 - Qualidade da Água *</label>
+                      <select
+                        value={firReservatorioQualidade}
+                        onChange={(e) => setFirReservatorioQualidade(e.target.value)}
+                        className="form-select"
+                        style={{ width: '100%', boxSizing: 'border-box' }}
+                      >
+                        <option value="Bom">Bom</option>
+                        <option value="Turva">Turva</option>
+                        <option value="Com sólidos">Com sólidos</option>
+                        <option value="N/A">N/A</option>
+                      </select>
+                    </div>
+
+                    <div className="fir-col-3 form-group">
+                      <label className="form-label">5.1 - Nível de Assoreamento *</label>
+                      <select
+                        value={firReservatorioAssoreamento}
+                        onChange={(e) => setFirReservatorioAssoreamento(e.target.value)}
+                        className="form-select"
+                        style={{ width: '100%', boxSizing: 'border-box' }}
+                      >
+                        <option value="Baixo">Baixo</option>
+                        <option value="Médio">Médio</option>
+                        <option value="Alto">Alto</option>
+                        <option value="N/A">N/A</option>
+                      </select>
+                    </div>
+
+                    <div className="fir-col-3 form-group">
+                      <label className="form-label">5.2 - Talude de Montante *</label>
+                      <select
+                        value={firReservatorioTaludeMontante}
+                        onChange={(e) => setFirReservatorioTaludeMontante(e.target.value)}
+                        className="form-select"
+                        style={{ width: '100%', boxSizing: 'border-box' }}
+                      >
+                        <option value="Bom">Bom</option>
+                        <option value="Regular">Regular</option>
+                        <option value="Deficiente">Deficiente</option>
+                        <option value="N/A">N/A</option>
+                      </select>
+                    </div>
+
+                    <div className="fir-col-3 form-group">
+                      <label className="form-label">5.3 - Estado de Conservação Geral *</label>
+                      <select
+                        value={firReservatorioConservacao}
+                        onChange={(e) => setFirReservatorioConservacao(e.target.value)}
+                        className="form-select"
+                        style={{ width: '100%', boxSizing: 'border-box' }}
+                      >
+                        <option value="Bom">Bom</option>
+                        <option value="Regular">Regular</option>
+                        <option value="Deficiente">Deficiente</option>
+                        <option value="N/A">N/A</option>
+                      </select>
+                    </div>
+
+                    <div className="fir-col-3 form-group">
+                      <label className="form-label">Cota do Espelho d'Água (m)</label>
+                      <input
+                        type="number"
+                        step="0.01"
+                        value={firCotaEspelho}
+                        onChange={(e) => setFirCotaEspelho(parseFloat(e.target.value) || 0)}
+                        className="form-input font-mono"
+                        style={{ width: '100%', boxSizing: 'border-box' }}
+                      />
+                    </div>
+
+                    <div className="fir-col-3 form-group">
+                      <label className="form-label">Borda Livre Mínima (m)</label>
+                      <input
+                        type="number"
+                        step="0.01"
+                        value={firBordaLivre}
+                        onChange={(e) => setFirBordaLivre(parseFloat(e.target.value) || 0)}
+                        className="form-input font-mono"
+                        style={{ width: '100%', boxSizing: 'border-box' }}
+                      />
+                    </div>
+
+                    <div className="fir-col-6 form-group">
+                      <label className="form-label">5.4 - Observações do Reservatório</label>
+                      <input
+                        type="text"
+                        value={firReservatorioObs}
+                        onChange={(e) => setFirReservatorioObs(e.target.value)}
+                        placeholder="Observações complementares..."
+                        className="form-input"
+                        style={{ width: '100%', boxSizing: 'border-box' }}
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* ============================================================
+                  PÁGINA 6: DRENAGEM INTERNA
+                  ============================================================ */}
+              {(firViewMode === 'completo' || currentFirPage === 6) && (
+                <div className="card-panel" style={{ padding: '1.25rem', display: 'flex', flexDirection: 'column', gap: '1rem', width: '100%', boxSizing: 'border-box' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid var(--border-subtle)', paddingBottom: '0.65rem' }}>
+                    <h4 style={{ fontSize: '0.95rem', fontWeight: 800, color: 'var(--text-main)', margin: 0, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                      <Activity size={18} style={{ color: '#8b5cf6' }} />
+                      <span>Seção 6 — Drenagem Interna</span>
+                    </h4>
+                    <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>Página 6 • Formulário Oficial</span>
+                  </div>
+
+                  <div className="fir-grid-12">
+                    <div className="fir-col-4 form-group">
+                      <label className="form-label">6 - Drenagem Interna *</label>
+                      <select
+                        value={firDrenagemInterna}
+                        onChange={(e) => setFirDrenagemInterna(e.target.value)}
+                        className="form-select"
+                        style={{ width: '100%', boxSizing: 'border-box' }}
+                      >
+                        <option value="Sim">Sim (Existente e operante)</option>
+                        <option value="Não">Não</option>
+                      </select>
+                    </div>
+
+                    <div className="fir-col-4 form-group">
+                      <label className="form-label">6.1 - Medidor de Vazão *</label>
+                      <select
+                        value={firDrenagemMedidorVazao}
+                        onChange={(e) => setFirDrenagemMedidorVazao(e.target.value)}
+                        className="form-select"
+                        style={{ width: '100%', boxSizing: 'border-box' }}
+                      >
+                        <option value="Sim">Sim (Instalado e calibrado)</option>
+                        <option value="Não">Não</option>
+                        <option value="N/A">N/A</option>
+                      </select>
+                    </div>
+
+                    <div className="fir-col-4 form-group">
+                      <label className="form-label">6.2 - Qualidade da Água *</label>
+                      <select
+                        value={firDrenagemQualidadeAgua}
+                        onChange={(e) => setFirDrenagemQualidadeAgua(e.target.value)}
+                        className="form-select"
+                        style={{ width: '100%', boxSizing: 'border-box' }}
+                      >
+                        <option value="Límpida">Límpida (Normal)</option>
+                        <option value="Turva">Turva (Atenção)</option>
+                        <option value="Sólidos Suspensos">Sólidos Suspensos (Alerta / Finos)</option>
+                        <option value="N/A">N/A</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div style={{ marginTop: '0.5rem' }}>
+                    <h5 style={{ fontSize: '0.86rem', fontWeight: 700, color: 'var(--text-main)', marginBottom: '0.5rem' }}>
+                      6.3 — Condições Gerais da Drenagem Interna
+                    </h5>
+                    <div className="fir-matrix-container">
+                      <table className="fir-matrix-table">
+                        <thead>
+                          <tr>
+                            <th>Condição</th>
+                            <th>Sim</th>
+                            <th>Não</th>
+                            <th>N/A</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {[
+                            { key: 'alt_vazao', label: 'Alteração da Vazão', val: firDrenagemAltVazao, set: setFirDrenagemAltVazao },
+                            { key: 'assoreamento_dreno', label: 'Assoreamento na Saída do Dreno', val: firDrenagemAssoreamentoSaida, set: setFirDrenagemAssoreamentoSaida },
+                            { key: 'carreamento_sol', label: 'Carreamento de Sólidos', val: firDrenagemCarreamentoSolidos, set: setFirDrenagemCarreamentoSolidos },
+                            { key: 'presenca_veg', label: 'Presença de Vegetação', val: firDrenagemPresencaVegetacao, set: setFirDrenagemPresencaVegetacao }
+                          ].map(row => (
+                            <tr key={row.key}>
+                              <td>{row.label}</td>
+                              {['Sim', 'Não', 'N/A'].map(opt => (
+                                <td key={opt} className={row.val === opt ? 'fir-matrix-cell-active' : ''}>
+                                  <input
+                                    type="radio"
+                                    name={`dren_int_${row.key}`}
+                                    value={opt}
+                                    checked={row.val === opt}
+                                    onChange={() => row.set(opt)}
+                                    className="fir-matrix-radio"
+                                  />
+                                </td>
+                              ))}
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+
+                  <div className="form-group" style={{ marginTop: '0.5rem' }}>
+                    <label className="form-label">6.4 - Observações da Drenagem Interna</label>
+                    <input
+                      type="text"
+                      value={firDrenagemInternaObs}
+                      onChange={(e) => setFirDrenagemInternaObs(e.target.value)}
+                      placeholder="Observações complementares..."
+                      className="form-input"
+                      style={{ width: '100%', boxSizing: 'border-box' }}
+                    />
+                  </div>
+                </div>
+              )}
+
+              {/* ============================================================
+                  PÁGINA 7: INSTRUMENTAÇÃO
+                  ============================================================ */}
+              {(firViewMode === 'completo' || currentFirPage === 7) && (
+                <div className="card-panel" style={{ padding: '1.25rem', display: 'flex', flexDirection: 'column', gap: '1rem', width: '100%', boxSizing: 'border-box' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid var(--border-subtle)', paddingBottom: '0.65rem' }}>
+                    <h4 style={{ fontSize: '0.95rem', fontWeight: 800, color: 'var(--text-main)', margin: 0, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                      <Sliders size={18} style={{ color: '#ec4899' }} />
+                      <span>Seção 7 — Instrumentação de Monitoramento Geotécnico</span>
+                    </h4>
+                    <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>Página 7 • Formulário Oficial</span>
+                  </div>
+
+                  <div className="form-group">
+                    <label className="form-label">7 - Instrumentação de Monitoramento Geotécnico *</label>
+                    <select
+                      value={firInstrumentacaoMonitoramento}
+                      onChange={(e) => setFirInstrumentacaoMonitoramento(e.target.value)}
+                      className="form-select"
+                      style={{ width: '100%', boxSizing: 'border-box' }}
+                    >
+                      <option value="Sim">Sim (Existente e em operação)</option>
+                      <option value="Não">Não</option>
+                      <option value="N/A">N/A</option>
+                    </select>
+                  </div>
+
+                  <div style={{ marginTop: '0.25rem' }}>
+                    <h5 style={{ fontSize: '0.86rem', fontWeight: 700, color: 'var(--text-main)', marginBottom: '0.5rem' }}>
+                      7.1 — Condições Gerais dos Instrumentos
+                    </h5>
+                    <div className="fir-matrix-container">
+                      <table className="fir-matrix-table">
+                        <thead>
+                          <tr>
+                            <th>Condição</th>
+                            <th>Bom</th>
+                            <th>Regular</th>
+                            <th>Deficiente</th>
+                            <th>N/A</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {[
+                            { key: 'acesso_leitura', label: 'Condições de Acesso/Leitura', val: firInstAcessoLeitura, set: setFirInstAcessoLeitura },
+                            { key: 'identificacao', label: 'Identificação', val: firInstIdentificacao, set: setFirInstIdentificacao },
+                            { key: 'integridade', label: 'Integridade Física', val: firInstIntegridade, set: setFirInstIntegridade }
+                          ].map(row => (
+                            <tr key={row.key}>
+                              <td>{row.label}</td>
+                              {['Bom', 'Regular', 'Deficiente', 'N/A'].map(opt => (
+                                <td key={opt} className={row.val === opt ? 'fir-matrix-cell-active' : ''}>
+                                  <input
+                                    type="radio"
+                                    name={`inst_cond_${row.key}`}
+                                    value={opt}
+                                    checked={row.val === opt}
+                                    onChange={() => row.set(opt)}
+                                    className="fir-matrix-radio"
+                                  />
+                                </td>
+                              ))}
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+
+                  <div className="form-group" style={{ marginTop: '0.5rem' }}>
+                    <label className="form-label">7.2 - Tipos de Instrumentos Presentes</label>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', marginTop: '0.35rem' }}>
+                      {[
+                        { id: 'Piezômetro_-_PZ', label: 'Piezômetro - PZ' },
+                        { id: 'Indicador_de_Nível_D\'água', label: 'Indicador de Nível D\'água (INA)' },
+                        { id: 'Marcos_Superficiais_-_MS', label: 'Marcos Superficiais - MS' },
+                        { id: 'Medidor_de_Vazão_-_MV', label: 'Medidor de Vazão - MV' },
+                        { id: 'Pluviômetro_-_PZ', label: 'Pluviômetro' },
+                        { id: 'Régua_Linimétrica', label: 'Régua Linimétrica' },
+                        { id: 'Tiltimeter_-_MT', label: 'Tiltimeter - MT' }
+                      ].map(inst => {
+                        const isSelected = firInstTipos.includes(inst.id);
+                        return (
+                          <button
+                            key={inst.id}
+                            type="button"
+                            onClick={() => {
+                              if (isSelected) {
+                                setFirInstTipos(firInstTipos.filter(x => x !== inst.id));
+                              } else {
+                                setFirInstTipos([...firInstTipos, inst.id]);
+                              }
+                            }}
+                            className={`btn-secondary ${isSelected ? 'active-preset' : ''}`}
+                            style={{ fontSize: '0.76rem', padding: '0.35rem 0.65rem' }}
+                          >
+                            <span>{isSelected ? '✓ ' : '+ '}{inst.label}</span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  <div className="form-group">
+                    <label className="form-label">7.3 - Observações da Instrumentação</label>
+                    <input
+                      type="text"
+                      value={firInstObs}
+                      onChange={(e) => setFirInstObs(e.target.value)}
+                      placeholder="Observações complementares..."
+                      className="form-input"
+                      style={{ width: '100%', boxSizing: 'border-box' }}
+                    />
+                  </div>
+                </div>
+              )}
+
+              {/* ============================================================
+                  PÁGINA 8: SISTEMA EXTRAVASOR
+                  ============================================================ */}
+              {(firViewMode === 'completo' || currentFirPage === 8) && (
+                <div className="card-panel" style={{ padding: '1.25rem', display: 'flex', flexDirection: 'column', gap: '1rem', width: '100%', boxSizing: 'border-box' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid var(--border-subtle)', paddingBottom: '0.65rem' }}>
+                    <h4 style={{ fontSize: '0.95rem', fontWeight: 800, color: 'var(--text-main)', margin: 0, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                      <ShieldCheck size={18} style={{ color: '#10b981' }} />
+                      <span>Seção 8 — Sistema Extravasor</span>
+                    </h4>
+                    <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>Página 8 • Formulário Oficial</span>
+                  </div>
+
+                  <div className="fir-grid-12">
+                    <div className="fir-col-3 form-group">
+                      <label className="form-label">8.1 - Obstruções *</label>
+                      <select
+                        value={firExtravasorObstrucoes}
+                        onChange={(e) => setFirExtravasorObstrucoes(e.target.value)}
+                        className="form-select"
+                        style={{ width: '100%', boxSizing: 'border-box' }}
+                      >
+                        <option value="Não">Não (Desobstruído)</option>
+                        <option value="Sim">Sim (Obstruído)</option>
+                        <option value="N/A">N/A</option>
+                      </select>
+                    </div>
+
+                    <div className="fir-col-3 form-group">
+                      <label className="form-label">8.2 - Tipo de Obstrução *</label>
+                      <select
+                        value={firExtravasorTipoObstrucao}
+                        onChange={(e) => setFirExtravasorTipoObstrucao(e.target.value)}
+                        className="form-select"
+                        style={{ width: '100%', boxSizing: 'border-box' }}
+                      >
+                        <option value="N/A">N/A (Nenhuma)</option>
+                        <option value="Sedimentos">Sedimentos</option>
+                        <option value="Vegetação">Vegetação</option>
+                        <option value="Outros">Outros</option>
+                      </select>
+                    </div>
+
+                    <div className="fir-col-3 form-group">
+                      <label className="form-label">8.3 - Condições de Fluxo *</label>
+                      <select
+                        value={firExtravasorFluxo}
+                        onChange={(e) => setFirExtravasorFluxo(e.target.value)}
+                        className="form-select"
+                        style={{ width: '100%', boxSizing: 'border-box' }}
+                      >
+                        <option value="Normal">Normal</option>
+                        <option value="Regular">Regular</option>
+                        <option value="Deficiente">Deficiente</option>
+                        <option value="N/A">N/A</option>
+                      </select>
+                    </div>
+
+                    <div className="fir-col-3 form-group">
+                      <label className="form-label">8.4 - Estado de Conservação Geral *</label>
+                      <select
+                        value={firExtravasorConservacao}
+                        onChange={(e) => setFirExtravasorConservacao(e.target.value)}
+                        className="form-select"
+                        style={{ width: '100%', boxSizing: 'border-box' }}
+                      >
+                        <option value="Bom">Bom</option>
+                        <option value="Regular">Regular</option>
+                        <option value="Deficiente">Deficiente</option>
+                        <option value="N/A">N/A</option>
+                      </select>
+                    </div>
+
+                    <div className="fir-col-12 form-group">
+                      <label className="form-label">8.5 - Observações do Sistema Extravasor</label>
+                      <input
+                        type="text"
+                        value={firExtravasorObs}
+                        onChange={(e) => setFirExtravasorObs(e.target.value)}
+                        placeholder="Observações complementares..."
+                        className="form-input"
+                        style={{ width: '100%', boxSizing: 'border-box' }}
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* ============================================================
+                  PÁGINA 9: ESTADO DE CONSERVAÇÃO DA ESTRUTURA - EC & MATRIZ ANM
+                  ============================================================ */}
+              {(firViewMode === 'completo' || currentFirPage === 9) && (
+                <div className="card-panel" style={{ padding: '1.25rem', display: 'flex', flexDirection: 'column', gap: '1.25rem', width: '100%', boxSizing: 'border-box' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid var(--border-subtle)', paddingBottom: '0.65rem' }}>
+                    <h4 style={{ fontSize: '0.95rem', fontWeight: 800, color: 'var(--text-main)', margin: 0, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                      <AlertTriangle size={18} style={{ color: '#f59e0b' }} />
+                      <span>Seção 9 — Estado de Conservação da Estrutura - EC & Registro Fotográfico</span>
+                    </h4>
+                    <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>Portaria ANM 95/2022 • Tabela de Severidade</span>
+                  </div>
+
+                  {/* 9.1 Matriz de Classificação ANM */}
+                  <div>
+                    <h5 style={{ fontSize: '0.86rem', fontWeight: 700, color: 'var(--text-main)', marginBottom: '0.5rem' }}>
+                      9.1 — Matriz de Classificação do Estado de Conservação (EC)
+                    </h5>
+                    <div className="fir-grid-12">
+                      <div className="fir-col-4 form-group">
+                        <label className="form-label">Confiabilidade Estruturas Extravasoras (k)</label>
+                        <select
+                          value={firMatrizK}
+                          onChange={(e) => setFirMatrizK(Number(e.target.value))}
+                          className="form-select"
+                          style={{ width: '100%', boxSizing: 'border-box' }}
+                        >
+                          <option value={0}>0 — Em condições normais</option>
+                          <option value={3}>3 — Deficiências toleráveis</option>
+                          <option value={6}>6 — Deficiências expressivas</option>
+                          <option value={10}>10 — Comprometimento grave / Ruptura iminente</option>
+                        </select>
+                      </div>
+
+                      <div className="fir-col-4 form-group">
+                        <label className="form-label">Percolação (l)</label>
+                        <select
+                          value={firMatrizL}
+                          onChange={(e) => setFirMatrizL(Number(e.target.value))}
+                          className="form-select"
+                          style={{ width: '100%', boxSizing: 'border-box' }}
+                        >
+                          <option value={0}>0 — Normal / Não detectada</option>
+                          <option value={3}>3 — Umidade / Percolação sem carreados</option>
+                          <option value={6}>6 — Surgência com fluxo contínuo</option>
+                          <option value={10}>10 — Carreamento de finos (Piping ativo)</option>
+                        </select>
+                      </div>
+
+                      <div className="fir-col-4 form-group">
+                        <label className="form-label">Deformação e Recalques (m)</label>
+                        <select
+                          value={firMatrizM}
+                          onChange={(e) => setFirMatrizM(Number(e.target.value))}
+                          className="form-select"
+                          style={{ width: '100%', boxSizing: 'border-box' }}
+                        >
+                          <option value={0}>0 — Não detectado</option>
+                          <option value={2}>2 — Deformações leves toleráveis</option>
+                          <option value={6}>6 — Trincas expressivas / Recalques</option>
+                          <option value={10}>10 — Escorregamento / Abatimento grave</option>
+                        </select>
+                      </div>
+
+                      <div className="fir-col-4 form-group">
+                        <label className="form-label">Deterioração dos Taludes / Paramentos (n)</label>
+                        <select
+                          value={firMatrizN}
+                          onChange={(e) => setFirMatrizN(Number(e.target.value))}
+                          className="form-select"
+                          style={{ width: '100%', boxSizing: 'border-box' }}
+                        >
+                          <option value={0}>0 — Vegetação íntegra / Taludes protegidos</option>
+                          <option value={2}>2 — Falhas na vegetação / Sulcos leves</option>
+                          <option value={6}>6 — Ravinamento severo / Erosões</option>
+                          <option value={10}>10 — Boçorocas / Falha estrutural de talude</option>
+                        </select>
+                      </div>
+
+                      <div className="fir-col-4 form-group">
+                        <label className="form-label">Drenagem Superficial (o)</label>
+                        <select
+                          value={firMatrizO}
+                          onChange={(e) => setFirMatrizO(Number(e.target.value))}
+                          className="form-select"
+                          style={{ width: '100%', boxSizing: 'border-box' }}
+                        >
+                          <option value={0}>0 — Desobstruída e íntegra</option>
+                          <option value={2}>2 — Pequena obstrução / Trincas pontuais</option>
+                          <option value={4}>4 — Assoreamento moderado / Danos</option>
+                          <option value={5}>5 — Obstrução total / Ruptura de calha</option>
+                        </select>
+                      </div>
+
+                      <div className="fir-col-4 form-group">
+                        <label className="form-label">Classificação Geral (Matriz ANM) *</label>
+                        <select
+                          value={firClassificacaoGeral}
+                          onChange={(e) => {
+                            setFirClassificacaoGeral(e.target.value);
+                            if (e.target.value.includes('Nível 3')) setAnomalySeverity('Crítico');
+                            else if (e.target.value.includes('Nível 2')) setAnomalySeverity('Alto');
+                            else if (e.target.value.includes('Nível 1')) setAnomalySeverity('Médio');
+                            else setAnomalySeverity('Baixo');
+                          }}
+                          className="form-select"
+                          style={{ fontWeight: 800, width: '100%', boxSizing: 'border-box' }}
+                          required
+                        >
+                          <option value="Nível 0 - Normal / Conforme">Nível 0 — Normal / Conforme</option>
+                          <option value="Nível 1 - Atenção Operacional">Nível 1 — Atenção</option>
+                          <option value="Nível 2 - Alerta Geotécnico">Nível 2 — Alerta (Ação 24h)</option>
+                          <option value="Nível 3 - Emergência (PAEBM)">Nível 3 — Emergência (PAEBM)</option>
+                        </select>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Campos de Ocorrência & Localização */}
+                  <div className="fir-grid-12" style={{ borderTop: '1px solid var(--border-subtle)', paddingTop: '0.85rem' }}>
+                    <div className="fir-col-6 form-group">
+                      <label className="form-label">Tipo de Ocorrência / Anomalia Visual *</label>
+                      <select
+                        value={anomalyType}
+                        onChange={(e) => setAnomalyType(e.target.value)}
+                        className="form-select"
+                        style={{ width: '100%', boxSizing: 'border-box' }}
+                        required
+                      >
+                        <option value="Trinca Longitudinal">Trinca Longitudinal (Crista / Berma)</option>
+                        <option value="Trinca Transversal">Trinca Transversal (Corpo do Maciço)</option>
+                        <option value="Surgência de Água Limpa">Surgência de Água Limpa no Pé do Talude</option>
+                        <option value="Surgência com Finos (Turbidez)">Surgência com Finos / Turbidez (Piping)</option>
+                        <option value="Erosão Superficial">Erosão Superficial / Ravinamento de Talude</option>
+                        <option value="Abatimento de Crista/Berma">Abatimento / Desnível de Crista ou Berma</option>
+                        <option value="Obstrução de Drenagem">Obstrução de Drenagem, Canaleta ou Vertedouro</option>
+                        <option value="Vegetação com Raízes Profundas">Vegetação Arbórea com Raízes Profundas</option>
+                        <option value="Formigueiro / Toca de Animal">Formigueiro / Toca de Animal Escavador</option>
+                        <option value="Nenhuma Anomalia Detectada">Nenhuma Anomalia Detectada (100% Conforme)</option>
+                        <option value="Outro">Outro Tipo de Ocorrência</option>
+                      </select>
+                    </div>
+
+                    <div className="fir-col-6 form-group">
+                      <label className="form-label">Localização Exata e Referência no Talude *</label>
+                      <input
+                        type="text"
+                        value={anomalyLocation}
+                        onChange={(e) => setAnomalyLocation(e.target.value)}
+                        placeholder="Ex: Talude de jusante, berma 2, entre drenos D-03 e D-04..."
+                        className="form-input"
+                        style={{ width: '100%', boxSizing: 'border-box' }}
+                        required
+                      />
+                    </div>
+
+                    <div className="fir-col-12 form-group">
+                      <label className="form-label">Descrição Técnica Detalhada da Inspeção *</label>
+                      <textarea
+                        rows={3}
+                        value={anomalyDesc}
+                        onChange={(e) => setAnomalyDesc(e.target.value)}
+                        placeholder="Descreva extensões estimadas, presença de umidade, características geométricas da trinca, vazão aproximada ou qualquer alteração perceptível..."
+                        className="form-textarea"
+                        style={{ width: '100%', boxSizing: 'border-box' }}
+                        required
+                      />
+                    </div>
+                  </div>
+
+                  {/* Registro Fotográfico da Inspeção */}
+                  <div style={{ borderTop: '1px solid var(--border-subtle)', paddingTop: '0.85rem' }}>
+                    <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', marginBottom: '0.5rem' }}>
+                      <Camera size={16} style={{ color: 'var(--primary-accent)' }} />
+                      <span>Registro Fotográfico da Inspeção (Evidência Obrigatória)</span>
+                    </label>
+
+                    <div style={{
+                      border: '2px dashed var(--border-medium)',
+                      borderRadius: '10px',
+                      padding: '1.25rem',
+                      textAlign: 'center',
+                      backgroundColor: 'var(--bg-secondary)',
+                      position: 'relative'
+                    }}>
+                      {anomalyPhoto.photoData ? (
+                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.75rem' }}>
+                          <img
+                            src={anomalyPhoto.photoData}
+                            alt="Evidência fotográfica Survey123"
+                            style={{
+                              maxHeight: '230px',
+                              borderRadius: '8px',
+                              objectFit: 'cover',
+                              border: '1px solid var(--border-medium)',
+                              boxShadow: 'var(--shadow-md)'
+                            }}
+                          />
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                            <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>
+                              {anomalyPhoto.photoName || 'Foto anexada e georreferenciada'}
+                            </span>
+                            <button
+                              type="button"
+                              onClick={anomalyPhoto.clearPhoto}
+                              className="btn-danger"
+                              style={{ padding: '0.3rem 0.65rem', fontSize: '0.75rem' }}
+                            >
+                              <Trash2 size={14} />
+                              <span>Remover Foto</span>
+                            </button>
+                          </div>
+                        </div>
+                      ) : (
+                        <div>
+                          <Camera size={34} style={{ color: 'var(--primary-accent)', margin: '0 auto 0.5rem' }} />
+                          <p style={{ fontSize: '0.88rem', fontWeight: 700, color: 'var(--text-main)' }}>
+                            Clique para tirar foto com a câmera do dispositivo ou fazer upload
+                          </p>
+                          <p style={{ fontSize: '0.75rem', color: 'var(--text-faint)', marginTop: '2px' }}>
+                            Compressão automática em JPG para relatório de conformidade e envio rápido
+                          </p>
+                          <input
+                            type="file"
+                            accept="image/*"
+                            capture="environment"
+                            onChange={anomalyPhoto.handleFileUpload}
+                            style={{
+                              position: 'absolute',
+                              top: 0,
+                              left: 0,
+                              width: '100%',
+                              height: '100%',
+                              opacity: 0,
+                              cursor: 'pointer'
+                            }}
+                          />
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* ============================================================
+                  PÁGINA 10: ASSINATURA DIGITAL DO INSPETOR
+                  ============================================================ */}
+              {(firViewMode === 'completo' || currentFirPage === 10) && (
+                <div className="card-panel" style={{ padding: '1.25rem', display: 'flex', flexDirection: 'column', gap: '0.85rem', width: '100%', boxSizing: 'border-box' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid var(--border-subtle)', paddingBottom: '0.65rem' }}>
+                    <h4 style={{ fontSize: '0.95rem', fontWeight: 800, color: 'var(--text-main)', margin: 0, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                      <PenTool size={18} style={{ color: 'var(--primary-accent)' }} />
+                      <span>Seção 10 — Assinatura Digital do Inspetor Geotécnico</span>
+                    </h4>
+                    <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>Validação em Tela Touch ou Mouse</span>
+                  </div>
+
+                  <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', margin: 0 }}>
+                    Assine acima da linha para validação oficial nos termos da Portaria ANM nº 95/2022:
+                  </p>
+
+                  <div style={{
+                    position: 'relative',
+                    border: '2px solid var(--border-medium)',
+                    borderRadius: '10px',
+                    backgroundColor: 'var(--bg-secondary)',
+                    overflow: 'hidden',
+                    touchAction: 'none'
+                  }}>
+                    <canvas
+                      ref={firCanvasRef}
+                      width={800}
+                      height={140}
+                      onMouseDown={startFirDrawing}
+                      onMouseMove={drawFir}
+                      onMouseUp={stopFirDrawing}
+                      onMouseLeave={stopFirDrawing}
+                      onTouchStart={startFirDrawing}
+                      onTouchMove={drawFir}
+                      onTouchEnd={stopFirDrawing}
+                      style={{
+                        display: 'block',
+                        width: '100%',
+                        height: '140px',
+                        cursor: 'crosshair',
+                        backgroundColor: 'transparent'
+                      }}
+                    />
+
+                    {/* Linha guia para assinatura conforme Survey123 "Assine acima da linha" */}
+                    <div style={{
+                      position: 'absolute',
+                      left: '5%',
+                      right: '5%',
+                      bottom: '35px',
+                      height: '1px',
+                      backgroundColor: 'var(--border-medium)',
+                      pointerEvents: 'none'
+                    }} />
+
+                    {!hasFirDrawn && (
+                      <div style={{
+                        position: 'absolute',
+                        top: '40%',
+                        left: '50%',
+                        transform: 'translate(-50%, -50%)',
+                        color: 'var(--text-faint)',
+                        fontSize: '0.85rem',
+                        pointerEvents: 'none',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.4rem'
+                      }}>
+                        <PenTool size={16} />
+                        <span>Assine acima da linha com o dedo ou mouse</span>
+                      </div>
+                    )}
+
+                    <div style={{
+                      position: 'absolute',
+                      bottom: '8px',
+                      right: '8px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.5rem'
+                    }}>
+                      {hasFirDrawn && (
+                        <span style={{ fontSize: '0.72rem', color: '#10b981', fontWeight: 700, backgroundColor: 'var(--bg-surface)', padding: '2px 8px', borderRadius: '4px' }}>
+                          ✓ Assinatura Capturada
+                        </span>
+                      )}
+                      <button
+                        type="button"
+                        onClick={clearFirSignature}
+                        className="btn-secondary"
+                        style={{ fontSize: '0.72rem', padding: '0.25rem 0.55rem', display: 'flex', alignItems: 'center', gap: '0.3rem' }}
+                      >
+                        <RotateCcw size={12} />
+                        <span>Limpar</span>
+                      </button>
+                    </div>
+                  </div>
+
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.5rem', fontSize: '0.78rem', color: 'var(--text-muted)' }}>
+                    <span>Responsável: <strong>{firProfissional}</strong></span>
+                    <span>Registro: <strong>{firRegistro}</strong></span>
+                  </div>
+                </div>
+              )}
+
+              {/* ============================================================
+                  BARRA DE NAVEGAÇÃO DE PÁGINAS E SUBMISSÃO DA FICHA
+                  ============================================================ */}
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                flexWrap: 'wrap',
+                gap: '0.75rem',
+                paddingTop: '0.5rem'
+              }}>
+                <div style={{ display: 'flex', gap: '0.5rem' }}>
+                  {firViewMode === 'paginado' && currentFirPage > 1 && (
+                    <button
+                      type="button"
+                      onClick={() => setCurrentFirPage(p => Math.max(1, p - 1))}
+                      className="btn-secondary"
+                      style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', fontSize: '0.85rem', padding: '0.75rem 1.15rem' }}
+                    >
+                      <ChevronLeft size={16} />
+                      <span>Página Anterior</span>
+                    </button>
+                  )}
+                  {firViewMode === 'paginado' && currentFirPage < 10 && (
+                    <button
+                      type="button"
+                      onClick={() => setCurrentFirPage(p => Math.min(10, p + 1))}
+                      className="btn-secondary"
+                      style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', fontSize: '0.85rem', padding: '0.75rem 1.15rem', fontWeight: 700 }}
+                    >
+                      <span>Próxima Página</span>
+                      <ChevronRight size={16} />
+                    </button>
+                  )}
+                </div>
+
+                <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap', marginLeft: 'auto' }}>
+                  <a
+                    href="https://arcg.is/0yOmKX0"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="btn-secondary"
+                    style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.85rem', textDecoration: 'none', padding: '0.75rem 1.15rem' }}
+                  >
+                    <ExternalLink size={15} />
+                    <span>Abrir Pesquisa Original Web</span>
+                  </a>
+
+                  {(firViewMode === 'completo' || currentFirPage === 10) && (
+                    <button
+                      type="submit"
+                      className="btn-primary"
+                      style={{
+                        padding: '0.75rem 1.5rem',
+                        fontSize: '0.9rem',
+                        fontWeight: 800,
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.6rem',
+                        boxShadow: 'var(--shadow-md)'
+                      }}
+                    >
+                      <ClipboardCheck size={18} />
+                      <span>Salvar Ficha de Inspeção Regular (Survey123 FIR) & Notificar</span>
+                    </button>
+                  )}
+                </div>
               </div>
 
             </form>
