@@ -513,8 +513,45 @@ button:focus-visible, .btn-action:focus-visible {
 }
 
 /* ============================================================
-   MODAIS & DIÁLOGOS (DESKTOP & RESPONSIVO)
+   ANIMAÇÕES DE FADE E MODAIS & DIÁLOGOS (DESKTOP & RESPONSIVO)
    ============================================================ */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes fadeOut {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+@keyframes modalFadeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.96) translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.animate-modal-fade {
+  animation: modalFadeIn 0.28s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
 .modal-backdrop {
   position: fixed;
   inset: 0;
@@ -522,15 +559,15 @@ button:focus-visible, .btn-action:focus-visible {
   left: 0;
   right: 0;
   bottom: 0;
-  background-color: rgba(0, 0, 0, 0.75);
-  backdrop-filter: blur(6px);
-  -webkit-backdrop-filter: blur(6px);
-  z-index: 1200;
+  background-color: rgba(2, 6, 23, 0.78);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  z-index: 9999;
   display: flex;
   align-items: center;
   justify-content: center;
   padding: 1.5rem;
-  animation: fadeIn 0.2s ease-out;
+  animation: fadeIn 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
 .modal-content {
@@ -541,9 +578,9 @@ button:focus-visible, .btn-action:focus-visible {
   max-width: 860px;
   max-height: 92vh;
   overflow-y: auto;
-  box-shadow: var(--shadow-xl);
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.08);
   position: relative;
-  animation: fadeInUp 0.25s ease-out;
+  animation: modalFadeIn 0.28s cubic-bezier(0.16, 1, 0.3, 1) forwards;
   color: var(--text-main);
   box-sizing: border-box;
 }
