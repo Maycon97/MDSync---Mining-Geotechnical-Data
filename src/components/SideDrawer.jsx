@@ -5,6 +5,7 @@ import { storageService } from '../services/storageService';
 import { 
   X, 
   Search,
+  Home,
   LayoutDashboard, 
   LineChart, 
   ClipboardEdit, 
@@ -137,15 +138,27 @@ export const SideDrawer = ({
   /* Catálogo de Módulos Categorizados */
   const menuCategories = useMemo(() => [
     {
-      category: 'Monitoramento & Multiperspectiva',
+      category: 'Visão Geral & Executivo',
       items: [
         {
-          id: 'dashboard',
-          title: 'Dashboard Executivo',
-          icon: LayoutDashboard,
+          id: 'home',
+          title: 'Página Inicial (Home)',
+          icon: Home,
           type: 'tab',
           tabId: 'home'
         },
+        {
+          id: 'dashboard',
+          title: 'Dashboard Executivo (KPIs)',
+          icon: LayoutDashboard,
+          type: 'tab',
+          tabId: 'dashboard'
+        }
+      ]
+    },
+    {
+      category: 'Monitoramento & Multiperspectiva',
+      items: [
         {
           id: 'mapa',
           title: '1. Planta (GIS / Satélite)',
@@ -155,7 +168,7 @@ export const SideDrawer = ({
         },
         {
           id: 'secoes',
-          title: '2. Seções (Cortes 2D Dinâmicos)',
+          title: '2. Seções (Cortes 2D com Linha Freática)',
           icon: Layers,
           type: 'tab',
           tabId: 'secoes',
@@ -163,15 +176,8 @@ export const SideDrawer = ({
           badgeColor: '#38bdf8'
         },
         {
-          id: '3d',
-          title: '3. Visualizador 3D Spline',
-          icon: Box,
-          type: 'tab',
-          tabId: '3d'
-        },
-        {
           id: 'piezometria',
-          title: 'Piezometria & NA',
+          title: 'Piezometria & Nível d\'Água (NA)',
           icon: LineChart,
           type: 'tab',
           tabId: 'piezometria'

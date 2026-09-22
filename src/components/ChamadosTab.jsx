@@ -1,7 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { useGeotechData } from '../context/GeotechDataContext';
 import { useAuth } from '../context/AuthContext';
-import { Spline3DViewerTab } from './Spline3DViewerTab';
 import { 
   LifeBuoy, 
   Plus, 
@@ -53,8 +52,6 @@ export const ChamadosTab = ({ onNavigateTab }) => {
   } = useGeotechData();
   const { currentUser } = useAuth();
 
-  // Modo de visualização da aba: 'chamados' (padrão Fluig) ou '3d' (Gêmeo digital 3D)
-  const [viewMode, setViewMode] = useState('chamados'); // 'chamados' | '3d'
 
   // Filtros
   const [selectedSetor, setSelectedSetor] = useState('TODOS');
@@ -458,55 +455,21 @@ export const ChamadosTab = ({ onNavigateTab }) => {
           {/* Ações do Topo: Alternador de Visualização, Configuração e Abrir Chamado */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', flexWrap: 'wrap' }}>
             
-            {/* Seletor de Modo de Visualização */}
+            {/* Indicador Painel Fluig */}
             <div style={{
               display: 'flex',
               alignItems: 'center',
+              gap: '0.4rem',
               backgroundColor: 'var(--bg-secondary)',
-              padding: '3px',
+              padding: '0.4rem 0.75rem',
               borderRadius: '8px',
-              border: '1px solid var(--border-subtle)'
+              border: '1px solid var(--border-subtle)',
+              fontSize: '0.8rem',
+              fontWeight: 600,
+              color: 'var(--primary-accent)'
             }}>
-              <button
-                onClick={() => setViewMode('chamados')}
-                style={{
-                  padding: '0.35rem 0.75rem',
-                  fontSize: '0.78rem',
-                  fontWeight: 600,
-                  borderRadius: '6px',
-                  border: 'none',
-                  backgroundColor: viewMode === 'chamados' ? 'var(--primary-accent)' : 'transparent',
-                  color: viewMode === 'chamados' ? '#ffffff' : 'var(--text-muted)',
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '0.35rem',
-                  transition: 'all 0.2s'
-                }}
-              >
-                <LifeBuoy size={14} />
-                <span>Painel Fluig ({totalCount})</span>
-              </button>
-              <button
-                onClick={() => setViewMode('3d')}
-                style={{
-                  padding: '0.35rem 0.75rem',
-                  fontSize: '0.78rem',
-                  fontWeight: 600,
-                  borderRadius: '6px',
-                  border: 'none',
-                  backgroundColor: viewMode === '3d' ? 'var(--primary-accent)' : 'transparent',
-                  color: viewMode === '3d' ? '#ffffff' : 'var(--text-muted)',
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '0.35rem',
-                  transition: 'all 0.2s'
-                }}
-              >
-                <Box size={14} />
-                <span>Modelo 3D & Spline</span>
-              </button>
+              <LifeBuoy size={15} />
+              <span>Painel Fluig ({totalCount})</span>
             </div>
 
             {/* Configurar Conexão Fluig */}
@@ -543,37 +506,8 @@ export const ChamadosTab = ({ onNavigateTab }) => {
         </div>
       </div>
 
-      {/* RENDERIZAÇÃO CONDICIONAL: SE MODO 3D ESTIVER SELECIONADO */}
-      {viewMode === '3d' ? (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-          <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            padding: '0.75rem 1.25rem',
-            borderRadius: '10px',
-            backgroundColor: 'var(--bg-secondary)',
-            border: '1px solid var(--border-subtle)'
-          }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
-              <Box size={18} style={{ color: 'var(--primary-accent)' }} />
-              <span style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-main)' }}>
-                Visualizador 3D Integrado • Alterne para o Painel Fluig a qualquer momento.
-              </span>
-            </div>
-            <button
-              onClick={() => setViewMode('chamados')}
-              className="btn-secondary"
-              style={{ fontSize: '0.75rem', padding: '0.3rem 0.65rem' }}
-            >
-              Voltar aos Chamados
-            </button>
-          </div>
-          <Spline3DViewerTab />
-        </div>
-      ) : (
-        /* MODO PRINCIPAL: PAINEL FLUIG */
-        <>
+      {/* PAINEL PRINCIPAL FLUIG */}
+      <>
           {/* 2. FAIXA DE MÉTRICAS (KPIS DOS CHAMADOS) */}
           <div style={{
             display: 'grid',
@@ -1086,7 +1020,6 @@ export const ChamadosTab = ({ onNavigateTab }) => {
           )}
 
         </>
-      )}
 
       {/* ============================================================
           5. MODAL DE ABERTURA DE NOVO CHAMADO FLUIG

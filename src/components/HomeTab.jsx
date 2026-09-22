@@ -89,15 +89,15 @@ export const HomeTab = ({ onNavigateTab }) => {
       action: 'Iniciar Coleta'
     },
     {
-      id: '3d',
-      title: 'Modelo 3D & Spline',
-      category: 'Gêmeo Digital',
-      icon: Box,
+      id: 'secoes',
+      title: 'Seções Transversais 2D',
+      category: 'Geometria & Fator de Segurança',
+      icon: Layers,
       color: '#8b5cf6',
       bgColor: 'rgba(139, 92, 246, 0.12)',
-      desc: 'Representação tridimensional interativa do maciço, taludes de montante/jusante e linha freática simulada.',
-      stat: 'Visualização Tridimensional',
-      action: 'Explorar Modelo 3D'
+      desc: 'Visualização dos perfis de corte e freatimetria com cálculo em tempo real do Fator de Segurança (FS) e linha de saturação.',
+      stat: 'Cortes Geotécnicos & FS',
+      action: 'Ver Seções 2D'
     },
     {
       id: 'piezometria',

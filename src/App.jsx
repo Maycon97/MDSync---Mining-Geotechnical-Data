@@ -6,7 +6,6 @@ import { HomeTab } from './components/HomeTab';
 import { DashboardTab } from './components/DashboardTab';
 import { MapTab } from './components/MapTab';
 import { FieldCollectionTab } from './components/FieldCollectionTab';
-import { Spline3DViewerTab } from './components/Spline3DViewerTab';
 import { PiezometryTab } from './components/PiezometryTab';
 import { FlowRateTab } from './components/FlowRateTab';
 import { ReportTab } from './components/ReportTab';
@@ -190,7 +189,11 @@ export function App() {
       />
 
       {/* Navegação por Abas (com rolagem horizontal responsiva) */}
-      <Navigation activeTab={activeTab} onSelectTab={handleNavigateTab} />
+      <Navigation 
+        activeTab={activeTab} 
+        onSelectTab={handleNavigateTab} 
+        onOpenDrawer={() => setDrawerOpen(true)}
+      />
 
       {/* Área de Conteúdo da Aba Ativa */}
       <main style={{ flex: 1, padding: '1.25rem', maxWidth: '1600px', width: '100%', margin: '0 auto' }}>
@@ -277,10 +280,6 @@ export function App() {
 
         {activeTab === 'chamados' && (
           <ChamadosTab onNavigateTab={handleNavigateTab} />
-        )}
-
-        {activeTab === '3d' && (
-          <Spline3DViewerTab />
         )}
 
         {activeTab === 'piezometria' && (

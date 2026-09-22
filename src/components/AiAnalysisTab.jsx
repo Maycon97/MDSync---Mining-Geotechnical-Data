@@ -299,9 +299,9 @@ Como posso te ajudar hoje?
                 } else if (act.param === 'lotes_relatorios') {
                   icon = <FileText size={14} style={{ color: '#60a5fa' }} />;
                   label = 'Ver Lotes de Relatórios';
-                } else if (act.param === '3d') {
-                  icon = <Activity size={14} style={{ color: '#3b82f6' }} />;
-                  label = 'Abrir Modelo 3D da Cava Jangada';
+                } else if (act.param === 'secoes') {
+                  icon = <Layers size={14} style={{ color: '#3b82f6' }} />;
+                  label = 'Abrir Seções Transversais 2D';
                 }
               } else if (act.type === 'DOWNLOAD' && act.param === 'apk') {
                 icon = <Download size={14} style={{ color: '#10b981' }} />;

@@ -99,10 +99,10 @@ export const ChecklistModal = ({ isOpen, onClose, onOpenReport, onOpenAuth, onOp
     },
     {
       id: 'item7',
-      title: 'Item 7: Integração com Spline 3D & Webhooks',
-      desc: 'Gêmeo digital 3D da barragem com linha freática dinâmica, tubos piezométricos tridimensionais com status e suporte a endpoint de API do Spline.',
+      title: 'Item 7: Seções Geotécnicas 2D & Freatimetria',
+      desc: 'Cortes transversais interativos com visualização da linha freática, tubos piezométricos e cálculo automático do Fator de Segurança (FS).',
       status: 'Conforme',
-      detalhes: 'Renderizador 3D com rotação 360°, zoom e presets de câmera',
+      detalhes: 'Renderizador 2D com perfis topográficos e cotas de emergência',
       action: null
     },
     {

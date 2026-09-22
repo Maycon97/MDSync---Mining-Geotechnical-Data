@@ -316,25 +316,6 @@ export const GeotechCrossSectionTab = ({ onNavigateTab }) => {
             <Layers size={16} />
             <span>2. Seção (Corte)</span>
           </button>
-
-          <button
-            onClick={() => onNavigateTab && onNavigateTab('3d')}
-            className="btn-secondary"
-            style={{
-              padding: '0.45rem 0.85rem',
-              fontSize: '0.8rem',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '0.4rem',
-              border: 'none',
-              background: 'transparent',
-              color: 'var(--text-muted)'
-            }}
-            title="Ir para o Modelo Tridimensional Spline 3D"
-          >
-            <Box size={16} />
-            <span>3. Modelo 3D</span>
-          </button>
         </div>
       </div>
 
