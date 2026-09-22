@@ -31,56 +31,122 @@ export const MapTab = ({ onNavigateTab, onSelectInstrumentForReading }) => {
   const [filterStatus, setFilterStatus] = useState('TODOS');
   const [selectedInstrument, setSelectedInstrument] = useState(null);
 
-  // Inicializar o mapa do Leaflet
+  // Inicializar o mapa do Leaflet com ciclo de vida seguro e auto-redimensionamento
   useEffect(() => {
-    if (!mapContainerRef.current) return;
+    const container = mapContainerRef.current;
+    if (!container) return;
 
-    if (!mapInstanceRef.current) {
-      // Centro padrão: Complexo Itaminas / Barragem B1
-      const initialLat = -20.063818;
-      const initialLon = -44.114360;
+    // Destruir mapa anterior se ainda estiver associado
+    if (mapInstanceRef.current?.map) {
+      try {
+        mapInstanceRef.current.map.remove();
+      } catch (e) {
+        console.warn('Erro ao remover mapa anterior:', e);
+      }
+      mapInstanceRef.current = null;
+    }
 
-      const map = L.map(mapContainerRef.current, {
-        center: [initialLat, initialLon],
-        zoom: 15,
-        zoomControl: false,
-        attributionControl: false
-      });
+    // Se o elemento container já tiver _leaflet_id por hot reload, limpa
+    if (container._leaflet_id) {
+      container._leaflet_id = null;
+    }
 
-      L.control.zoom({ position: 'bottomright' }).addTo(map);
+    // Centro padrão: Complexo Itaminas / Barragem B1
+    const initialLat = -20.063818;
+    const initialLon = -44.114360;
 
-      // Layer de Satélite (Esri World Imagery)
-      const satelliteLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
-        maxZoom: 19
-      });
+    const map = L.map(container, {
+      center: [initialLat, initialLon],
+      zoom: 15,
+      zoomControl: false,
+      attributionControl: false,
+      fadeAnimation: true,
+      zoomAnimation: true
+    });
 
-      // Layer de Ruas / Terreno (OpenStreetMap)
-      const streetsLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        maxZoom: 19
-      });
+    L.control.zoom({ position: 'bottomright' }).addTo(map);
 
+    // Layer 1: Satélite de Alta Resolução (Esri World Imagery)
+    const satelliteLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+      maxZoom: 19,
+      attribution: 'Esri World Imagery'
+    });
+
+    // Layer 2: Ruas & Topografia Urbana (OpenStreetMap)
+    const streetsLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      maxZoom: 19,
+      attribution: '&copy; OpenStreetMap'
+    });
+
+    // Layer 3: CartoDB Voyager / Relevo
+    const topoLayer = L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+      maxZoom: 19,
+      attribution: '&copy; CARTO'
+    });
+
+    // Adiciona a camada inicial
+    if (mapType === 'satellite') {
       satelliteLayer.addTo(map);
-      mapInstanceRef.current = { map, satelliteLayer, streetsLayer };
-      markersLayerRef.current = L.layerGroup().addTo(map);
+    } else if (mapType === 'streets') {
+      streetsLayer.addTo(map);
+    } else {
+      topoLayer.addTo(map);
+    }
+
+    const markersLayer = L.layerGroup().addTo(map);
+    mapInstanceRef.current = { map, satelliteLayer, streetsLayer, topoLayer };
+    markersLayerRef.current = markersLayer;
+
+    // Disparar invalidateSize imediatamente e após pequenos delays para garantir layout completo
+    const t1 = setTimeout(() => map.invalidateSize(), 80);
+    const t2 = setTimeout(() => map.invalidateSize(), 300);
+    const t3 = setTimeout(() => map.invalidateSize(), 700);
+
+    // Observar redimensionamento do container dinamicamente
+    let resizeObserver = null;
+    if (window.ResizeObserver) {
+      resizeObserver = new ResizeObserver(() => {
+        try {
+          map.invalidateSize();
+        } catch (e) {}
+      });
+      resizeObserver.observe(container);
     }
 
     return () => {
-      // Manter instância viva ao alternar abas para performance instantânea
+      clearTimeout(t1);
+      clearTimeout(t2);
+      clearTimeout(t3);
+      if (resizeObserver) {
+        resizeObserver.disconnect();
+      }
+      try {
+        map.remove();
+      } catch (e) {}
+      mapInstanceRef.current = null;
+      markersLayerRef.current = null;
     };
   }, []);
 
-  // Alternar camadas de satélite e ruas
+  // Alternar camadas do mapa dinamicamente
   useEffect(() => {
     if (!mapInstanceRef.current) return;
-    const { map, satelliteLayer, streetsLayer } = mapInstanceRef.current;
+    const { map, satelliteLayer, streetsLayer, topoLayer } = mapInstanceRef.current;
+
+    // Remove todas e adiciona a selecionada
+    if (map.hasLayer(satelliteLayer)) map.removeLayer(satelliteLayer);
+    if (map.hasLayer(streetsLayer)) map.removeLayer(streetsLayer);
+    if (topoLayer && map.hasLayer(topoLayer)) map.removeLayer(topoLayer);
 
     if (mapType === 'satellite') {
-      map.removeLayer(streetsLayer);
       map.addLayer(satelliteLayer);
-    } else {
-      map.removeLayer(satelliteLayer);
+    } else if (mapType === 'streets') {
       map.addLayer(streetsLayer);
+    } else if (topoLayer) {
+      map.addLayer(topoLayer);
     }
+
+    map.invalidateSize();
   }, [mapType]);
 
   // Navegar suavemente para uma estrutura
@@ -304,6 +370,20 @@ export const MapTab = ({ onNavigateTab, onSelectInstrumentForReading }) => {
               Satélite
             </button>
             <button
+              onClick={() => setMapType('topo')}
+              style={{
+                padding: '0.25rem 0.55rem',
+                fontSize: '0.75rem',
+                fontWeight: 600,
+                borderRadius: '5px',
+                backgroundColor: mapType === 'topo' ? 'var(--primary-accent)' : 'transparent',
+                color: mapType === 'topo' ? '#ffffff' : 'var(--text-muted)',
+                transition: 'all 0.2s ease'
+              }}
+            >
+              Relevo / Topo
+            </button>
+            <button
               onClick={() => setMapType('streets')}
               style={{
                 padding: '0.25rem 0.55rem',
@@ -315,7 +395,7 @@ export const MapTab = ({ onNavigateTab, onSelectInstrumentForReading }) => {
                 transition: 'all 0.2s ease'
               }}
             >
-              Terreno / Ruas
+              Ruas
             </button>
           </div>
         </div>

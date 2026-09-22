@@ -191,7 +191,7 @@ Assinado digitalmente por autoridade credenciada ICP-Brasil.
         alignItems: 'center',
         justifyContent: 'space-between',
         gap: '1rem',
-        background: 'linear-gradient(135deg, rgba(15, 23, 42, 0.95), rgba(30, 41, 59, 0.9))',
+        backgroundColor: 'var(--bg-surface)',
         border: '1px solid var(--border-medium)'
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>

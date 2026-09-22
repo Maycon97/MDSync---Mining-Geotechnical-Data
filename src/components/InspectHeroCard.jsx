@@ -94,9 +94,9 @@ export const InspectHeroCard = ({
         style={{
           padding: '1.5rem',
           borderRadius: '16px',
-          background: 'linear-gradient(135deg, rgba(30, 58, 138, 0.25) 0%, rgba(15, 23, 42, 0.4) 100%)',
-          border: '1px solid rgba(59, 130, 246, 0.25)',
-          boxShadow: '0 10px 30px rgba(0, 0, 0, 0.25)',
+          background: 'linear-gradient(135deg, rgba(2, 132, 199, 0.08) 0%, var(--bg-surface) 100%)',
+          border: '1px solid var(--border-medium)',
+          boxShadow: 'var(--shadow-md)',
           position: 'relative',
           overflow: 'hidden'
         }}

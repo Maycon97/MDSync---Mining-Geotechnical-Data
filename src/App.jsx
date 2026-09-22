@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useGeotechData } from './context/GeotechDataContext';
 import { Header } from './components/Header';
+import { Navigation } from './components/Navigation';
 import { HomeTab } from './components/HomeTab';
 import { DashboardTab } from './components/DashboardTab';
 import { MapTab } from './components/MapTab';
@@ -144,7 +145,7 @@ export function App() {
 
   return (
     <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', backgroundColor: 'var(--bg-primary)' }}>
-      {/* Barra de Topo */}
+      {/* Barra de Topo com Botão MENU e Identificação da Sessão */}
       <Header 
         activeTab={activeTab}
         onOpenAuth={() => { setAuthModalTab('login'); setAuthModalOpen(true); }}
@@ -155,7 +156,7 @@ export function App() {
         onOpenProfile={() => handleNavigateTab('configuracoes_perfil')}
       />
 
-      {/* Menu Retrátil Lateral MENU (Central unificada de todas as 20 sessões) */}
+      {/* Menu Retrátil Lateral 3D (Consolidado e Alfabético) */}
       <SideDrawer 
         isOpen={drawerOpen}
         onClose={() => setDrawerOpen(false)}

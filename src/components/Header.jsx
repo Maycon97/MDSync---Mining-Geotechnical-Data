@@ -8,20 +8,20 @@ import {
 } from 'lucide-react';
 
 const TAB_TITLES = {
-  home: 'Home',
-  dashboard: 'Dashboard',
-  mapa: 'Planta (GIS)',
-  secoes: 'Seções 2D',
+  home: 'Página Inicial',
+  dashboard: 'Dashboard Executivo',
+  mapa: 'Planta (GIS / Satélite)',
+  secoes: 'Seções 2D (Cortes & Estabilidade)',
   anomalias_inspecoes: 'Anomalias & ISR',
-  campo: 'Coleta de Campo',
+  campo: 'Coleta de Campo (Inspect)',
   fila_sync: 'Fila de Sincronização',
   checklist: 'CheckList FIR',
   chamados: 'Chamados Fluig',
   piezometria: 'Piezometria & NA',
   vazao: 'Vazão & Vertedouros',
   documentos: 'Gestão Documental',
-  comunicacao: 'Comunicação',
-  laudo: 'Laudo ANM 95/2022',
+  comunicacao: 'Central de Comunicação',
+  laudo: 'Laudo ANM nº 95/2022',
   lotes_relatorios: 'Lotes de Relatórios',
   historico: 'Histórico de Dados',
   ia: 'SUPORTE GEOTINHO',
@@ -51,29 +51,29 @@ export const Header = ({ onToggleDrawer, onOpenProfile, activeTab = 'home' }) =>
       backdropFilter: 'blur(10px)',
       boxShadow: '0 2px 10px rgba(0, 0, 0, 0.08)'
     }}>
-      {/* Lado Esquerdo: Botão MENU + Logo Oficial e Indicador de Sessão */}
+      {/* Lado Esquerdo: Botão Oficial MENU + Logo e Indicador de Sessão */}
       <div style={{ display: 'flex', alignItems: 'center', gap: '0.85rem' }}>
         
-        {/* Botão Oficial MENU (Abre a aba lateral com todas as sessões) */}
+        {/* Botão Oficial MENU com Destaque Corporativo */}
         <button
           onClick={onToggleDrawer}
           className="btn-menu-clean"
-          title="Abrir Menu Lateral com todas as sessões"
+          title="Clique para abrir o Menu Lateral com todas as 20 opções do MDSync"
           style={{
-            display: 'inline-flex',
+            display: 'flex',
             alignItems: 'center',
             gap: '0.45rem',
             padding: '0.45rem 0.85rem',
             borderRadius: '8px',
             backgroundColor: 'var(--primary-accent-bg)',
-            border: '1px solid var(--border-highlight)',
             color: 'var(--primary-accent)',
+            border: '1.5px solid var(--border-highlight)',
             fontWeight: 800,
             fontSize: '0.82rem',
             letterSpacing: '0.04em',
             cursor: 'pointer',
-            boxShadow: 'var(--shadow-sm)',
-            transition: 'all 0.15s ease'
+            transition: 'all 0.2s ease',
+            boxShadow: '0 2px 6px rgba(0, 0, 0, 0.08)'
           }}
         >
           <Menu size={18} />
@@ -86,54 +86,54 @@ export const Header = ({ onToggleDrawer, onOpenProfile, activeTab = 'home' }) =>
             src="./logo_mdsync_icon.png" 
             alt="MDSync Logo" 
             style={{ 
-              height: '38px', 
-              width: '38px', 
+              height: '36px', 
+              width: '36px', 
               objectFit: 'contain',
               filter: 'drop-shadow(0 4px 8px rgba(56, 189, 248, 0.35))'
             }} 
           />
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem' }}>
-              <span style={{ fontWeight: 800, fontSize: '1.2rem', letterSpacing: '-0.02em', color: 'var(--text-main)' }}>
+              <span style={{ fontWeight: 800, fontSize: '1.15rem', letterSpacing: '-0.02em', color: 'var(--text-main)' }}>
                 MDSync
               </span>
               <span style={{ 
-                fontSize: '0.65rem', 
+                fontSize: '0.62rem', 
                 fontWeight: 700, 
                 backgroundColor: 'var(--primary-accent-bg)', 
                 color: 'var(--primary-accent)', 
-                padding: '0.12rem 0.45rem', 
+                padding: '0.12rem 0.4rem', 
                 borderRadius: '6px',
                 border: '1px solid var(--border-highlight)'
               }}>
                 v2.0 GEOTEC
               </span>
             </div>
-            <p style={{ fontSize: '0.65rem', fontWeight: 600, color: 'var(--text-faint)', letterSpacing: '0.04em', textTransform: 'uppercase', margin: 0 }}>
+            <p style={{ fontSize: '0.62rem', fontWeight: 600, color: 'var(--text-faint)', letterSpacing: '0.04em', textTransform: 'uppercase', margin: 0 }}>
               MINING | GEOTECHNICS | DATA PLATFORM
             </p>
           </div>
         </div>
 
         {/* Indicador da Sessão Ativa */}
-        {activeTab && (
-          <div className="hide-mobile" style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '0.45rem',
-            padding: '0.32rem 0.75rem',
-            borderRadius: '7px',
-            backgroundColor: 'var(--bg-secondary)',
-            border: '1px solid var(--border-subtle)',
-            fontSize: '0.78rem',
-            marginLeft: '0.4rem'
-          }}>
-            <span style={{ color: 'var(--text-faint)', fontWeight: 600 }}>Sessão:</span>
-            <span style={{ color: 'var(--primary-accent)', fontWeight: 800 }}>
-              {TAB_TITLES[activeTab] || activeTab}
-            </span>
-          </div>
-        )}
+        <div className="hide-mobile" style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '0.45rem',
+          padding: '0.35rem 0.75rem',
+          borderRadius: '8px',
+          backgroundColor: 'var(--bg-secondary)',
+          border: '1px solid var(--border-subtle)',
+          fontSize: '0.78rem',
+          fontWeight: 700,
+          color: 'var(--text-main)',
+          marginLeft: '0.4rem'
+        }}>
+          <span style={{ width: '7px', height: '7px', borderRadius: '50%', backgroundColor: 'var(--primary-accent)' }}></span>
+          <span style={{ color: 'var(--text-muted)', fontWeight: 500 }}>Sessão:</span>
+          <span style={{ color: 'var(--primary-accent)' }}>{TAB_TITLES[activeTab] || 'MDSync'}</span>
+        </div>
+
       </div>
 
       {/* Lado Direito: Status de Conexão e Acesso Rápido ao Menu / Perfil */}

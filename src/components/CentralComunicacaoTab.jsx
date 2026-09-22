@@ -100,7 +100,7 @@ export const CentralComunicacaoTab = ({ onNavigateTab }) => {
         alignItems: 'center',
         justifyContent: 'space-between',
         gap: '1rem',
-        background: 'linear-gradient(135deg, rgba(15, 23, 42, 0.95), rgba(30, 41, 59, 0.9))',
+        backgroundColor: 'var(--bg-surface)',
         border: '1px solid var(--border-medium)'
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
@@ -240,7 +240,7 @@ export const CentralComunicacaoTab = ({ onNavigateTab }) => {
           </div>
 
           {/* Card de Radar de Telemetria e Inconsistências */}
-          <div className="card-panel" style={{ padding: '1rem', background: 'linear-gradient(135deg, rgba(30, 41, 59, 0.5), rgba(15, 23, 42, 0.8))' }}>
+          <div className="card-panel" style={{ padding: '1rem', backgroundColor: 'var(--bg-surface-elevated)', border: '1px solid var(--border-medium)' }}>
             <h4 style={{ fontSize: '0.85rem', fontWeight: 800, color: 'var(--text-main)', display: 'flex', alignItems: 'center', gap: '0.4rem', marginBottom: '0.5rem' }}>
               <ShieldCheck size={16} style={{ color: 'var(--geo-normal)' }} />
               <span>Radar de Inconsistência de Leituras</span>

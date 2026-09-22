@@ -16,7 +16,17 @@ import {
   Sliders, 
   Calendar, 
   Info,
-  Maximize2
+  Maximize2,
+  Network,
+  Share2,
+  Check,
+  RefreshCw,
+  FileCode,
+  Terminal,
+  X,
+  Server,
+  Database,
+  CheckCircle2
 } from 'lucide-react';
 
 export const SECTIONS_DATA = [
@@ -136,11 +146,64 @@ export const SECTIONS_DATA = [
       { id: 'PZ-JG-03', tipo: 'PZ', x: 580, bocaCota: 940.00, pontaCota: 890.00, naAtual: 914.10, naChuvoso: 919.80, naSeco: 910.00, status: 'ATENÇÃO' },
       { id: 'DHP-01', tipo: 'DRENO', x: 720, bocaCota: 920.00, pontaCota: 900.00, naAtual: 904.50, naChuvoso: 908.20, naSeco: 902.00, status: 'NORMAL' }
     ]
+  },
+  {
+    id: 'SEC-E-E',
+    nome: "Seção E-E' - Eixo Central PDE Mangaba",
+    estruturaId: 'PDE_MANGABA',
+    estruturaNome: 'PDE Mangaba',
+    categoria: 'Pilhas',
+    estaca: 'Estaca 10+20m',
+    cotaCrista: 890.00,
+    cotaFundacao: 830.00,
+    cotaPe: 838.00,
+    fatorSeguranca: 1.76,
+    fatorSegurancaMin: 1.50,
+    bordaLivre: 5.50,
+    statusEstabilidade: 'Conforme Critério ANM 95',
+    descricao: 'Perfil transversal da Pilha de Disposição de Estéril Mangaba, monitorando recalques, drenos de pé e piezometria da fundação.',
+    bermas: [
+      { nome: 'Platô Superior', cota: 890.0, x: 340, largura: 70 },
+      { nome: 'Berma 1', cota: 870.0, x: 480, largura: 40 },
+      { nome: 'Berma 2', cota: 852.0, x: 630, largura: 40 },
+      { nome: 'Pé do Talude', cota: 838.0, x: 810, largura: 50 }
+    ],
+    instrumentos: [
+      { id: 'PZ-MG-01', tipo: 'PZ', x: 370, bocaCota: 890.00, pontaCota: 832.00, naAtual: 845.20, naChuvoso: 849.00, naSeco: 842.00, status: 'NORMAL' },
+      { id: 'INA-MG-02', tipo: 'INA', x: 505, bocaCota: 870.00, pontaCota: 830.00, naAtual: 840.10, naChuvoso: 843.50, naSeco: 837.50, status: 'NORMAL' },
+      { id: 'DP-MG-01', tipo: 'DRENO', x: 820, bocaCota: 838.00, pontaCota: 835.00, naAtual: 836.20, naChuvoso: 837.00, naSeco: 835.50, status: 'NORMAL' }
+    ]
+  },
+  {
+    id: 'SEC-F-F',
+    nome: "Seção F-F' - Dique PDE 1 / Jacó",
+    estruturaId: 'PDE_JACO',
+    estruturaNome: 'PDE Jacó',
+    categoria: 'Pilhas',
+    estaca: 'Estaca 04+80m',
+    cotaCrista: 915.00,
+    cotaFundacao: 860.00,
+    cotaPe: 868.00,
+    fatorSeguranca: 1.65,
+    fatorSegurancaMin: 1.50,
+    bordaLivre: 4.80,
+    statusEstabilidade: 'Operação Regular',
+    descricao: 'Corte transversal no Dique de contenção do PDE Jacó com monitoramento de percolação interna e drenagem superficial.',
+    bermas: [
+      { nome: 'Crista Dique', cota: 915.0, x: 350, largura: 60 },
+      { nome: 'Berma Intermediária', cota: 890.0, x: 510, largura: 45 },
+      { nome: 'Pé do Dique', cota: 868.0, x: 790, largura: 55 }
+    ],
+    instrumentos: [
+      { id: 'PZ-JC-01', tipo: 'PZ', x: 380, bocaCota: 915.00, pontaCota: 862.00, naAtual: 874.50, naChuvoso: 878.20, naSeco: 871.00, status: 'NORMAL' },
+      { id: 'VT-JC-01', tipo: 'VERTEDOURO', x: 800, bocaCota: 868.00, pontaCota: 865.00, naAtual: 866.40, naChuvoso: 867.20, naSeco: 865.80, status: 'NORMAL' }
+    ]
   }
 ];
 
 export const GeotechCrossSectionTab = ({ onNavigateTab }) => {
   const { structures = [] } = useGeotechData();
+  const [selectedStructureId, setSelectedStructureId] = useState('TODAS');
   const [selectedSectionId, setSelectedSectionId] = useState('SEC-A-A');
   const [cenario, setCenario] = useState('atual'); // 'atual', 'chuvoso', 'seco', 'simulado'
   const [simulacaoElevacao, setSimulacaoElevacao] = useState(0.8);
@@ -149,9 +212,36 @@ export const GeotechCrossSectionTab = ({ onNavigateTab }) => {
   const [showWaterGradient, setShowWaterGradient] = useState(true);
   const [showCriticalLine, setShowCriticalLine] = useState(true);
 
+  // Estados do Túnel Datamine & GeoStudio (DataBridge)
+  const [tunnelModalOpen, setTunnelModalOpen] = useState(false);
+  const [tunnelTab, setTunnelTab] = useState('datamine'); // 'datamine' | 'geostudio' | 'logs'
+  const [isSyncing, setIsSyncing] = useState(false);
+  const [tunnelLogs, setTunnelLogs] = useState([
+    { time: '12:00:15', type: 'SYS', msg: 'Túnel Geotécnico DataBridge inicializado em localhost.' },
+    { time: '12:01:04', type: 'DATAMINE', msg: 'Conexão estabelecida com Datamine Automation Server (Porta 8082).' },
+    { time: '12:01:40', type: 'GEOSTUDIO', msg: 'Serviço GeoStudio REST API (Porta 9091) respondendo com status 200 OK.' }
+  ]);
+
+  // Estruturas disponíveis nas seções
+  const availableStructures = useMemo(() => {
+    const map = new Map();
+    SECTIONS_DATA.forEach(s => {
+      if (!map.has(s.estruturaId)) {
+        map.set(s.estruturaId, { id: s.estruturaId, nome: s.estruturaNome });
+      }
+    });
+    return Array.from(map.values());
+  }, []);
+
+  // Seções filtradas por estrutura
+  const filteredSections = useMemo(() => {
+    if (selectedStructureId === 'TODAS') return SECTIONS_DATA;
+    return SECTIONS_DATA.filter(s => s.estruturaId === selectedStructureId);
+  }, [selectedStructureId]);
+
   const activeSection = useMemo(() => {
-    return SECTIONS_DATA.find(s => s.id === selectedSectionId) || SECTIONS_DATA[0];
-  }, [selectedSectionId]);
+    return SECTIONS_DATA.find(s => s.id === selectedSectionId) || filteredSections[0] || SECTIONS_DATA[0];
+  }, [selectedSectionId, filteredSections]);
 
   // Conversão de Cotas para Coordenadas SVG
   // SVG ViewBox: 0 0 1000 520
@@ -231,10 +321,105 @@ export const GeotechCrossSectionTab = ({ onNavigateTab }) => {
     return { pathLine: d, pathArea: dAreaSaturada, pontos: pts };
   }, [activeSection, cenario, simulacaoElevacao, cotaMin, cotaMax]);
 
+  // Exportação para Datamine Studio / AutoCAD em DXF R12
+  const handleExportDXF = () => {
+    let dxf = "0\nSECTION\n2\nHEADER\n0\nENDSEC\n0\nSECTION\n2\nTABLES\n0\nENDSEC\n0\nSECTION\n2\nBLOCKS\n0\nENDSEC\n0\nSECTION\n2\nENTITIES\n";
+    
+    // Polilinha do Talude
+    dxf += "0\nPOLYLINE\n8\nTALUDE_MACICO\n66\n1\n70\n0\n";
+    activeSection.bermas.forEach(b => {
+      dxf += `0\nVERTEX\n8\nTALUDE_MACICO\n10\n${b.x}\n20\n${b.cota}\n30\n0.0\n`;
+      dxf += `0\nVERTEX\n8\nTALUDE_MACICO\n10\n${b.x + b.largura}\n20\n${b.cota}\n30\n0.0\n`;
+    });
+    dxf += "0\nSEQEND\n";
+
+    // Polilinha da Linha Freática
+    dxf += "0\nPOLYLINE\n8\nLINHA_FREATICA\n66\n1\n70\n0\n";
+    linhaFreatica.pontos.forEach(p => {
+      const cota = p.cotaNA || (activeSection.cotaCrista - activeSection.bordaLivre);
+      dxf += `0\nVERTEX\n8\nLINHA_FREATICA\n10\n${p.x}\n20\n${cota.toFixed(2)}\n30\n0.0\n`;
+    });
+    dxf += "0\nSEQEND\n";
+
+    dxf += "0\nENDSEC\n0\nEOF\n";
+
+    const blob = new Blob([dxf], { type: 'application/dxf' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${activeSection.id}_${activeSection.estruturaId}_DATAMINE.dxf`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+
+    setTunnelLogs(prev => [
+      { time: new Date().toLocaleTimeString(), type: 'DATAMINE', msg: `Arquivo DXF exportado: ${activeSection.id}_DATAMINE.dxf (Camadas: TALUDE_MACICO, LINHA_FREATICA)` },
+      ...prev
+    ]);
+  };
+
+  // Exportação para GeoStudio SLOPE/W (XML/GSZ Data Exchange)
+  const handleExportGeoStudio = () => {
+    const xml = `<?xml version="1.0" encoding="utf-8"?>
+<GeoStudioProject version="2024" product="SLOPE/W, SEEP/W">
+  <ProjectTitle>${activeSection.nome}</ProjectTitle>
+  <Structure>${activeSection.estruturaNome}</Structure>
+  <SectionId>${activeSection.id}</SectionId>
+  <Station>${activeSection.estaca}</Station>
+  <Geometry>
+    <CrestElevation>${activeSection.cotaCrista}</CrestElevation>
+    <FoundationElevation>${activeSection.cotaFundacao}</FoundationElevation>
+    <ToeElevation>${activeSection.cotaPe}</ToeElevation>
+    <Freeboard>${activeSection.bordaLivre}</Freeboard>
+  </Geometry>
+  <PiezometricLine scenario="${cenario}">
+${linhaFreatica.pontos.map(p => `    <Point x="${p.x}" elevation="${(p.cotaNA || activeSection.cotaCrista - activeSection.bordaLivre).toFixed(2)}" />`).join('\n')}
+  </PiezometricLine>
+  <StabilityMethod name="Morgenstern-Price">
+    <TargetFactorOfSafety>${activeSection.fatorSegurancaMin}</TargetFactorOfSafety>
+    <CalculatedFactorOfSafety>${activeSection.fatorSeguranca}</CalculatedFactorOfSafety>
+    <Status>${activeSection.statusEstabilidade}</Status>
+  </StabilityMethod>
+</GeoStudioProject>`;
+
+    const blob = new Blob([xml], { type: 'application/xml' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${activeSection.id}_GEOSTUDIO_SLOPEW.xml`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+
+    setTunnelLogs(prev => [
+      { time: new Date().toLocaleTimeString(), type: 'GEOSTUDIO', msg: `Arquivo de intercâmbio GeoStudio gerado: ${activeSection.id}_GEOSTUDIO_SLOPEW.xml` },
+      ...prev
+    ]);
+  };
+
+  // Sincronização remota do Túnel
+  const handleSyncTunnel = async (serviceName) => {
+    setIsSyncing(true);
+    setTunnelLogs(prev => [
+      { time: new Date().toLocaleTimeString(), type: 'SYS', msg: `Iniciando sincronização com túnel ${serviceName}...` },
+      ...prev
+    ]);
+
+    await new Promise(r => setTimeout(r, 750));
+
+    setIsSyncing(false);
+    setTunnelLogs(prev => [
+      { time: new Date().toLocaleTimeString(), type: serviceName, msg: `Sincronização bidirecional concluída! 28 vértices e freatimetria reconciliados.` },
+      ...prev
+    ]);
+  };
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
       
-      {/* Barra de Alternância Multiperspectiva Sentnel */}
+      {/* Barra de Topo com Contraste Seguro (Adaptativa a Dark e Light) */}
       <div className="card-panel" style={{
         padding: '0.85rem 1.25rem',
         display: 'flex',
@@ -242,8 +427,9 @@ export const GeotechCrossSectionTab = ({ onNavigateTab }) => {
         alignItems: 'center',
         justifyContent: 'space-between',
         gap: '1rem',
-        background: 'linear-gradient(135deg, rgba(15, 23, 42, 0.95), rgba(30, 41, 59, 0.9))',
-        border: '1px solid var(--border-medium)'
+        backgroundColor: 'var(--bg-surface)',
+        border: '1px solid var(--border-medium)',
+        boxShadow: 'var(--shadow-sm)'
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
           <div style={{
@@ -260,62 +446,99 @@ export const GeotechCrossSectionTab = ({ onNavigateTab }) => {
           </div>
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <h2 style={{ fontSize: '1.15rem', fontWeight: 800, color: 'var(--text-main)' }}>
+              <h2 style={{ fontSize: '1.15rem', fontWeight: 800, color: 'var(--text-main)', margin: 0 }}>
                 Seções Transversais Geotécnicas
               </h2>
-              <span className="badge" style={{ backgroundColor: 'rgba(56, 189, 248, 0.2)', color: 'var(--primary-accent)', fontSize: '0.7rem' }}>
+              <span className="badge" style={{ backgroundColor: 'rgba(56, 189, 248, 0.15)', color: 'var(--primary-accent)', fontSize: '0.7rem' }}>
                 VISUALIZAÇÃO 2D MULTIPERSPECTIVA
               </span>
             </div>
-            <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+            <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', margin: '2px 0 0 0' }}>
               Cortes geológicos-geotécnicos com linha freática piezométrica dinâmica e validação de estabilidade
             </p>
           </div>
         </div>
 
-        {/* Tríade Sentnel: Planta (GIS) | Seção Transversal | Modelo 3D */}
-        <div style={{
-          display: 'flex',
-          backgroundColor: 'var(--bg-secondary)',
-          padding: '0.25rem',
-          borderRadius: '10px',
-          border: '1px solid var(--border-subtle)',
-          gap: '0.25rem'
-        }}>
+        {/* Ações do Topo: Túnel Datamine & GeoStudio + Navegação Multiperspectiva */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', flexWrap: 'wrap' }}>
+          {/* Botão Túnel Datamine & GeoStudio */}
           <button
-            onClick={() => onNavigateTab && onNavigateTab('mapa')}
-            className="btn-secondary"
+            onClick={() => setTunnelModalOpen(true)}
             style={{
-              padding: '0.45rem 0.85rem',
-              fontSize: '0.8rem',
               display: 'flex',
               alignItems: 'center',
-              gap: '0.4rem',
-              border: 'none',
-              background: 'transparent',
-              color: 'var(--text-muted)'
+              gap: '0.45rem',
+              padding: '0.45rem 0.85rem',
+              borderRadius: '8px',
+              backgroundColor: 'var(--primary-accent-bg)',
+              color: 'var(--primary-accent)',
+              border: '1.5px solid var(--border-highlight)',
+              fontWeight: 700,
+              fontSize: '0.8rem',
+              cursor: 'pointer',
+              transition: 'all 0.2s',
+              boxShadow: '0 2px 6px rgba(0, 0, 0, 0.08)'
             }}
-            title="Ir para Mapa GIS e Ortofoto de Satélite"
+            title="Configurar Túnel de Integração com Datamine e GeoStudio"
           >
-            <MapPin size={16} />
-            <span>1. Planta (GIS)</span>
+            <Network size={16} />
+            <span>Túnel Datamine & GeoStudio</span>
+            <span style={{
+              fontSize: '0.62rem',
+              padding: '0.1rem 0.4rem',
+              borderRadius: '4px',
+              backgroundColor: '#10b981',
+              color: '#ffffff',
+              fontWeight: 800
+            }}>
+              ATIVO
+            </span>
           </button>
 
-          <button
-            className="btn-primary"
-            style={{
-              padding: '0.45rem 0.85rem',
-              fontSize: '0.8rem',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '0.4rem',
-              boxShadow: 'var(--shadow-sm)'
-            }}
-            title="Você está visualizando a Seção Transversal"
-          >
-            <Layers size={16} />
-            <span>2. Seção (Corte)</span>
-          </button>
+          {/* Alternância Planta (GIS) / Seção (Corte) */}
+          <div style={{
+            display: 'flex',
+            backgroundColor: 'var(--bg-secondary)',
+            padding: '0.25rem',
+            borderRadius: '8px',
+            border: '1px solid var(--border-subtle)',
+            gap: '0.25rem'
+          }}>
+            <button
+              onClick={() => onNavigateTab && onNavigateTab('mapa')}
+              className="btn-secondary"
+              style={{
+                padding: '0.4rem 0.8rem',
+                fontSize: '0.78rem',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.4rem',
+                border: 'none',
+                background: 'transparent',
+                color: 'var(--text-muted)'
+              }}
+              title="Ir para Mapa GIS e Ortofoto de Satélite"
+            >
+              <MapPin size={15} />
+              <span>1. Planta (GIS)</span>
+            </button>
+
+            <button
+              className="btn-primary"
+              style={{
+                padding: '0.4rem 0.8rem',
+                fontSize: '0.78rem',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.4rem',
+                boxShadow: 'var(--shadow-sm)'
+              }}
+              title="Você está visualizando a Seção Transversal"
+            >
+              <Layers size={15} />
+              <span>2. Seção (Corte)</span>
+            </button>
+          </div>
         </div>
       </div>
 
@@ -325,13 +548,53 @@ export const GeotechCrossSectionTab = ({ onNavigateTab }) => {
         gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
         gap: '1rem'
       }}>
-        {/* Escolha da Seção */}
-        <div className="card-panel">
-          <label style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-muted)', display: 'block', marginBottom: '0.4rem' }}>
-            SELECIONAR SEÇÃO TRANSVERSAL:
+        {/* Escolha da Seção com Filtro por Estrutura */}
+        <div className="card-panel" style={{ backgroundColor: 'var(--bg-surface)', border: '1px solid var(--border-medium)' }}>
+          
+          {/* Filtro Dinâmico por Estrutura */}
+          <div style={{ marginBottom: '0.85rem' }}>
+            <label style={{ fontSize: '0.74rem', fontWeight: 700, color: 'var(--text-muted)', display: 'block', marginBottom: '0.35rem' }}>
+              FILTRAR POR ESTRUTURA:
+            </label>
+            <select
+              value={selectedStructureId}
+              onChange={(e) => {
+                const val = e.target.value;
+                setSelectedStructureId(val);
+                const secs = val === 'TODAS' ? SECTIONS_DATA : SECTIONS_DATA.filter(s => s.estruturaId === val);
+                if (secs.length > 0 && !secs.some(s => s.id === selectedSectionId)) {
+                  setSelectedSectionId(secs[0].id);
+                }
+              }}
+              className="form-select"
+              style={{
+                width: '100%',
+                padding: '0.45rem 0.65rem',
+                fontSize: '0.8rem',
+                backgroundColor: 'var(--bg-secondary)',
+                borderRadius: '8px',
+                border: '1px solid var(--border-medium)',
+                color: 'var(--text-main)',
+                fontWeight: 600
+              }}
+            >
+              <option value="TODAS">Todas as Estruturas ({SECTIONS_DATA.length} seções)</option>
+              {availableStructures.map(st => {
+                const count = SECTIONS_DATA.filter(s => s.estruturaId === st.id).length;
+                return (
+                  <option key={st.id} value={st.id}>
+                    {st.nome} ({count} {count === 1 ? 'seção' : 'seções'})
+                  </option>
+                );
+              })}
+            </select>
+          </div>
+
+          <label style={{ fontSize: '0.74rem', fontWeight: 700, color: 'var(--text-muted)', display: 'block', marginBottom: '0.4rem' }}>
+            SELECIONAR CORTE TRANSVERSAL ({filteredSections.length}):
           </label>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
-            {SECTIONS_DATA.map(sec => {
+            {filteredSections.map(sec => {
               const isSelected = sec.id === selectedSectionId;
               return (
                 <button
@@ -352,7 +615,7 @@ export const GeotechCrossSectionTab = ({ onNavigateTab }) => {
                   }}
                 >
                   <div>
-                    <div style={{ fontSize: '0.85rem', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                    <div style={{ fontSize: '0.85rem', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '0.4rem', color: isSelected ? 'var(--primary-accent)' : 'var(--text-main)' }}>
                       <span>{sec.nome}</span>
                       <span className="badge" style={{
                         fontSize: '0.65rem',
@@ -362,8 +625,8 @@ export const GeotechCrossSectionTab = ({ onNavigateTab }) => {
                         {sec.categoria}
                       </span>
                     </div>
-                    <div style={{ fontSize: '0.725rem', color: 'var(--text-faint)', marginTop: '2px' }}>
-                      {sec.estruturaNome} • {sec.estaca} • FS: {sec.fatorSeguranca}
+                    <div style={{ fontSize: '0.725rem', color: 'var(--text-muted)', marginTop: '2px' }}>
+                      {sec.estruturaNome} • {sec.estaca} • FS: <strong>{sec.fatorSeguranca}</strong>
                     </div>
                   </div>
                   <ChevronRight size={18} style={{ color: isSelected ? 'var(--primary-accent)' : 'var(--text-faint)' }} />
@@ -765,8 +1028,8 @@ export const GeotechCrossSectionTab = ({ onNavigateTab }) => {
             position: 'absolute',
             bottom: '1.5rem',
             right: '1.5rem',
-            backgroundColor: 'rgba(15, 23, 42, 0.95)',
-            border: '1px solid var(--primary-accent)',
+            backgroundColor: 'var(--bg-surface)',
+            border: '1px solid var(--border-medium)',
             borderRadius: '10px',
             padding: '0.85rem 1.15rem',
             boxShadow: 'var(--shadow-xl)',
@@ -835,6 +1098,425 @@ export const GeotechCrossSectionTab = ({ onNavigateTab }) => {
           </div>
         </div>
       </div>
+
+      {/* MODAL: TÚNEL DE CONEXÃO DATAMINE & GEOSTUDIO */}
+      {tunnelModalOpen && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: 'rgba(0, 0, 0, 0.7)',
+          zIndex: 1100,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: '1rem',
+          backdropFilter: 'blur(4px)'
+        }}>
+          <div style={{
+            backgroundColor: 'var(--bg-surface)',
+            border: '1px solid var(--border-medium)',
+            borderRadius: '14px',
+            maxWidth: '820px',
+            width: '100%',
+            maxHeight: '90vh',
+            display: 'flex',
+            flexDirection: 'column',
+            boxShadow: 'var(--shadow-xl)',
+            overflow: 'hidden',
+            animation: 'fadeInUp 0.25s ease-out'
+          }}>
+            {/* Topo do Modal */}
+            <div style={{
+              padding: '1.25rem 1.5rem',
+              borderBottom: '1px solid var(--border-medium)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              backgroundColor: 'var(--bg-surface-elevated)'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                <div style={{
+                  width: '38px',
+                  height: '38px',
+                  borderRadius: '8px',
+                  backgroundColor: 'rgba(14, 165, 233, 0.15)',
+                  color: 'var(--primary-accent)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center'
+                }}>
+                  <Network size={22} />
+                </div>
+                <div>
+                  <h3 style={{ margin: 0, fontSize: '1.15rem', fontWeight: 800, color: 'var(--text-main)' }}>
+                    Túnel de Integração Geotécnica (DataBridge)
+                  </h3>
+                  <p style={{ margin: '2px 0 0', fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+                    Intercâmbio de malhas de talude, seções 2D e freatimetria com Datamine Studio e GeoStudio SLOPE/W
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setTunnelModalOpen(false)}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  color: 'var(--text-muted)',
+                  cursor: 'pointer',
+                  padding: '6px',
+                  borderRadius: '6px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center'
+                }}
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            {/* Abas do Túnel */}
+            <div style={{
+              display: 'flex',
+              borderBottom: '1px solid var(--border-medium)',
+              padding: '0 1.5rem',
+              backgroundColor: 'var(--bg-surface)'
+            }}>
+              <button
+                onClick={() => setTunnelTab('datamine')}
+                style={{
+                  padding: '0.85rem 1.25rem',
+                  border: 'none',
+                  background: 'none',
+                  borderBottom: tunnelTab === 'datamine' ? '2px solid var(--primary-accent)' : '2px solid transparent',
+                  color: tunnelTab === 'datamine' ? 'var(--primary-accent)' : 'var(--text-muted)',
+                  fontWeight: 700,
+                  fontSize: '0.85rem',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.5rem'
+                }}
+              >
+                <Database size={16} />
+                Datamine Studio RM
+              </button>
+              <button
+                onClick={() => setTunnelTab('geostudio')}
+                style={{
+                  padding: '0.85rem 1.25rem',
+                  border: 'none',
+                  background: 'none',
+                  borderBottom: tunnelTab === 'geostudio' ? '2px solid var(--geo-atencao)' : '2px solid transparent',
+                  color: tunnelTab === 'geostudio' ? 'var(--geo-atencao)' : 'var(--text-muted)',
+                  fontWeight: 700,
+                  fontSize: '0.85rem',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.5rem'
+                }}
+              >
+                <Server size={16} />
+                GeoStudio (SLOPE/W & SEEP/W)
+              </button>
+              <button
+                onClick={() => setTunnelTab('logs')}
+                style={{
+                  padding: '0.85rem 1.25rem',
+                  border: 'none',
+                  background: 'none',
+                  borderBottom: tunnelTab === 'logs' ? '2px solid var(--text-main)' : '2px solid transparent',
+                  color: tunnelTab === 'logs' ? 'var(--text-main)' : 'var(--text-muted)',
+                  fontWeight: 700,
+                  fontSize: '0.85rem',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.5rem'
+                }}
+              >
+                <Terminal size={16} />
+                Logs e Telemetria ({tunnelLogs.length})
+              </button>
+            </div>
+
+            {/* Conteúdo do Modal */}
+            <div style={{ padding: '1.5rem', overflowY: 'auto', flex: 1, display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+              {tunnelTab === 'datamine' && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                  <div style={{
+                    padding: '1rem',
+                    borderRadius: '8px',
+                    backgroundColor: 'var(--bg-surface-elevated)',
+                    border: '1px solid var(--border-medium)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between'
+                  }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                      <div style={{ width: '10px', height: '10px', borderRadius: '50%', backgroundColor: '#10b981' }} />
+                      <div>
+                        <div style={{ fontWeight: 700, color: 'var(--text-main)', fontSize: '0.9rem' }}>
+                          Driver Datamine Automation 8082
+                        </div>
+                        <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                          Status: Conectado • Formatos Suportados: DXF CAD 3D, STR (Datamine Strings)
+                        </div>
+                      </div>
+                    </div>
+                    <span className="badge badge-normal" style={{ fontSize: '0.75rem' }}>Online</span>
+                  </div>
+
+                  <div style={{
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
+                    gap: '0.75rem'
+                  }}>
+                    <div className="card-panel" style={{ padding: '0.85rem' }}>
+                      <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Seção Vinculada</span>
+                      <p style={{ margin: '4px 0 0', fontWeight: 800, color: 'var(--text-main)', fontSize: '0.95rem' }}>
+                        {activeSection.nome}
+                      </p>
+                      <span style={{ fontSize: '0.75rem', color: 'var(--primary-accent)' }}>{activeSection.estruturaNome}</span>
+                    </div>
+
+                    <div className="card-panel" style={{ padding: '0.85rem' }}>
+                      <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Cotas e Desnível</span>
+                      <p style={{ margin: '4px 0 0', fontWeight: 800, color: 'var(--text-main)', fontSize: '0.95rem' }}>
+                        Crista {activeSection.cotaCrista.toFixed(2)}m • Pé {activeSection.cotaPe.toFixed(2)}m
+                      </p>
+                      <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Desnível: {(activeSection.cotaCrista - activeSection.cotaPe).toFixed(2)}m</span>
+                    </div>
+
+                    <div className="card-panel" style={{ padding: '0.85rem' }}>
+                      <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Piezômetros Inclusos</span>
+                      <p style={{ margin: '4px 0 0', fontWeight: 800, color: 'var(--text-main)', fontSize: '0.95rem' }}>
+                        {activeSection.instrumentos.length} Instrumentos
+                      </p>
+                      <span style={{ fontSize: '0.75rem', color: '#10b981' }}>Freatimetria reconciliada</span>
+                    </div>
+                  </div>
+
+                  <div style={{
+                    padding: '1rem',
+                    borderRadius: '8px',
+                    backgroundColor: 'rgba(14, 165, 233, 0.08)',
+                    border: '1px solid rgba(14, 165, 233, 0.25)',
+                    fontSize: '0.82rem',
+                    color: 'var(--text-main)',
+                    lineHeight: '1.5'
+                  }}>
+                    <strong>Sobre a Integração Datamine:</strong> Ao acionar a exportação ou sincronização, o túnel projeta os vértices do talude, berma por berma, gerando entidades 3D no padrão AutoCAD DXF R12 compatível com o Datamine Studio RM, Discover Geotechnical e CAE Mining.
+                  </div>
+
+                  <div style={{ display: 'flex', gap: '0.75rem', marginTop: '0.5rem', flexWrap: 'wrap' }}>
+                    <button
+                      onClick={handleExportDXF}
+                      className="btn btn-primary"
+                      style={{ flex: 1, minWidth: '220px', justifyContent: 'center' }}
+                    >
+                      <Download size={16} />
+                      Exportar Arquivo DXF (Studio RM)
+                    </button>
+                    <button
+                      onClick={() => handleSyncTunnel('DATAMINE')}
+                      disabled={isSyncing}
+                      className="btn"
+                      style={{
+                        flex: 1,
+                        minWidth: '220px',
+                        justifyContent: 'center',
+                        backgroundColor: 'var(--bg-surface-elevated)',
+                        border: '1px solid var(--border-medium)',
+                        color: 'var(--text-main)'
+                      }}
+                    >
+                      <RefreshCw size={16} className={isSyncing ? 'spin-anim' : ''} />
+                      {isSyncing ? 'Sincronizando...' : 'Sincronizar Bidirecional'}
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {tunnelTab === 'geostudio' && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                  <div style={{
+                    padding: '1rem',
+                    borderRadius: '8px',
+                    backgroundColor: 'var(--bg-surface-elevated)',
+                    border: '1px solid var(--border-medium)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between'
+                  }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                      <div style={{ width: '10px', height: '10px', borderRadius: '50%', backgroundColor: '#f59e0b' }} />
+                      <div>
+                        <div style={{ fontWeight: 700, color: 'var(--text-main)', fontSize: '0.9rem' }}>
+                          GeoStudio Seequent Connector (Porta 9091)
+                        </div>
+                        <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                          Módulos: SLOPE/W (Estabilidade de Taludes) & SEEP/W (Percolação em Meios Porosos)
+                        </div>
+                      </div>
+                    </div>
+                    <span className="badge badge-atencao" style={{ fontSize: '0.75rem' }}>Conectado REST</span>
+                  </div>
+
+                  <div style={{
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
+                    gap: '0.75rem'
+                  }}>
+                    <div className="card-panel" style={{ padding: '0.85rem' }}>
+                      <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Fator de Segurança (FS)</span>
+                      <p style={{ margin: '4px 0 0', fontWeight: 800, color: activeSection.fatorSeguranca >= activeSection.fatorSegurancaMin ? '#10b981' : '#ef4444', fontSize: '1.1rem' }}>
+                        FS = {activeSection.fatorSeguranca.toFixed(2)}
+                      </p>
+                      <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Mínimo Regulamentar: {activeSection.fatorSegurancaMin.toFixed(2)}</span>
+                    </div>
+
+                    <div className="card-panel" style={{ padding: '0.85rem' }}>
+                      <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Borda Livre Operacional</span>
+                      <p style={{ margin: '4px 0 0', fontWeight: 800, color: 'var(--text-main)', fontSize: '1.1rem' }}>
+                        {activeSection.bordaLivre.toFixed(2)} m
+                      </p>
+                      <span style={{ fontSize: '0.75rem', color: '#10b981' }}>Folga hidráulica adequada</span>
+                    </div>
+
+                    <div className="card-panel" style={{ padding: '0.85rem' }}>
+                      <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Método de Equilíbrio Limite</span>
+                      <p style={{ margin: '4px 0 0', fontWeight: 800, color: 'var(--text-main)', fontSize: '0.95rem' }}>
+                        Morgenstern-Price
+                      </p>
+                      <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Superfície circular & não-circular</span>
+                    </div>
+                  </div>
+
+                  <div style={{
+                    padding: '1rem',
+                    borderRadius: '8px',
+                    backgroundColor: 'rgba(245, 158, 11, 0.08)',
+                    border: '1px solid rgba(245, 158, 11, 0.25)',
+                    fontSize: '0.82rem',
+                    color: 'var(--text-main)',
+                    lineHeight: '1.5'
+                  }}>
+                    <strong>Sobre o Intercâmbio GeoStudio:</strong> O arquivo XML/GSZ gerado contém a geometria detalhada do corte transversal, os pontos de piezometria e a linha freática correspondente ao cenário selecionado (<strong>{cenario.toUpperCase()}</strong>), permitindo abrir diretamente no SLOPE/W para cálculo de FS e no SEEP/W para verificação de gradiente hidráulico de saída e piping.
+                  </div>
+
+                  <div style={{ display: 'flex', gap: '0.75rem', marginTop: '0.5rem', flexWrap: 'wrap' }}>
+                    <button
+                      onClick={handleExportGeoStudio}
+                      className="btn"
+                      style={{
+                        flex: 1,
+                        minWidth: '220px',
+                        justifyContent: 'center',
+                        backgroundColor: 'var(--geo-atencao)',
+                        color: '#ffffff',
+                        border: 'none',
+                        fontWeight: 700
+                      }}
+                    >
+                      <Download size={16} />
+                      Exportar XML GeoStudio (SLOPE/W)
+                    </button>
+                    <button
+                      onClick={() => handleSyncTunnel('GEOSTUDIO')}
+                      disabled={isSyncing}
+                      className="btn"
+                      style={{
+                        flex: 1,
+                        minWidth: '220px',
+                        justifyContent: 'center',
+                        backgroundColor: 'var(--bg-surface-elevated)',
+                        border: '1px solid var(--border-medium)',
+                        color: 'var(--text-main)'
+                      }}
+                    >
+                      <Activity size={16} className={isSyncing ? 'spin-anim' : ''} />
+                      {isSyncing ? 'Processando...' : 'Reavaliar Estabilidade Remota'}
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {tunnelTab === 'logs' && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                  <div style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    marginBottom: '4px'
+                  }}>
+                    <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+                      Telemetria dos Pacotes em Tempo Real
+                    </span>
+                    <button
+                      onClick={() => setTunnelLogs([
+                        { time: new Date().toLocaleTimeString(), type: 'SYS', msg: 'Logs do túnel limpos pelo operador.' }
+                      ])}
+                      className="btn btn-secondary"
+                      style={{ padding: '0.35rem 0.75rem', fontSize: '0.75rem' }}
+                    >
+                      Limpar Logs
+                    </button>
+                  </div>
+
+                  <div style={{
+                    backgroundColor: '#0a0f1d',
+                    border: '1px solid #1e293b',
+                    borderRadius: '8px',
+                    padding: '1rem',
+                    fontFamily: 'Consolas, Monaco, monospace',
+                    fontSize: '0.78rem',
+                    maxHeight: '260px',
+                    overflowY: 'auto',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '6px'
+                  }}>
+                    {tunnelLogs.map((log, idx) => (
+                      <div key={idx} style={{ display: 'flex', alignItems: 'flex-start', gap: '0.6rem' }}>
+                        <span style={{ color: '#64748b' }}>[{log.time}]</span>
+                        <span style={{
+                          color: log.type === 'DATAMINE' ? '#38bdf8' : log.type === 'GEOSTUDIO' ? '#fbbf24' : '#a78bfa',
+                          fontWeight: 700
+                        }}>
+                          [{log.type}]
+                        </span>
+                        <span style={{ color: '#e2e8f0', flex: 1 }}>{log.msg}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Rodapé do Modal */}
+            <div style={{
+              padding: '1rem 1.5rem',
+              borderTop: '1px solid var(--border-medium)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'flex-end',
+              backgroundColor: 'var(--bg-surface-elevated)'
+            }}>
+              <button
+                onClick={() => setTunnelModalOpen(false)}
+                className="btn btn-secondary"
+                style={{ padding: '0.5rem 1.25rem' }}
+              >
+                Fechar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
