@@ -408,19 +408,20 @@ export const SideDrawer = ({
                   MDSync
                 </span>
                 <span style={{ 
-                  fontSize: '0.6rem', 
-                  fontWeight: 600, 
+                  fontSize: '0.62rem', 
+                  fontWeight: 800, 
                   backgroundColor: 'var(--primary-accent-bg)', 
                   color: 'var(--primary-accent)', 
-                  padding: '0.05rem 0.3rem', 
+                  padding: '0.1rem 0.35rem', 
                   borderRadius: '4px',
-                  border: '1px solid rgba(56, 189, 248, 0.2)'
+                  border: '1px solid var(--border-highlight)',
+                  letterSpacing: '0.05em'
                 }}>
-                  v2.0
+                  MENU
                 </span>
               </div>
               <p style={{ fontSize: '0.62rem', color: 'var(--text-faint)', margin: 0, letterSpacing: '0.02em' }}>
-                Itaminas Mineração
+                Navegação & Módulos Geotécnicos
               </p>
             </div>
           </div>

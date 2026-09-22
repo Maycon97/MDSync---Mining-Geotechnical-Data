@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { useGeotechData } from './context/GeotechDataContext';
 import { Header } from './components/Header';
-import { Navigation } from './components/Navigation';
 import { HomeTab } from './components/HomeTab';
 import { DashboardTab } from './components/DashboardTab';
 import { MapTab } from './components/MapTab';
@@ -147,6 +146,7 @@ export function App() {
     <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', backgroundColor: 'var(--bg-primary)' }}>
       {/* Barra de Topo */}
       <Header 
+        activeTab={activeTab}
         onOpenAuth={() => { setAuthModalTab('login'); setAuthModalOpen(true); }}
         onOpenSync={() => handleNavigateTab('fila_sync')}
         onOpenReport={() => handleNavigateTab('lotes_relatorios')}
@@ -155,7 +155,7 @@ export function App() {
         onOpenProfile={() => handleNavigateTab('configuracoes_perfil')}
       />
 
-      {/* Menu Retrátil Lateral 3D (Consolidado e Alfabético) */}
+      {/* Menu Retrátil Lateral MENU (Central unificada de todas as 20 sessões) */}
       <SideDrawer 
         isOpen={drawerOpen}
         onClose={() => setDrawerOpen(false)}
@@ -186,13 +186,6 @@ export function App() {
           setAuthModalOpen(true);
           setDrawerOpen(false);
         }}
-      />
-
-      {/* Navegação por Abas (com rolagem horizontal responsiva) */}
-      <Navigation 
-        activeTab={activeTab} 
-        onSelectTab={handleNavigateTab} 
-        onOpenDrawer={() => setDrawerOpen(true)}
       />
 
       {/* Área de Conteúdo da Aba Ativa */}

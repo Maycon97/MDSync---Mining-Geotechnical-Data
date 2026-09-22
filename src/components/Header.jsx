@@ -7,7 +7,32 @@ import {
   Menu
 } from 'lucide-react';
 
-export const Header = ({ onToggleDrawer, onOpenProfile }) => {
+const TAB_TITLES = {
+  home: 'Home',
+  dashboard: 'Dashboard',
+  mapa: 'Planta (GIS)',
+  secoes: 'Seções 2D',
+  anomalias_inspecoes: 'Anomalias & ISR',
+  campo: 'Coleta de Campo',
+  fila_sync: 'Fila de Sincronização',
+  checklist: 'CheckList FIR',
+  chamados: 'Chamados Fluig',
+  piezometria: 'Piezometria & NA',
+  vazao: 'Vazão & Vertedouros',
+  documentos: 'Gestão Documental',
+  comunicacao: 'Comunicação',
+  laudo: 'Laudo ANM 95/2022',
+  lotes_relatorios: 'Lotes de Relatórios',
+  historico: 'Histórico de Dados',
+  ia: 'SUPORTE GEOTINHO',
+  cadastro: 'Cadastro & Limites',
+  clientes: 'Clientes',
+  contratos: 'Contratos Terceiros',
+  importacoes: 'Importações PCMI',
+  configuracoes_perfil: 'Configurações & Perfil'
+};
+
+export const Header = ({ onToggleDrawer, onOpenProfile, activeTab = 'home' }) => {
   const { currentUser } = useAuth();
   const { isOnline } = useGeotechData();
 
@@ -26,17 +51,33 @@ export const Header = ({ onToggleDrawer, onOpenProfile }) => {
       backdropFilter: 'blur(10px)',
       boxShadow: '0 2px 10px rgba(0, 0, 0, 0.08)'
     }}>
-      {/* Lado Esquerdo: Botão 3D Tátil de Abrir Menu + Logo Oficial e Título */}
+      {/* Lado Esquerdo: Botão MENU + Logo Oficial e Indicador de Sessão */}
       <div style={{ display: 'flex', alignItems: 'center', gap: '0.85rem' }}>
         
-        {/* Botão Clean de Abrir Menu Lateral */}
+        {/* Botão Oficial MENU (Abre a aba lateral com todas as sessões) */}
         <button
           onClick={onToggleDrawer}
           className="btn-menu-clean"
-          title="Abrir Menu Lateral"
+          title="Abrir Menu Lateral com todas as sessões"
+          style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '0.45rem',
+            padding: '0.45rem 0.85rem',
+            borderRadius: '8px',
+            backgroundColor: 'var(--primary-accent-bg)',
+            border: '1px solid var(--border-highlight)',
+            color: 'var(--primary-accent)',
+            fontWeight: 800,
+            fontSize: '0.82rem',
+            letterSpacing: '0.04em',
+            cursor: 'pointer',
+            boxShadow: 'var(--shadow-sm)',
+            transition: 'all 0.15s ease'
+          }}
         >
-          <Menu size={17} />
-          <span>Menu</span>
+          <Menu size={18} />
+          <span>MENU</span>
         </button>
 
         {/* Marca & Identificação MDSync */}
@@ -73,6 +114,26 @@ export const Header = ({ onToggleDrawer, onOpenProfile }) => {
             </p>
           </div>
         </div>
+
+        {/* Indicador da Sessão Ativa */}
+        {activeTab && (
+          <div className="hide-mobile" style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.45rem',
+            padding: '0.32rem 0.75rem',
+            borderRadius: '7px',
+            backgroundColor: 'var(--bg-secondary)',
+            border: '1px solid var(--border-subtle)',
+            fontSize: '0.78rem',
+            marginLeft: '0.4rem'
+          }}>
+            <span style={{ color: 'var(--text-faint)', fontWeight: 600 }}>Sessão:</span>
+            <span style={{ color: 'var(--primary-accent)', fontWeight: 800 }}>
+              {TAB_TITLES[activeTab] || activeTab}
+            </span>
+          </div>
+        )}
       </div>
 
       {/* Lado Direito: Status de Conexão e Acesso Rápido ao Menu / Perfil */}
