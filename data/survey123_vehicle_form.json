@@ -1,0 +1,908 @@
+{
+  "layerName": "survey",
+  "portalUrl": "https://www.arcgis.com",
+  "questions": [
+    {
+      "id": "page_2",
+      "name": "identifica_o",
+      "type": "esriQuestionTypePage",
+      "appearance": {
+        "layout": [
+          "expanded"
+        ]
+      },
+      "label": "Página 1",
+      "description": null,
+      "questions": [
+        {
+          "id": "field_55",
+          "fieldName": "data_e_hora",
+          "name": "data_e_hora",
+          "type": "esriQuestionTypeDateTime",
+          "isRequired": true,
+          "appearance": {
+            "layout": [
+              "day-month-year"
+            ]
+          },
+          "fieldType": "esriFieldTypeDate",
+          "label": "Data e Hora",
+          "description": null
+        },
+        {
+          "id": "field_34",
+          "fieldName": "condutor",
+          "name": "condutor",
+          "type": "esriQuestionTypeText",
+          "isRequired": true,
+          "fieldType": "esriFieldTypeString",
+          "label": "Condutor",
+          "description": null
+        },
+        {
+          "id": "field_23",
+          "name": "localiza_o",
+          "type": "esriQuestionTypeGeoPoint",
+          "isRequired": true,
+          "defaultValue": null,
+          "fieldType": "esriFieldTypeGeometry",
+          "defaultExtent": {
+            "spatialReference": {
+              "wkid": 102100
+            },
+            "xmin": -4909758.956678292,
+            "ymin": -2283067.075439399,
+            "xmax": -4909343.330337027,
+            "ymax": -2282837.7643545633,
+            "centerLatitude": -20.083729,
+            "centerLongitude": -44.103248,
+            "zoomLevel": 17
+          },
+          "deviceLocation": {
+            "trigger": "locateButton"
+          },
+          "maps": [
+            {
+              "type": "webmap",
+              "itemId": "1a0c9a25bc2e4e19b858bb8cfee4eaa9",
+              "name": "Imagem"
+            }
+          ],
+          "search": {
+            "sources": []
+          },
+          "snapping": {
+            "isEnabled": false,
+            "modes": []
+          },
+          "inputTools": [
+            "pin",
+            "search",
+            "locate"
+          ],
+          "mapTools": [
+            "zoom",
+            "home"
+          ],
+          "displayFormats": [
+            "DD",
+            "DMS",
+            "UTM",
+            "MGRS"
+          ],
+          "defaultMap": {
+            "type": "webmap",
+            "itemId": "1a0c9a25bc2e4e19b858bb8cfee4eaa9"
+          },
+          "hasZ": false,
+          "label": "Localização",
+          "description": null
+        },
+        {
+          "id": "field_47",
+          "fieldName": "field_47",
+          "name": "field_47",
+          "type": "esriQuestionTypeDropdown",
+          "isRequired": true,
+          "appearance": {
+            "layout": [
+              "minimal"
+            ]
+          },
+          "choices": {
+            "items": [
+              {
+                "value": "PZB-1G94",
+                "label": "PZB-1G94"
+              },
+              {
+                "value": "TXY-7J22",
+                "label": "TXY-7J22"
+              },
+              {
+                "value": "TEQ-1E02",
+                "label": "TEQ-1E02"
+              },
+              {
+                "value": "TEQ-1E17",
+                "label": "TEQ-1E17"
+              },
+              {
+                "value": "Outro",
+                "label": "Outro"
+              }
+            ],
+            "other": {
+              "isEnabled": false,
+              "value": "other",
+              "name": "field_47_other",
+              "fieldName": "field_47_other",
+              "label": "Outro"
+            }
+          },
+          "fieldType": "esriFieldTypeString",
+          "choicesOrder": {
+            "type": "default"
+          },
+          "label": "Placa",
+          "description": null
+        },
+        {
+          "id": "field_45",
+          "fieldName": "outro",
+          "name": "outro",
+          "type": "esriQuestionTypeNumber",
+          "isRequired": false,
+          "fieldType": "esriFieldTypeDouble",
+          "validation": {
+            "isInteger": false
+          },
+          "label": "Outro",
+          "description": "<p><em style=\"color:rgb(230, 0, 0);\">Descrever marca e modelo caso o veículo não esteja listado acima</em></p>"
+        },
+        {
+          "id": "field_30",
+          "fieldName": "hod_metro_km_atual",
+          "name": "hod_metro_km_atual",
+          "type": "esriQuestionTypeNumber",
+          "isRequired": true,
+          "fieldType": "esriFieldTypeDouble",
+          "validation": {
+            "isInteger": false
+          },
+          "label": "Hodômetro (km atual)",
+          "description": null
+        },
+        {
+          "id": "field_31",
+          "name": "registro_do_painel",
+          "type": "esriQuestionTypeImage",
+          "isRequired": true,
+          "validation": {
+            "allowFileType": {
+              "type": "image",
+              "exts": [
+                "*"
+              ]
+            },
+            "allowFileSize": {
+              "min": 0,
+              "max": 10
+            }
+          },
+          "fieldType": "esriAttachment",
+          "inputTools": [
+            "browse",
+            "camera"
+          ],
+          "label": "Registro do Painel",
+          "description": null
+        }
+      ]
+    },
+    {
+      "id": "page_8",
+      "name": "p_gina_2",
+      "type": "esriQuestionTypePage",
+      "appearance": {
+        "layout": [
+          "expanded"
+        ]
+      },
+      "label": "Página 2",
+      "description": null,
+      "questions": [
+        {
+          "id": "field_35",
+          "name": "field_35",
+          "type": "esriQuestionTypeSingleChoiceGrid",
+          "appearance": {},
+          "choices": {
+            "items": [
+              {
+                "value": "OK",
+                "label": "OK"
+              },
+              {
+                "value": "Atenção",
+                "label": "Atenção"
+              },
+              {
+                "value": "Crítico",
+                "label": "Crítico"
+              }
+            ]
+          },
+          "choicesOrder": {
+            "type": "default"
+          },
+          "label": "Itens de Segurança Obrigatório",
+          "description": null,
+          "questions": [
+            {
+              "id": "field_35_14",
+              "fieldName": "field_35_gua_no_limpador",
+              "name": "field_35_gua_no_limpador",
+              "type": "esriQuestionTypeSingleChoice",
+              "isRequired": true,
+              "choices": {
+                "reference": "#/questions/field_35/choices"
+              },
+              "fieldType": null,
+              "choicesOrder": {
+                "type": "default"
+              },
+              "label": "Água no limpador",
+              "description": null
+            },
+            {
+              "id": "field_35_4",
+              "fieldName": "itens_de_seguran_a_obrigat_rio",
+              "name": "itens_de_seguran_a_obrigat_rio",
+              "type": "esriQuestionTypeSingleChoice",
+              "isRequired": true,
+              "choices": {
+                "reference": "#/questions/field_35/choices"
+              },
+              "fieldType": null,
+              "choicesOrder": {
+                "type": "default"
+              },
+              "label": "Bandeirola de sinalização",
+              "description": null
+            },
+            {
+              "id": "field_35_13",
+              "fieldName": "field_35_buzina",
+              "name": "field_35_buzina",
+              "type": "esriQuestionTypeSingleChoice",
+              "isRequired": true,
+              "choices": {
+                "reference": "#/questions/field_35/choices"
+              },
+              "fieldType": null,
+              "choicesOrder": {
+                "type": "default"
+              },
+              "label": "Buzina",
+              "description": null
+            },
+            {
+              "id": "field_35_8",
+              "fieldName": "itens_de_seguran_a_obrigat_rio_",
+              "name": "itens_de_seguran_a_obrigat_rio_",
+              "type": "esriQuestionTypeSingleChoice",
+              "isRequired": true,
+              "choices": {
+                "reference": "#/questions/field_35/choices"
+              },
+              "fieldType": null,
+              "choicesOrder": {
+                "type": "default"
+              },
+              "label": "Cintos de segurança",
+              "description": null
+            },
+            {
+              "id": "field_35_10",
+              "fieldName": "field_35_10",
+              "name": "field_35_10",
+              "type": "esriQuestionTypeSingleChoice",
+              "isRequired": true,
+              "choices": {
+                "reference": "#/questions/field_35/choices"
+              },
+              "fieldType": null,
+              "choicesOrder": {
+                "type": "default"
+              },
+              "label": "Documentação válida (CRLV + CNH + Credencial de Plano de Trânsito)",
+              "description": null
+            },
+            {
+              "id": "field_35_11",
+              "fieldName": "field_35_freios",
+              "name": "field_35_freios",
+              "type": "esriQuestionTypeSingleChoice",
+              "isRequired": true,
+              "choices": {
+                "reference": "#/questions/field_35/choices"
+              },
+              "fieldType": null,
+              "choicesOrder": {
+                "type": "default"
+              },
+              "label": "Freios",
+              "description": null
+            },
+            {
+              "id": "field_35_5",
+              "fieldName": "field_35_5",
+              "name": "field_35_5",
+              "type": "esriQuestionTypeSingleChoice",
+              "isRequired": true,
+              "choices": {
+                "reference": "#/questions/field_35/choices"
+              },
+              "fieldType": null,
+              "choicesOrder": {
+                "type": "default"
+              },
+              "label": "Giroflex",
+              "description": null
+            },
+            {
+              "id": "field_35_6",
+              "fieldName": "field_35_6",
+              "name": "field_35_6",
+              "type": "esriQuestionTypeSingleChoice",
+              "isRequired": true,
+              "choices": {
+                "reference": "#/questions/field_35/choices"
+              },
+              "fieldType": null,
+              "choicesOrder": {
+                "type": "default"
+              },
+              "label": "Pneus + Estepe",
+              "description": null
+            },
+            {
+              "id": "field_35_7",
+              "fieldName": "field_35_7",
+              "name": "field_35_7",
+              "type": "esriQuestionTypeSingleChoice",
+              "isRequired": true,
+              "choices": {
+                "reference": "#/questions/field_35/choices"
+              },
+              "fieldType": null,
+              "choicesOrder": {
+                "type": "default"
+              },
+              "label": "Kit de sinalização (Macaco, chave de roda, triângulo)",
+              "description": null
+            }
+          ]
+        },
+        {
+          "id": "field_9",
+          "name": "registros_itens_de_seguran_a_ob",
+          "type": "esriQuestionTypeImage",
+          "isRequired": false,
+          "validation": {
+            "allowFileType": {
+              "type": "image",
+              "exts": [
+                "*"
+              ]
+            },
+            "allowFileSize": {
+              "min": 0,
+              "max": 10
+            }
+          },
+          "fieldType": "esriAttachment",
+          "inputTools": [
+            "browse",
+            "camera"
+          ],
+          "appearance": {},
+          "label": "Registros - Itens de Segurança Obrigatório",
+          "description": "<p><em style=\"color:rgb(230, 0, 0);\">Registro fotográfico obrigatório apenas em casos de itens marcados como atenção e/ou críticos</em></p>"
+        },
+        {
+          "id": "field_48",
+          "name": "field_48",
+          "type": "esriQuestionTypeImage",
+          "isRequired": false,
+          "validation": {
+            "allowFileType": {
+              "type": "image",
+              "exts": [
+                "*"
+              ]
+            },
+            "allowFileSize": {
+              "min": 0,
+              "max": 10
+            }
+          },
+          "fieldType": "esriAttachment",
+          "inputTools": [
+            "browse",
+            "camera"
+          ],
+          "appearance": {},
+          "label": "Registros - Itens de Segurança Obrigatório",
+          "description": "<p><em style=\"color:rgb(230, 0, 0);\">Registro fotográfico obrigatório apenas em casos de itens marcados como atenção e/ou críticos</em></p>"
+        },
+        {
+          "id": "field_49",
+          "name": "field_49",
+          "type": "esriQuestionTypeImage",
+          "isRequired": false,
+          "validation": {
+            "allowFileType": {
+              "type": "image",
+              "exts": [
+                "*"
+              ]
+            },
+            "allowFileSize": {
+              "min": 0,
+              "max": 10
+            }
+          },
+          "fieldType": "esriAttachment",
+          "inputTools": [
+            "browse",
+            "camera"
+          ],
+          "appearance": {},
+          "label": "Registros - Itens de Segurança Obrigatório",
+          "description": "<p><em style=\"color:rgb(230, 0, 0);\">Registro fotográfico obrigatório apenas em casos de itens marcados como atenção e/ou críticos</em></p>"
+        },
+        {
+          "id": "field_50",
+          "name": "field_50",
+          "type": "esriQuestionTypeImage",
+          "isRequired": false,
+          "validation": {
+            "allowFileType": {
+              "type": "image",
+              "exts": [
+                "*"
+              ]
+            },
+            "allowFileSize": {
+              "min": 0,
+              "max": 10
+            }
+          },
+          "fieldType": "esriAttachment",
+          "inputTools": [
+            "browse",
+            "camera"
+          ],
+          "appearance": {},
+          "label": "Registros - Itens de Segurança Obrigatório",
+          "description": "<p><em style=\"color:rgb(230, 0, 0);\">Registro fotográfico obrigatório apenas em casos de itens marcados como atenção e/ou críticos</em></p>"
+        }
+      ]
+    },
+    {
+      "id": "page_12",
+      "name": "p_gina_3",
+      "type": "esriQuestionTypePage",
+      "appearance": {
+        "layout": [
+          "expanded"
+        ]
+      },
+      "label": "Página 3",
+      "description": null,
+      "questions": [
+        {
+          "id": "field_36",
+          "name": "field_36",
+          "type": "esriQuestionTypeSingleChoiceGrid",
+          "appearance": {},
+          "choices": {
+            "items": [
+              {
+                "value": "OK",
+                "label": "OK"
+              },
+              {
+                "value": "Atenção",
+                "label": "Atenção"
+              },
+              {
+                "value": "Crítico",
+                "label": "Crítico"
+              }
+            ]
+          },
+          "choicesOrder": {
+            "type": "default"
+          },
+          "label": "Condições Gerais",
+          "description": null,
+          "questions": [
+            {
+              "id": "field_36_5",
+              "fieldName": "field_36_calibragem_dos_pneus",
+              "name": "field_36_calibragem_dos_pneus",
+              "type": "esriQuestionTypeSingleChoice",
+              "isRequired": true,
+              "choices": {
+                "reference": "#/questions/field_36/choices"
+              },
+              "fieldType": "esriFieldTypeString",
+              "choicesOrder": {
+                "type": "default"
+              },
+              "label": "Calibragem dos pneus",
+              "description": null
+            },
+            {
+              "id": "field_36_11",
+              "fieldName": "field_36_ilumina_o_e_sinaliza_o",
+              "name": "field_36_ilumina_o_e_sinaliza_o",
+              "type": "esriQuestionTypeSingleChoice",
+              "isRequired": true,
+              "choices": {
+                "reference": "#/questions/field_36/choices"
+              },
+              "fieldType": "esriFieldTypeString",
+              "choicesOrder": {
+                "type": "default"
+              },
+              "label": "Iluminação e sinalização (faróis, setas, freio, ré e lanternas funcionando)",
+              "description": null
+            },
+            {
+              "id": "field_36_9",
+              "fieldName": "field_36_lataria_pintura",
+              "name": "field_36_lataria_pintura",
+              "type": "esriQuestionTypeSingleChoice",
+              "isRequired": true,
+              "choices": {
+                "reference": "#/questions/field_36/choices"
+              },
+              "fieldType": "esriFieldTypeString",
+              "choicesOrder": {
+                "type": "default"
+              },
+              "label": "Lataria + Pintura",
+              "description": null
+            },
+            {
+              "id": "field_36_10",
+              "fieldName": "field_36_limpeza_geral",
+              "name": "field_36_limpeza_geral",
+              "type": "esriQuestionTypeSingleChoice",
+              "isRequired": true,
+              "choices": {
+                "reference": "#/questions/field_36/choices"
+              },
+              "fieldType": "esriFieldTypeString",
+              "choicesOrder": {
+                "type": "default"
+              },
+              "label": "Limpeza geral",
+              "description": null
+            },
+            {
+              "id": "field_36_1",
+              "fieldName": "field_36_n_vel_do_leo_do_motor",
+              "name": "field_36_n_vel_do_leo_do_motor",
+              "type": "esriQuestionTypeSingleChoice",
+              "isRequired": true,
+              "fieldType": "esriFieldTypeString",
+              "choices": {
+                "reference": "#/questions/field_36/choices"
+              },
+              "choicesOrder": {
+                "type": "default"
+              },
+              "label": "Nível do óleo do motor",
+              "description": null
+            },
+            {
+              "id": "field_36_2",
+              "fieldName": "field_36_n_vel_de_gual_quido_de",
+              "name": "field_36_n_vel_de_gual_quido_de",
+              "type": "esriQuestionTypeSingleChoice",
+              "isRequired": true,
+              "fieldType": "esriFieldTypeString",
+              "choices": {
+                "reference": "#/questions/field_36/choices"
+              },
+              "choicesOrder": {
+                "type": "default"
+              },
+              "label": "Nível de água/líquido de arrefecimento",
+              "description": null
+            },
+            {
+              "id": "field_36_12",
+              "fieldName": "field_36_para_brisa",
+              "name": "field_36_para_brisa",
+              "type": "esriQuestionTypeSingleChoice",
+              "isRequired": true,
+              "choices": {
+                "reference": "#/questions/field_36/choices"
+              },
+              "fieldType": "esriFieldTypeString",
+              "choicesOrder": {
+                "type": "default"
+              },
+              "label": "Para-brisa",
+              "description": null
+            },
+            {
+              "id": "field_36_13",
+              "fieldName": "field_36_vazamentos_aparentes",
+              "name": "field_36_vazamentos_aparentes",
+              "type": "esriQuestionTypeSingleChoice",
+              "isRequired": true,
+              "choices": {
+                "reference": "#/questions/field_36/choices"
+              },
+              "fieldType": "esriFieldTypeString",
+              "choicesOrder": {
+                "type": "default"
+              },
+              "label": "Vazamentos aparentes",
+              "description": null
+            }
+          ]
+        },
+        {
+          "id": "field_43",
+          "name": "registros_condi_es_gerais",
+          "type": "esriQuestionTypeImage",
+          "isRequired": false,
+          "validation": {
+            "allowFileType": {
+              "type": "image",
+              "exts": [
+                "*"
+              ]
+            },
+            "allowFileSize": {
+              "min": 0,
+              "max": 10
+            }
+          },
+          "fieldType": "esriAttachment",
+          "inputTools": [
+            "browse",
+            "camera"
+          ],
+          "appearance": {},
+          "label": "Registros - Condições Gerais",
+          "description": "<p><em style=\"color:rgb(230, 0, 0);\">Registro fotográfico obrigatório apenas em casos de itens marcados como atenção e/ou críticos</em></p>"
+        },
+        {
+          "id": "field_53",
+          "name": "field_53",
+          "type": "esriQuestionTypeImage",
+          "isRequired": false,
+          "validation": {
+            "allowFileType": {
+              "type": "image",
+              "exts": [
+                "*"
+              ]
+            },
+            "allowFileSize": {
+              "min": 0,
+              "max": 10
+            }
+          },
+          "fieldType": "esriAttachment",
+          "inputTools": [
+            "browse",
+            "camera"
+          ],
+          "appearance": {},
+          "label": "Registros - Condições Gerais",
+          "description": "<p><em style=\"color:rgb(230, 0, 0);\">Registro fotográfico obrigatório apenas em casos de itens marcados como atenção e/ou críticos</em></p>"
+        },
+        {
+          "id": "field_54",
+          "name": "field_54",
+          "type": "esriQuestionTypeImage",
+          "isRequired": false,
+          "validation": {
+            "allowFileType": {
+              "type": "image",
+              "exts": [
+                "*"
+              ]
+            },
+            "allowFileSize": {
+              "min": 0,
+              "max": 10
+            }
+          },
+          "fieldType": "esriAttachment",
+          "inputTools": [
+            "browse",
+            "camera"
+          ],
+          "appearance": {},
+          "label": "Registros - Condições Gerais",
+          "description": "<p><em style=\"color:rgb(230, 0, 0);\">Registro fotográfico obrigatório apenas em casos de itens marcados como atenção e/ou críticos</em></p>"
+        },
+        {
+          "id": "field_52",
+          "name": "field_52",
+          "type": "esriQuestionTypeImage",
+          "isRequired": false,
+          "validation": {
+            "allowFileType": {
+              "type": "image",
+              "exts": [
+                "*"
+              ]
+            },
+            "allowFileSize": {
+              "min": 0,
+              "max": 10
+            }
+          },
+          "fieldType": "esriAttachment",
+          "inputTools": [
+            "browse",
+            "camera"
+          ],
+          "appearance": {},
+          "label": "Registros - Condições Gerais",
+          "description": "<p><em style=\"color:rgb(230, 0, 0);\">Registro fotográfico obrigatório apenas em casos de itens marcados como atenção e/ou críticos</em></p>"
+        }
+      ]
+    },
+    {
+      "id": "page_6",
+      "name": "page_6",
+      "type": "esriQuestionTypePage",
+      "appearance": {
+        "layout": [
+          "expanded"
+        ]
+      },
+      "label": "Observações e Finalização",
+      "description": null,
+      "questions": [
+        {
+          "id": "field_19",
+          "fieldName": "descreva_aqui",
+          "name": "descreva_aqui",
+          "type": "esriQuestionTypeTextArea",
+          "isRequired": false,
+          "fieldType": "esriFieldTypeString",
+          "label": "Descreva aqui",
+          "description": "<p><em style=\"color:rgb(230, 0, 0);\">Descrição obrigatória apenas em casos de itens marcados como atenção e/ou críticos</em></p>"
+        },
+        {
+          "id": "field_28",
+          "name": "registros_complementares",
+          "type": "esriQuestionTypeImage",
+          "isRequired": false,
+          "validation": {
+            "allowFileType": {
+              "type": "image",
+              "exts": [
+                "*"
+              ]
+            },
+            "allowFileSize": {
+              "min": 0,
+              "max": 10
+            }
+          },
+          "fieldType": "esriAttachment",
+          "inputTools": [
+            "browse",
+            "camera"
+          ],
+          "label": "Registros complementares",
+          "description": "<p><em style=\"color:rgb(230, 0, 0);\">Registro fotográfico obrigatório apenas em casos de itens marcados como atenção e/ou críticos</em></p>"
+        },
+        {
+          "id": "field_44",
+          "name": "assinatura",
+          "type": "esriQuestionTypeSignature",
+          "isRequired": true,
+          "fieldType": "esriAttachment",
+          "label": "Assinatura",
+          "description": null,
+          "inlineDesc": "Assine acima da linha"
+        }
+      ]
+    }
+  ],
+  "version": "3.25",
+  "themes": [
+    {
+      "id": "yP7Qpyh-A",
+      "name": "theme-color1",
+      "isEnabled": true,
+      "header": {
+        "backgroundColor": "#31872e",
+        "textColor": "#ffffff"
+      },
+      "form": {
+        "backgroundColor": "#ffffff",
+        "backgroundOpacity": 1,
+        "textColor": "#505050",
+        "primaryColor": "#31872e",
+        "primaryTextColor": "#ffffff",
+        "inputTextColor": "#505050",
+        "inputBackgroundColor": "#ffffff"
+      },
+      "webpage": {
+        "backgroundColor": "#b7dcc7"
+      }
+    }
+  ],
+  "header": {
+    "isVisible": true,
+    "content": "<p style=\"text-align:center;\">Checklist Veicular - Diário</p>"
+  },
+  "subHeader": {
+    "isVisible": true,
+    "content": "<p><br></p><p><img src=\"@survey/info/media/logo_itaminas_logo_cor_vertical_1772546249750.png\" width=\"598\"></p><p><span style=\"font-size:16px;\">Empreendedor:</span><strong style=\"font-size:16px;\"> ITAMINAS Comércio de Minérios S.A</strong></p><p><span style=\"font-size:16px;\">Localização: </span><strong style=\"font-size:16px;\">Sarzedo/MG</strong></p>"
+  },
+  "settings": {
+    "valueUpdateTrigger": "onInput",
+    "thankYouScreenContent": "Obrigado por preencher o checklist! Sua atenção é fundamental para a segurança e conservação dos veículos da empresa.",
+    "openStatusInfo": {
+      "status": "open",
+      "schedule": {
+        "start": null,
+        "end": null
+      },
+      "closedStatusContent": "<p style=\"text-align:center;\"><br></p><p style=\"text-align:center;\"><img src=\"@survey/info/media/openClose.png\"></p><p style=\"text-align:center;\"><br></p><p style=\"text-align:center;\"><strong style=\"font-size:16px;\">Esta pesquisa está atualmente encerrada. Obrigado!</strong></p>"
+    },
+    "recordStartEndTime": {
+      "isEnabled": false,
+      "fieldInfos": []
+    },
+    "notificationsInfo": {
+      "webhooks": []
+    },
+    "isVersionLocked": true,
+    "multiSubmissionInfo": {
+      "autoReload": -1,
+      "maxAllowed": 0,
+      "showSubmitAnotherTip": false,
+      "redirectUrl": ""
+    },
+    "draftInfo": {
+      "isEnabled": false
+    },
+    "captcha": {
+      "isEnabled": false,
+      "content": "Preencha o CAPTCHA abaixo para enviar a pesquisa."
+    }
+  },
+  "locales": [
+    {
+      "code": "pt-br",
+      "label": "pt-br",
+      "isDefault": true
+    }
+  ],
+  "submit": {
+    "buttonText": "Enviar"
+  },
+  "footer": {
+    "isVisible": true,
+    "content": "<p style=\"text-align:center;\"><a href=\"https://www.esri.com/products/survey123\" target=\"_blank\" style=\"color:rgb(0, 0, 0);\">Suportado pelo ArcGIS Survey123</a></p>"
+  }
+}
