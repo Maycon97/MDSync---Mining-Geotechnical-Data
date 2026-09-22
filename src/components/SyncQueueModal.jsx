@@ -13,7 +13,9 @@ import {
   FileText, 
   Camera, 
   AlertTriangle,
-  ArrowRight
+  ArrowRight,
+  Truck,
+  ClipboardCheck
 } from 'lucide-react';
 
 export const SyncQueueModal = ({ isOpen, onClose }) => {
@@ -241,31 +243,37 @@ export const SyncQueueModal = ({ isOpen, onClose }) => {
                         width: '40px',
                         height: '40px',
                         borderRadius: '6px',
-                        backgroundColor: 'var(--primary-accent-bg)',
-                        color: 'var(--primary-accent)',
+                        backgroundColor: (item.type === 'vehicle_checklist' || item.placa) ? 'rgba(16, 185, 129, 0.15)' : 'var(--primary-accent-bg)',
+                        color: (item.type === 'vehicle_checklist' || item.placa) ? '#10b981' : 'var(--primary-accent)',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
                         flexShrink: 0
                       }}>
-                        <FileText size={18} />
+                        {(item.type === 'vehicle_checklist' || item.placa) ? (
+                          <Truck size={18} />
+                        ) : (item.type === 'checklist' || item.surveyId) ? (
+                          <ClipboardCheck size={18} />
+                        ) : (
+                          <FileText size={18} />
+                        )}
                       </div>
                     )}
 
                     <div>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', flexWrap: 'wrap' }}>
                         <span style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-main)' }}>
-                          {item.tipo ? `${item.tipo}-${item.id}` : (item.descricao || 'Item de Coleta')}
+                          {item.placa ? `Checklist Veicular - ${item.placa}` : item.tipo ? `${item.tipo}-${item.id}` : (item.descricao || 'Item de Coleta')}
                         </span>
                         <span style={{
                           fontSize: '0.68rem',
                           fontWeight: 700,
                           padding: '0.1rem 0.35rem',
                           borderRadius: '4px',
-                          backgroundColor: 'var(--primary-accent-bg)',
-                          color: 'var(--primary-accent)'
+                          backgroundColor: (item.type === 'vehicle_checklist' || item.placa) ? 'rgba(16, 185, 129, 0.15)' : 'var(--primary-accent-bg)',
+                          color: (item.type === 'vehicle_checklist' || item.placa) ? '#10b981' : 'var(--primary-accent)'
                         }}>
-                          {item.estrutura || 'Itaminas'}
+                          {item.estrutura || item.placa || item.setor || 'Itaminas'}
                         </span>
                       </div>
 
@@ -273,7 +281,10 @@ export const SyncQueueModal = ({ isOpen, onClose }) => {
                         {item.valor !== undefined && (
                           <span>Leitura no Piu: <strong>{Number(item.valor).toFixed(2)} m</strong> • </span>
                         )}
-                        <span>{item.dataHoraFila || 'Data local'}</span>
+                        {item.quilometragem && (
+                          <span>KM: <strong>{item.quilometragem}</strong> • </span>
+                        )}
+                        <span>{item.dataHoraFila || 'Gravado em modo offline'}</span>
                       </div>
                     </div>
                   </div>

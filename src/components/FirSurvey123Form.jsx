@@ -51,7 +51,7 @@ export const SURVEY123_FIR_STRUCTURES = [
 ];
 
 export const FirSurvey123Form = ({ initialEstrutura, onSuccess, compact = false }) => {
-  const { structures = [], addAnomaly, addInspecaoGeotecnica, addAnomaliaGeotecnica } = useGeotechData();
+  const { structures = [], addAnomaly, addInspecaoGeotecnica, addAnomaliaGeotecnica, addChecklist } = useGeotechData();
   const { currentUser } = useAuth();
   const { coords, accuracy, loading: gpsLoading, getPosition } = useGeoLocation();
   const firPhoto = useCameraPhoto();
@@ -354,7 +354,38 @@ export const FirSurvey123Form = ({ initialEstrutura, onSuccess, compact = false 
         descricao: firDescricaoTecnica,
         foto: firPhoto.photoData
       },
-      assinatura: firAssinatura || (hasFirDrawn ? 'Assinatura Digital Registrada' : null)
+      assinatura: firAssinatura || (hasFirDrawn ? 'Assinatura Digital Registrada' : null),
+      // Campos compatíveis com o ChecklistTab e Fila Offline
+      acessos: firAcessoConservacao || 'Bom',
+      acessosObs: firAcessosObs || '',
+      macicoCondicoesEstruturais: firMacicoObsEstrutural || 'Não detectado',
+      macicoCondicoesVisuais: firMacicoObsVisual || 'Não detectado',
+      macicoCondicoesSuperficiais: firMacicoObsSuperficial || 'Não detectado',
+      macicoObs: [firMacicoObsEstrutural, firMacicoObsVisual, firMacicoObsSuperficial].filter(Boolean).join(' | '),
+      drenagemSuperficial: firDrenagemSuperficial || 'Não',
+      tipoObstrucao: firDrenagemTipoObstrucao || 'Nenhum',
+      estadoConservacaoDrenagem: firDrenagemConservacao || 'Bom',
+      drenagemObs: firDrenagemObs || '',
+      reservatorioQualidadeAgua: firReservatorioQualidade || 'Límpida',
+      nivelAssoreamento: firReservatorioAssoreamento || 'Baixo',
+      taludeMontante: firReservatorioTaludeMontante || 'Estável',
+      reservatorioObs: firReservatorioObs || '',
+      drenagemInterna: firDrenagemInterna || 'Operando Normal',
+      qualidadeAguaDrenagem: firDrenagemQualidadeAgua || 'Límpida',
+      estadoGeralDrenagemInterna: 'Bom',
+      drenagemInternaObs: firDrenagemInternaObs || '',
+      instrumentacao: firInstrumentacaoMonitoramento || 'Operando Normalmente',
+      condicoesGeraisInstrumentacao: 'Bom',
+      tampasProtecao: firInstIntegridade || 'Íntegras',
+      instrumentacaoObs: firInstObs || '',
+      sistemaExtravasor: 'Não',
+      condicoesFluxo: firExtravasorFluxo || 'Livre',
+      estadoConservacaoExtravasor: firExtravasorConservacao || 'Bom',
+      extravasorObs: firExtravasorObs || '',
+      classificacaoGeral: firClassificacaoGeral,
+      status: firClassificacaoGeral.includes('Nível 3') ? 'EMERGÊNCIA' : firClassificacaoGeral.includes('Nível 2') ? 'ALERTA' : firClassificacaoGeral.includes('Nível 1') ? 'ATENÇÃO' : 'CONFORME',
+      badgeClass: firClassificacaoGeral.includes('Nível 3') ? 'badge-emergencia' : firClassificacaoGeral.includes('Nível 2') ? 'badge-alerta' : firClassificacaoGeral.includes('Nível 1') ? 'badge-atencao' : 'badge-normal',
+      observacoesFinais: firDescricaoTecnica
     };
 
     // 1. Persistência no LocalStorage para rastreabilidade
@@ -364,6 +395,11 @@ export const FirSurvey123Form = ({ initialEstrutura, onSuccess, compact = false 
       localStorage.setItem('mdsync_survey123_fir_records', JSON.stringify(stored.slice(0, 50)));
     } catch (err) {
       console.warn('Erro ao salvar FIR no localStorage:', err);
+    }
+
+    // 2. Registrar no ChecklistTab e na Fila Offline (se desconectado)
+    if (addChecklist) {
+      addChecklist(newFirRecord);
     }
 
     // 2. Se houver função de inspeção no contexto global, registrar também no histórico
