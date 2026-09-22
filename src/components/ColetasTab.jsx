@@ -284,7 +284,7 @@ export const ColetasTab = ({ onNavigateTab, initialSubTab, defaultSubTab }) => {
           </button>
         </div>
       ) : (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(360px, 1fr))', gap: '1rem' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 320px), 1fr))', gap: '1rem' }}>
           {filteredColetas.map(coleta => (
             <div
               key={coleta.id}

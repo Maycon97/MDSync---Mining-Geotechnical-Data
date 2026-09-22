@@ -814,7 +814,7 @@ export const ChamadosTab = ({ onNavigateTab }) => {
               </button>
             </div>
           ) : (
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(360px, 1fr))', gap: '1rem' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 320px), 1fr))', gap: '1rem' }}>
               {filteredTickets.map(ticket => {
                 const setorConfig = SETORES_RESPONSAVEIS.find(s => s.id === ticket.setorResponsavelSigla || s.label === ticket.setorResponsavel) || SETORES_RESPONSAVEIS[0];
                 const SetorIcon = setorConfig.icon;

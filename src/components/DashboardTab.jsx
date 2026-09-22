@@ -852,7 +852,7 @@ export const DashboardTab = ({ onNavigateTab }) => {
       {/* 3. GRADE PRINCIPAL DE GRÁFICOS (DATA VISUALIZATION DE IMPACTO) */}
       <div style={{
         display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fit, minmax(520px, 1fr))',
+        gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 460px), 1fr))',
         gap: '1.25rem'
       }}>
         {/* GRÁFICO 1: Curva de Tendência Piezométrica & Limites de Controle */}

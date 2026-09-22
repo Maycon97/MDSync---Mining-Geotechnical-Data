@@ -140,7 +140,7 @@ export const ContratosTerceirosTab = () => {
       </div>
 
       {/* Lista de Contratos */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(380px, 1fr))', gap: '1rem' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 320px), 1fr))', gap: '1rem' }}>
         {filteredContratos.map(ctr => (
           <div
             key={ctr.id}

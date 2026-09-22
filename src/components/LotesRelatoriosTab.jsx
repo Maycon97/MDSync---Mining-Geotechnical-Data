@@ -213,7 +213,7 @@ export const LotesRelatoriosTab = () => {
       </div>
 
       {/* Grid de Lotes Existentes */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(360px, 1fr))', gap: '1rem' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 320px), 1fr))', gap: '1rem' }}>
         {lotesRelatorios.map(lote => (
           <div key={lote.id} className="card-panel" style={{ padding: '1.25rem', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', gap: '0.85rem' }}>
             <div>

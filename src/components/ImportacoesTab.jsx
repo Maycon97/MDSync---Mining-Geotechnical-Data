@@ -87,7 +87,7 @@ export const ImportacoesTab = () => {
       </div>
 
       {/* Diretórios Oficiais Mapeados */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '1rem' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 300px), 1fr))', gap: '1rem' }}>
         
         {/* Diretório 1: PCMI Geral */}
         <div className="card-panel" style={{ padding: '1.25rem', borderLeft: '4px solid #10b981' }}>
