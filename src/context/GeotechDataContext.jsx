@@ -17,6 +17,7 @@ export const GeotechDataProvider = ({ children }) => {
   const [pluviometria, setPluviometria] = useState([]);
   const [anomalies, setAnomalies] = useState([]);
   const [checklists, setChecklists] = useState([]);
+  const [vehicleChecklists, setVehicleChecklists] = useState([]);
   const [fluigTickets, setFluigTickets] = useState([]);
   const [clientes, setClientes] = useState([]);
   const [contratosTerceiros, setContratosTerceiros] = useState([]);
@@ -192,6 +193,9 @@ export const GeotechDataProvider = ({ children }) => {
         const localChecklists = storageService.getLocalChecklists();
         setChecklists([...localChecklists, ...(data.checklists || [])]);
 
+        const localVehicleChecklists = storageService.getLocalVehicleChecklists();
+        setVehicleChecklists([...localVehicleChecklists, ...(data.checklistsVeiculares || [])]);
+
         const localFluig = storageService.getFluigTickets();
         setFluigTickets([...localFluig, ...(data.chamadosFluig || [])]);
 
@@ -356,6 +360,38 @@ export const GeotechDataProvider = ({ children }) => {
     showToast('Checklist removido.', 'info');
   };
 
+  // Adicionar Checklist Veicular (Survey123 Frota Diário)
+  const addVehicleChecklist = (vehicleData) => {
+    const dataWithSyncStatus = {
+      ...vehicleData,
+      sincronizado: isOnline
+    };
+
+    const saved = storageService.saveLocalVehicleChecklist(dataWithSyncStatus);
+    if (saved) {
+      setVehicleChecklists(prev => [saved, ...prev.filter(c => c.id !== saved.id)]);
+      if (!isOnline) {
+        storageService.addToOfflineQueue({
+          type: 'vehicle_checklist',
+          ...dataWithSyncStatus,
+          descricao: `Checklist Veicular - Placa ${vehicleData.placa} (${vehicleData.status || 'LIBERADO'})`
+        });
+        showToast('Checklist veicular salvo na fila offline! Sincronizará ao retornar conexão.', 'info');
+      } else {
+        showToast(`Checklist veicular da placa ${vehicleData.placa} registrado com sucesso!`, 'success');
+      }
+      return saved;
+    }
+    return null;
+  };
+
+  // Excluir Checklist Veicular
+  const deleteVehicleChecklist = (id) => {
+    storageService.deleteLocalVehicleChecklist(id);
+    setVehicleChecklists(prev => prev.filter(c => c.id !== id));
+    showToast('Checklist veicular removido.', 'info');
+  };
+
   // Gerenciamento de Chamados Fluig (BPM & Anomalias)
   const addFluigTicket = (ticketData) => {
     const ticketWithSyncStatus = {
@@ -511,6 +547,7 @@ export const GeotechDataProvider = ({ children }) => {
       pluviometria,
       anomalies,
       checklists,
+      vehicleChecklists,
       fluigTickets,
       clientes,
       contratosTerceiros,
@@ -533,6 +570,8 @@ export const GeotechDataProvider = ({ children }) => {
       addAnomaly,
       addChecklist,
       deleteChecklist,
+      addVehicleChecklist,
+      deleteVehicleChecklist,
       addFluigTicket,
       updateFluigTicket,
       deleteFluigTicket,

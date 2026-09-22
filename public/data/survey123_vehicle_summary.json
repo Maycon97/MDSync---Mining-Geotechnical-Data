@@ -1,0 +1,30 @@
+[
+  {
+    "name": "identifica_o",
+    "label": "Página 1",
+    "type": "esriQuestionTypePage",
+    "required": false,
+    "choices": []
+  },
+  {
+    "name": "p_gina_2",
+    "label": "Página 2",
+    "type": "esriQuestionTypePage",
+    "required": false,
+    "choices": []
+  },
+  {
+    "name": "p_gina_3",
+    "label": "Página 3",
+    "type": "esriQuestionTypePage",
+    "required": false,
+    "choices": []
+  },
+  {
+    "name": "page_6",
+    "label": "Observações e Finalização",
+    "type": "esriQuestionTypePage",
+    "required": false,
+    "choices": []
+  }
+]

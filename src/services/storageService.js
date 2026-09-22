@@ -11,6 +11,7 @@ const STORAGE_KEYS = {
   LOCAL_READINGS: 'mdsync_local_readings',
   LOCAL_ANOMALIES: 'mdsync_local_anomalies',
   LOCAL_CHECKLISTS: 'mdsync_local_checklists',
+  LOCAL_VEHICLE_CHECKLISTS: 'mdsync_local_vehicle_checklists',
   FLUIG_TICKETS: 'mdsync_fluig_tickets',
   FLUIG_CONFIG: 'mdsync_fluig_config',
   CLIENTES: 'mdsync_clientes',
@@ -188,6 +189,175 @@ export const storageService = {
       return true;
     } catch (e) {
       console.error('Erro ao excluir checklist:', e);
+      return false;
+    }
+  },
+
+  // Checklists Veiculares Diários (Survey123 Itaminas Frota)
+  getLocalVehicleChecklists() {
+    try {
+      const data = localStorage.getItem(STORAGE_KEYS.LOCAL_VEHICLE_CHECKLISTS);
+      if (data) return JSON.parse(data);
+      
+      // Dados semente iniciais da frota Itaminas Sarzedo
+      const defaultVehicleChecklists = [
+        {
+          id: 'CHK-VEIC-2026-001',
+          data_e_hora: '2026-09-21T07:15',
+          data: '2026-09-21',
+          hora: '07:15',
+          condutor: 'Carlos Eduardo Mendes',
+          placa: 'PZB-1G94',
+          modeloVeiculo: 'Toyota Hilux 4x4 (Geotecnia Operacional)',
+          hod_metro_km_atual: 84520,
+          lat: -20.063824,
+          lon: -44.114686,
+          localizacaoNome: 'Barragem B1 - Crista (Sarzedo/MG)',
+          status: 'LIBERADO',
+          badgeClass: 'badge-normal',
+          linkSurvey: 'https://arcg.is/0DuT4L1',
+          itensSeguranca: {
+            aguaLimpador: 'OK',
+            bandeirola: 'OK',
+            buzina: 'OK',
+            cintosSeguranca: 'OK',
+            documentacao: 'OK',
+            freios: 'OK',
+            giroflex: 'OK',
+            pneusEstepe: 'OK',
+            kitSinalizacao: 'OK'
+          },
+          condicoesGerais: {
+            calibragemPneus: 'OK',
+            iluminacaoSinalizacao: 'OK',
+            latariaPintura: 'OK',
+            limpezaGeral: 'OK',
+            nivelOleoMotor: 'OK',
+            nivelAguaArrefecimento: 'OK',
+            parabrisa: 'OK',
+            vazamentosAparentes: 'OK'
+          },
+          descreva_aqui: 'Veículo em perfeito estado operacional. Liberado para rondas geotécnicas diárias nas barragens B1 e B4.',
+          assinatura: 'Carlos Eduardo Mendes (Assinatura Digital)'
+        },
+        {
+          id: 'CHK-VEIC-2026-002',
+          data_e_hora: '2026-09-20T06:45',
+          data: '2026-09-20',
+          hora: '06:45',
+          condutor: 'Eng. Marcelo N. Siqueira',
+          placa: 'TXY-7J22',
+          modeloVeiculo: 'Mitsubishi L200 Triton 4x4 (Campo/Piezometria)',
+          hod_metro_km_atual: 62110,
+          lat: -20.075412,
+          lon: -44.118930,
+          localizacaoNome: 'PDE Mangaba - Acesso Norte',
+          status: 'ATENÇÃO',
+          badgeClass: 'badge-atencao',
+          linkSurvey: 'https://arcg.is/0DuT4L1',
+          itensSeguranca: {
+            aguaLimpador: 'Atenção',
+            bandeirola: 'OK',
+            buzina: 'OK',
+            cintosSeguranca: 'OK',
+            documentacao: 'OK',
+            freios: 'OK',
+            giroflex: 'OK',
+            pneusEstepe: 'OK',
+            kitSinalizacao: 'OK'
+          },
+          condicoesGerais: {
+            calibragemPneus: 'Atenção',
+            iluminacaoSinalizacao: 'OK',
+            latariaPintura: 'OK',
+            limpezaGeral: 'OK',
+            nivelOleoMotor: 'OK',
+            nivelAguaArrefecimento: 'OK',
+            parabrisa: 'OK',
+            vazamentosAparentes: 'OK'
+          },
+          descreva_aqui: 'Reservatório do limpador completado no início do turno. Pneu dianteiro esquerdo calibrado de 26 para 32 PSI.',
+          assinatura: 'Marcelo N. Siqueira (Assinatura Digital)'
+        },
+        {
+          id: 'CHK-VEIC-2026-003',
+          data_e_hora: '2026-09-19T14:10',
+          data: '2026-09-19',
+          hora: '14:10',
+          condutor: 'Dra. Vanessa Albuquerque',
+          placa: 'TEQ-1E02',
+          modeloVeiculo: 'Ford Ranger 4x4 (Supervisão Geotécnica)',
+          hod_metro_km_atual: 41980,
+          lat: -20.082150,
+          lon: -44.108420,
+          localizacaoNome: 'Cava Jangada - Bancada 890',
+          status: 'LIBERADO',
+          badgeClass: 'badge-normal',
+          linkSurvey: 'https://arcg.is/0DuT4L1',
+          itensSeguranca: {
+            aguaLimpador: 'OK',
+            bandeirola: 'OK',
+            buzina: 'OK',
+            cintosSeguranca: 'OK',
+            documentacao: 'OK',
+            freios: 'OK',
+            giroflex: 'OK',
+            pneusEstepe: 'OK',
+            kitSinalizacao: 'OK'
+          },
+          condicoesGerais: {
+            calibragemPneus: 'OK',
+            iluminacaoSinalizacao: 'OK',
+            latariaPintura: 'OK',
+            limpezaGeral: 'OK',
+            nivelOleoMotor: 'OK',
+            nivelAguaArrefecimento: 'OK',
+            parabrisa: 'OK',
+            vazamentosAparentes: 'OK'
+          },
+          descreva_aqui: 'Inspeção de rotina sem inconformidades. Equipamentos de sinalização e EPIs a bordo e conformes.',
+          assinatura: 'Vanessa Albuquerque (Assinatura Digital)'
+        }
+      ];
+      localStorage.setItem(STORAGE_KEYS.LOCAL_VEHICLE_CHECKLISTS, JSON.stringify(defaultVehicleChecklists));
+      return defaultVehicleChecklists;
+    } catch {
+      return [];
+    }
+  },
+  saveLocalVehicleChecklist(checklist) {
+    try {
+      const sanitized = securityShield.sanitizeObject(checklist);
+      const list = this.getLocalVehicleChecklists();
+      const newChecklist = {
+        ...sanitized,
+        id: sanitized.id || `CHK-VEIC-${Date.now().toString().slice(-6)}`,
+        dataRegistro: sanitized.dataRegistro || new Date().toISOString(),
+        origem: 'Survey123 Veicular (MDSync)',
+        linkSurvey: 'https://arcg.is/0DuT4L1',
+        sincronizado: sanitized.sincronizado !== undefined ? sanitized.sincronizado : true
+      };
+      const existingIdx = list.findIndex(c => c.id === newChecklist.id);
+      if (existingIdx !== -1) {
+        list[existingIdx] = newChecklist;
+      } else {
+        list.unshift(newChecklist);
+      }
+      localStorage.setItem(STORAGE_KEYS.LOCAL_VEHICLE_CHECKLISTS, JSON.stringify(list));
+      securityShield.logSecurityEvent('SAVE_VEHICLE_CHECKLIST', { id: newChecklist.id, placa: newChecklist.placa });
+      return newChecklist;
+    } catch (e) {
+      console.error('Erro ao salvar checklist veicular local:', e);
+      return null;
+    }
+  },
+  deleteLocalVehicleChecklist(id) {
+    try {
+      const list = this.getLocalVehicleChecklists().filter(c => c.id !== id);
+      localStorage.setItem(STORAGE_KEYS.LOCAL_VEHICLE_CHECKLISTS, JSON.stringify(list));
+      return true;
+    } catch (e) {
+      console.error('Erro ao excluir checklist veicular:', e);
       return false;
     }
   },
@@ -537,6 +707,12 @@ export const storageService = {
         });
       } else if (item.type === 'checklist' || item.surveyId) {
         this.saveLocalChecklist({
+          ...item,
+          sincronizado: true,
+          dataSincronizacao: new Date().toISOString()
+        });
+      } else if (item.type === 'vehicle_checklist' || item.type === 'checklist_veicular' || item.placa) {
+        this.saveLocalVehicleChecklist({
           ...item,
           sincronizado: true,
           dataSincronizacao: new Date().toISOString()
