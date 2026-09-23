@@ -218,37 +218,42 @@ export const ImportacoesTab = () => {
               </tr>
             </thead>
             <tbody>
-              {importacoesPcmi.map(imp => (
-                <tr key={imp.id} style={{ borderBottom: '1px solid var(--border-subtle)' }}>
-                  <td style={{ padding: '0.65rem 0.75rem', fontFamily: 'monospace', fontWeight: 700, color: 'var(--primary-accent)' }}>
-                    {imp.id}
-                  </td>
-                  <td style={{ padding: '0.65rem 0.75rem', fontWeight: 600, color: 'var(--text-main)' }}>
-                    {imp.tipo}
-                  </td>
-                  <td style={{ padding: '0.65rem 0.75rem', color: 'var(--text-muted)', maxWidth: '350px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                    {imp.origem}
-                  </td>
-                  <td style={{ padding: '0.65rem 0.75rem', fontWeight: 700, color: '#10b981' }}>
-                    {imp.registrosImportados.toLocaleString()}
-                  </td>
-                  <td style={{ padding: '0.65rem 0.75rem', color: 'var(--text-muted)' }}>
-                    {imp.data}
-                  </td>
-                  <td style={{ padding: '0.65rem 0.75rem' }}>
-                    <span style={{
-                      fontSize: '0.7rem',
-                      fontWeight: 700,
-                      padding: '0.15rem 0.5rem',
-                      borderRadius: '10px',
-                      backgroundColor: 'rgba(16, 185, 129, 0.15)',
-                      color: '#10b981'
-                    }}>
-                      {imp.status}
-                    </span>
-                  </td>
-                </tr>
-              ))}
+              {importacoesPcmi.map((imp, idx) => {
+                const total = imp?.registrosImportados ?? imp?.totalLeituras ?? 0;
+                const impId = imp?.id || `IMP-${String(idx + 1).padStart(3, '0')}`;
+                const impTipo = imp?.tipo || (imp?.totalLeituras ? 'Base Completa PCMI' : 'Importação Automática');
+                return (
+                  <tr key={impId} style={{ borderBottom: '1px solid var(--border-subtle)' }}>
+                    <td style={{ padding: '0.65rem 0.75rem', fontFamily: 'monospace', fontWeight: 700, color: 'var(--primary-accent)' }}>
+                      {impId}
+                    </td>
+                    <td style={{ padding: '0.65rem 0.75rem', fontWeight: 600, color: 'var(--text-main)' }}>
+                      {impTipo}
+                    </td>
+                    <td style={{ padding: '0.65rem 0.75rem', color: 'var(--text-muted)', maxWidth: '350px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={imp?.origem}>
+                      {imp?.origem || 'Diretório PCMI Itaminas'}
+                    </td>
+                    <td style={{ padding: '0.65rem 0.75rem', fontWeight: 700, color: '#10b981' }}>
+                      {Number(total).toLocaleString('pt-BR')}
+                    </td>
+                    <td style={{ padding: '0.65rem 0.75rem', color: 'var(--text-muted)' }}>
+                      {imp?.data || '-'}
+                    </td>
+                    <td style={{ padding: '0.65rem 0.75rem' }}>
+                      <span style={{
+                        fontSize: '0.7rem',
+                        fontWeight: 700,
+                        padding: '0.15rem 0.5rem',
+                        borderRadius: '10px',
+                        backgroundColor: 'rgba(16, 185, 129, 0.15)',
+                        color: '#10b981'
+                      }}>
+                        {imp?.status || 'CONCLUIDO'}
+                      </span>
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>

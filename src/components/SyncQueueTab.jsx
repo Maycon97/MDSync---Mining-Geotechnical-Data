@@ -605,7 +605,7 @@ export const SyncQueueTab = ({ onNavigateTab }) => {
                   <div>
                     <span style={{ fontWeight: 700, color: 'var(--text-main)' }}>{b.batchId}</span>
                     <span style={{ color: 'var(--text-muted)', marginLeft: '0.6rem' }}>
-                      {new Date(b.timestamp).toLocaleString('pt-BR')}
+                      {b?.timestamp ? new Date(b.timestamp).toLocaleString('pt-BR') : 'Horário não disponível'}
                     </span>
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
