@@ -2,6 +2,7 @@ import React, { useState, useMemo, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useGeotechData } from '../context/GeotechDataContext';
 import { storageService } from '../services/storageService';
+import { GithubIcon } from './GithubIcon';
 import { 
   X, 
   Search,
@@ -338,6 +339,14 @@ export const SideDrawer = ({
           tabId: 'configuracoes_perfil'
         },
         {
+          id: 'github_repo',
+          title: 'Repositório GitHub (Código)',
+          icon: GithubIcon,
+          type: 'link',
+          href: 'https://github.com/Maycon97/MDSync---Mining-Geotechnical-Data',
+          target: '_blank'
+        },
+        {
           id: 'baixar_apk',
           title: 'Baixar APK Android',
           icon: Smartphone,
@@ -381,10 +390,25 @@ export const SideDrawer = ({
       role="dialog"
       aria-modal="true"
       aria-label="Menu Lateral MDSync"
+      style={{
+        position: 'fixed',
+        inset: 0,
+        zIndex: 1300,
+        display: 'flex',
+        pointerEvents: isActive ? 'auto' : 'none'
+      }}
     >
       <div 
         className={`drawer-clean-panel ${isActive ? 'is-active' : ''}`}
         onClick={e => e.stopPropagation()}
+        style={{
+          width: '290px',
+          maxWidth: '85vw',
+          height: '100%',
+          display: 'flex',
+          flexDirection: 'column',
+          boxSizing: 'border-box'
+        }}
       >
         {/* ============================================================
             1. CABEÇALHO TRANSLÚCIDO CLEAN
@@ -447,6 +471,7 @@ export const SideDrawer = ({
             placeholder="Buscar ferramenta..."
             value={searchQuery}
             onChange={e => setSearchQuery(e.target.value)}
+            style={{ boxSizing: 'border-box' }}
           />
           {searchQuery && (
             <button
@@ -490,7 +515,7 @@ export const SideDrawer = ({
                     const ItemIcon = item.icon;
                     const isTabActive = item.tabId && activeTab === item.tabId;
 
-                    /* 1. Item Tipo: Link Externo (APK) */
+                    /* 1. Item Tipo: Link Externo (APK/GitHub) */
                     if (item.type === 'link') {
                       return (
                         <a
@@ -501,10 +526,19 @@ export const SideDrawer = ({
                           rel="noopener noreferrer"
                           className="nav-item-clean"
                           title={item.title}
+                          style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            textAlign: 'left',
+                            gap: '0.65rem',
+                            textDecoration: 'none',
+                            width: '100%',
+                            boxSizing: 'border-box'
+                          }}
                         >
-                          <ItemIcon size={15} style={{ color: 'var(--primary-accent)' }} />
-                          <span style={{ flex: 1 }}>{item.title}</span>
-                          <Download size={12} style={{ color: 'var(--text-faint)', opacity: 0.8 }} />
+                          <ItemIcon size={15} style={{ color: 'var(--primary-accent)', flexShrink: 0 }} />
+                          <span style={{ flex: 1, textAlign: 'left' }}>{item.title}</span>
+                          <Download size={12} style={{ color: 'var(--text-faint)', opacity: 0.8, flexShrink: 0 }} />
                         </a>
                       );
                     }
@@ -624,21 +658,31 @@ export const SideDrawer = ({
                         onClick={() => handleNav(item.tabId)}
                         className={`nav-item-clean ${isTabActive ? 'active' : ''}`}
                         title={item.title}
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          textAlign: 'left',
+                          gap: '0.65rem',
+                          width: '100%',
+                          boxSizing: 'border-box'
+                        }}
                       >
                         <ItemIcon 
                           size={15} 
                           style={{ 
-                            color: isTabActive ? 'var(--primary-accent)' : 'inherit'
+                            color: isTabActive ? 'var(--primary-accent)' : 'inherit',
+                            flexShrink: 0
                           }} 
                         />
-                        <span style={{ flex: 1 }}>{item.title}</span>
+                        <span style={{ flex: 1, textAlign: 'left' }}>{item.title}</span>
                         {item.badge !== null && item.badge !== undefined && (
                           <span 
                             className="badge-pill-clean"
                             style={{
                               backgroundColor: item.badgeColor ? `${item.badgeColor}20` : 'var(--primary-accent-bg)',
                               color: item.badgeColor || 'var(--primary-accent)',
-                              border: `1px solid ${item.badgeColor ? `${item.badgeColor}30` : 'transparent'}`
+                              border: `1px solid ${item.badgeColor ? `${item.badgeColor}30` : 'transparent'}`,
+                              flexShrink: 0
                             }}
                           >
                             {item.badge}

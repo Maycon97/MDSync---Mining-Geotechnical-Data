@@ -20,6 +20,7 @@ import {
   Layers,
   Sparkles
 } from 'lucide-react';
+import { GithubIcon } from './GithubIcon';
 
 export const InspectHeroCard = ({ 
   onNavigate, 
@@ -263,7 +264,7 @@ export const InspectHeroCard = ({
               </button>
             </div>
 
-            <div style={{ borderTop: '1px solid var(--border-subtle)', paddingTop: '0.65rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <div style={{ borderTop: '1px solid var(--border-subtle)', paddingTop: '0.65rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.5rem' }}>
               <div>
                 <span style={{ fontSize: '0.68rem', fontWeight: 700, textTransform: 'uppercase', color: 'var(--text-muted)', display: 'block' }}>
                   VERSÃO DO APP
@@ -272,29 +273,53 @@ export const InspectHeroCard = ({
                   v2.0 GEOTEC
                 </span>
               </div>
-              <a
-                href="https://github.com/Maycon97/MDSync---Mining-Geotechnical-Data/releases/latest/download/mdsync-geotecnia.apk"
-                download="mdsync-geotecnia.apk"
-                target="_blank"
-                rel="noopener noreferrer"
-                style={{
-                  fontSize: '0.68rem',
-                  fontWeight: 700,
-                  color: '#10b981',
-                  backgroundColor: 'rgba(16, 185, 129, 0.15)',
-                  padding: '0.15rem 0.5rem',
-                  borderRadius: '8px',
-                  textDecoration: 'none',
-                  border: '1px solid rgba(16, 185, 129, 0.3)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '0.25rem'
-                }}
-                title="Baixar instalador APK oficial para Android"
-              >
-                <Download size={11} />
-                <span>APK Oficial</span>
-              </a>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                <a
+                  href="https://github.com/Maycon97/MDSync---Mining-Geotechnical-Data"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{
+                    fontSize: '0.68rem',
+                    fontWeight: 700,
+                    color: 'var(--primary-accent)',
+                    backgroundColor: 'var(--primary-accent-bg)',
+                    padding: '0.2rem 0.5rem',
+                    borderRadius: '8px',
+                    textDecoration: 'none',
+                    border: '1px solid var(--border-highlight)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.3rem'
+                  }}
+                  title="Acessar repositório oficial no GitHub"
+                >
+                  <GithubIcon size={12} />
+                  <span>GitHub</span>
+                </a>
+                <a
+                  href="https://github.com/Maycon97/MDSync---Mining-Geotechnical-Data/releases/latest/download/mdsync-geotecnia.apk"
+                  download="mdsync-geotecnia.apk"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{
+                    fontSize: '0.68rem',
+                    fontWeight: 700,
+                    color: '#10b981',
+                    backgroundColor: 'rgba(16, 185, 129, 0.15)',
+                    padding: '0.2rem 0.5rem',
+                    borderRadius: '8px',
+                    textDecoration: 'none',
+                    border: '1px solid rgba(16, 185, 129, 0.3)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.25rem'
+                  }}
+                  title="Baixar instalador APK oficial para Android"
+                >
+                  <Download size={11} />
+                  <span>APK Oficial</span>
+                </a>
+              </div>
             </div>
           </div>
 

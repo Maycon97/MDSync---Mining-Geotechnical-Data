@@ -6,6 +6,7 @@ import {
   WifiOff, 
   Menu
 } from 'lucide-react';
+import { GithubIcon } from './GithubIcon';
 
 const TAB_TITLES = {
   home: 'Página Inicial',
@@ -198,6 +199,30 @@ export const Header = ({ onToggleDrawer, onOpenProfile, activeTab = 'home' }) =>
             {currentUser?.nome?.split(' ')[0] || 'Usuário'}
           </span>
         </button>
+
+        {/* Link Direto do Repositório GitHub Oficial */}
+        <a
+          href="https://github.com/Maycon97/MDSync---Mining-Geotechnical-Data"
+          target="_blank"
+          rel="noopener noreferrer"
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            width: '32px',
+            height: '32px',
+            borderRadius: '8px',
+            backgroundColor: 'var(--bg-secondary)',
+            border: '1px solid var(--border-subtle)',
+            color: 'var(--text-main)',
+            textDecoration: 'none',
+            transition: 'all 0.15s ease'
+          }}
+          title="Abrir Repositório no GitHub"
+          className="hide-mobile"
+        >
+          <GithubIcon size={16} />
+        </a>
 
       </div>
     </header>
