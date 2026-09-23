@@ -14,6 +14,7 @@ const TAB_TITLES = {
   secoes: 'Seções 2D (Cortes & Estabilidade)',
   anomalias_inspecoes: 'Anomalias & ISR',
   campo: 'Coleta de Campo (Inspect)',
+  coletas: 'Coletas de Campo',
   fila_sync: 'Fila de Sincronização',
   checklist: 'CheckList FIR',
   chamados: 'Chamados Fluig',

@@ -23,7 +23,11 @@ import {
   CloudLightning,
   Sparkles,
   Sliders,
-  Menu
+  Menu,
+  Wrench,
+  Building2,
+  Briefcase,
+  FolderInput
 } from 'lucide-react';
 
 export const TABS = [
@@ -44,6 +48,12 @@ export const TABS = [
   { id: 'historico', label: 'Histórico de Dados', icon: History, desc: 'Consulta, filtros e exportação' },
   { id: 'ia', label: 'SUPORTE GEOTINHO', icon: Sparkles, desc: 'Assistente Geotinho, auditoria preditiva e parecer automatizado' },
   { id: 'cadastro', label: 'Cadastro & Limites', icon: Database, desc: 'Catálogo de instrumentos, cotas e seções' },
+  { id: 'coletas', label: 'Coletas de Campo', icon: ClipboardEdit, desc: 'Gestão de formulários de campo, rascunhos e integrações' },
+  { id: 'ordens_servico', label: 'Ordens de Serviço', icon: Wrench, desc: 'Planejamento e despacho de intervenções geotécnicas' },
+  { id: 'lotes_relatorios', label: 'Lotes de Relatórios', icon: Layers, desc: 'Emissão e consolidação de boletins e laudos em lote' },
+  { id: 'clientes', label: 'Clientes', icon: Building2, desc: 'Complexos minerários, empresas contratantes e unidades' },
+  { id: 'contratos', label: 'Contratos Terceiros', icon: Briefcase, desc: 'Contratos de empresas terceirizadas e SLAs' },
+  { id: 'importacoes', label: 'Importações PCMI', icon: FolderInput, desc: 'Integração de diretórios locais PCMI e telemetria' },
   { id: 'configuracoes_perfil', label: 'Configurações & Perfil', icon: Sliders, desc: 'Hub corporativo: perfil, senha, idioma i18n, tema, unidades, backup e compliance' }
 ];
 

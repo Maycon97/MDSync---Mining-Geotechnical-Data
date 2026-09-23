@@ -182,13 +182,15 @@ export const securityShield = {
    */
   logSecurityEvent(eventType, metadata = {}) {
     try {
+      if (typeof localStorage === 'undefined') return;
       const logs = JSON.parse(localStorage.getItem('mdsync_security_audit_log') || '[]');
+      const userAgent = typeof navigator !== 'undefined' ? navigator.userAgent.slice(0, 100) : 'Node/Test-Runtime';
       const event = {
         id: `SEC-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
         timestamp: new Date().toISOString(),
         eventType,
         metadata: this.sanitizeObject(metadata),
-        userAgent: navigator.userAgent.slice(0, 100)
+        userAgent
       };
       logs.unshift(event);
       // Manter últimos 100 eventos no armazenamento local
@@ -206,6 +208,7 @@ export const securityShield = {
    */
   getSecurityLogs() {
     try {
+      if (typeof localStorage === 'undefined') return [];
       return JSON.parse(localStorage.getItem('mdsync_security_audit_log') || '[]');
     } catch {
       return [];

@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { useGeotechData } from './context/GeotechDataContext';
 import { Header } from './components/Header';
-import { Navigation } from './components/Navigation';
 import { HomeTab } from './components/HomeTab';
 import { DashboardTab } from './components/DashboardTab';
 import { MapTab } from './components/MapTab';
@@ -20,8 +19,8 @@ import { ChecklistModal } from './components/ChecklistModal';
 import { ChecklistTab } from './components/ChecklistTab';
 import { ChamadosTab } from './components/ChamadosTab';
 
-// Novos componentes InspectApp & Centralizador Geotécnico
 import { SideDrawer } from './components/SideDrawer';
+import { ErrorBoundary } from './components/ErrorBoundary';
 import { InspectHeroCard } from './components/InspectHeroCard';
 import { ColetasTab } from './components/ColetasTab';
 import { ImportacoesTab } from './components/ImportacoesTab';
@@ -64,6 +63,8 @@ export function App() {
   const handleNavigateTab = (tabId, subTab = null) => {
     if (subTab) {
       setColetaInitialSubTab(subTab);
+    } else if (tabId === 'coletas') {
+      setColetaInitialSubTab('concluidas');
     }
     setActiveTab(tabId);
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -162,8 +163,7 @@ export function App() {
         onClose={() => setDrawerOpen(false)}
         activeTab={activeTab}
         onSelectTab={(tabId, subTab) => {
-          if (subTab) setColetaInitialSubTab(subTab);
-          handleNavigateTab(tabId);
+          handleNavigateTab(tabId, subTab);
           setDrawerOpen(false);
         }}
         onEditProfile={() => {
@@ -171,11 +171,11 @@ export function App() {
           setDrawerOpen(false);
         }}
         onOpenChecklist={() => {
-          setChecklistModalOpen(true);
+          handleNavigateTab('checklist');
           setDrawerOpen(false);
         }}
         onOpenReport={() => {
-          handleNavigateTab('lotes_relatorios');
+          handleNavigateTab('laudo');
           setDrawerOpen(false);
         }}
         onOpenSync={() => {
@@ -191,6 +191,7 @@ export function App() {
 
       {/* Área de Conteúdo da Aba Ativa */}
       <main style={{ flex: 1, padding: '1.25rem', maxWidth: '1600px', width: '100%', margin: '0 auto' }}>
+        <ErrorBoundary key={activeTab} onNavigateHome={() => handleNavigateTab('home')}>
         {activeTab === 'home' && (
           <div>
             <InspectHeroCard 
@@ -305,12 +306,36 @@ export function App() {
         )}
 
         {activeTab === 'cadastro' && (
-          <InstrumentsRegistryTab />
+          <InstrumentsRegistryTab onNavigateTab={handleNavigateTab} />
         )}
 
         {activeTab === 'configuracoes_perfil' && (
           <ProfileSettingsTab onNavigateTab={handleNavigateTab} />
         )}
+
+        {![
+          'home', 'dashboard', 'analises', 'coletas', 'importacoes', 'ordens_servico',
+          'lotes_relatorios', 'clientes', 'contratos', 'mapa', 'secoes', 'campo',
+          'fila_sync', 'anomalias_inspecoes', 'checklist', 'chamados', 'piezometria',
+          'vazao', 'documentos', 'comunicacao', 'laudo', 'historico', 'ia',
+          'cadastro', 'configuracoes_perfil'
+        ].includes(activeTab) && (
+          <div className="card-panel" style={{ padding: '2.5rem', textAlign: 'center' }}>
+            <h3 style={{ fontSize: '1.2rem', fontWeight: 800, color: 'var(--text-main)', marginBottom: '0.5rem' }}>
+              Módulo não encontrado
+            </h3>
+            <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '1.25rem' }}>
+              A aba solicitada ("{activeTab}") não está disponível ou foi movida.
+            </p>
+            <button 
+              onClick={() => handleNavigateTab('home')}
+              className="btn-primary"
+            >
+              Voltar para Página Inicial
+            </button>
+          </div>
+        )}
+        </ErrorBoundary>
       </main>
 
       {/* Botão de Ação Rápida Flutuante (Mobile FAB) */}

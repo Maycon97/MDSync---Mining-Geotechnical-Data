@@ -125,13 +125,7 @@ export const SideDrawer = ({
   const anomaliasAbertasCount = anomaliasGeotecnicas.filter(a => a.status !== 'Mitigada / Fechada').length;
 
   const handleNav = (tabId, subTab = null) => {
-    if (tabId === 'laudo' && onOpenReport) {
-      onOpenReport();
-    } else if (tabId === 'checklist' && onOpenChecklist) {
-      onSelectTab('checklist');
-    } else {
-      onSelectTab(tabId, subTab);
-    }
+    onSelectTab(tabId, subTab);
     onClose();
   };
 
@@ -494,10 +488,7 @@ export const SideDrawer = ({
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.1rem' }}>
                   {cat.items.map((item) => {
                     const ItemIcon = item.icon;
-                    const isTabActive = item.tabId && (
-                      activeTab === item.tabId || 
-                      (item.tabId === 'home' && activeTab === 'dashboard')
-                    );
+                    const isTabActive = item.tabId && activeTab === item.tabId;
 
                     /* 1. Item Tipo: Link Externo (APK) */
                     if (item.type === 'link') {
@@ -549,16 +540,17 @@ export const SideDrawer = ({
                     if (item.type === 'collapsible_coletas') {
                       return (
                         <div key={item.id}>
-                          <button
-                            onClick={() => setColetasExpanded(!coletasExpanded)}
-                            className={`nav-item-clean ${activeTab === 'coletas' ? 'active' : ''}`}
-                            style={{ justifyContent: 'space-between' }}
-                          >
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem', flex: 1 }}>
-                              <ItemIcon size={15} style={{ color: activeTab === 'coletas' ? 'var(--primary-accent)' : 'inherit' }} />
-                              <span>{item.title}</span>
-                            </div>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.2rem' }}>
+                            <button
+                              onClick={() => handleNav('coletas')}
+                              className={`nav-item-clean ${activeTab === 'coletas' ? 'active' : ''}`}
+                              style={{ flex: 1 }}
+                              title="Abrir tela de Coletas de Campo"
+                            >
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem', flex: 1 }}>
+                                <ItemIcon size={15} style={{ color: activeTab === 'coletas' ? 'var(--primary-accent)' : 'inherit' }} />
+                                <span>{item.title}</span>
+                              </div>
                               <span 
                                 className="badge-pill-clean"
                                 style={{
@@ -569,9 +561,20 @@ export const SideDrawer = ({
                               >
                                 {item.badge}
                               </span>
-                              {coletasExpanded ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
-                            </div>
-                          </button>
+                            </button>
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setColetasExpanded(!coletasExpanded);
+                              }}
+                              className="drawer-action-btn"
+                              style={{ padding: '0.45rem', borderRadius: '6px' }}
+                              title={coletasExpanded ? 'Recolher subitens' : 'Expandir subitens'}
+                            >
+                              {coletasExpanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+                            </button>
+                          </div>
 
                           {/* Subitens de Coletas */}
                           {coletasExpanded && (
