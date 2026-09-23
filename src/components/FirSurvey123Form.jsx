@@ -269,7 +269,7 @@ export const FirSurvey123Form = ({ initialEstrutura, onSuccess, compact = false 
       vazaoHm: Number(firVazaoHm) || 0,
       lat: coords?.lat || -20.083601,
       lon: coords?.lon || -44.103632,
-      acessos: {
+      acessosDetalhes: {
         revestimento: firAcessoRevestimento,
         empocamento: firAcessoEmpocamento,
         greide: firAcessoGreide,
@@ -277,7 +277,7 @@ export const FirSurvey123Form = ({ initialEstrutura, onSuccess, compact = false 
         conservacao: firAcessoConservacao,
         obs: firAcessosObs
       },
-      macico: {
+      macicoDetalhes: {
         abatimento: firMacicoAbatimento,
         deslocamento: firMacicoDeslocamento,
         erosoes: firMacicoErosoes,
@@ -299,14 +299,14 @@ export const FirSurvey123Form = ({ initialEstrutura, onSuccess, compact = false 
         taludesJusanteSup: firMacicoTaludesJusanteSup,
         obsSuperficial: firMacicoObsSuperficial
       },
-      drenagemSuperficial: {
+      drenagemSuperficialDetalhes: {
         superficial: firDrenagemSuperficial,
         obstrucao: firDrenagemObstrucao,
         tipoObstrucao: firDrenagemTipoObstrucao,
         conservacao: firDrenagemConservacao,
         obs: firDrenagemObs
       },
-      reservatorio: {
+      reservatorioDetalhes: {
         qualidade: firReservatorioQualidade,
         assoreamento: firReservatorioAssoreamento,
         taludeMontante: firReservatorioTaludeMontante,
@@ -315,7 +315,7 @@ export const FirSurvey123Form = ({ initialEstrutura, onSuccess, compact = false 
         bordaLivre: Number(firBordaLivre) || 0,
         obs: firReservatorioObs
       },
-      drenagemInterna: {
+      drenagemInternaDetalhes: {
         interna: firDrenagemInterna,
         medidorVazao: firDrenagemMedidorVazao,
         qualidadeAgua: firDrenagemQualidadeAgua,
@@ -325,7 +325,7 @@ export const FirSurvey123Form = ({ initialEstrutura, onSuccess, compact = false 
         presencaVegetacao: firDrenagemPresencaVegetacao,
         obs: firDrenagemInternaObs
       },
-      instrumentacao: {
+      instrumentacaoDetalhes: {
         monitoramento: firInstrumentacaoMonitoramento,
         acessoLeitura: firInstAcessoLeitura,
         identificacao: firInstIdentificacao,
@@ -333,7 +333,7 @@ export const FirSurvey123Form = ({ initialEstrutura, onSuccess, compact = false 
         tipos: firInstTipos,
         obs: firInstObs
       },
-      extravasor: {
+      extravasorDetalhes: {
         obstrucoes: firExtravasorObstrucoes,
         tipoObstrucao: firExtravasorTipoObstrucao,
         fluxo: firExtravasorFluxo,

@@ -107,16 +107,39 @@ export const VehicleChecklistModal = ({ isOpen, onClose, onSave, currentUser, in
     }
   };
 
-  // Upload genérico de imagens
+  // Upload genérico de imagens com compressão via Canvas (protege cota do LocalStorage)
   const handleFileUpload = (field, e) => {
     const file = e.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onload = () => {
-        setFormData(prev => ({ ...prev, [field]: reader.result }));
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        const MAX_DIM = 1200;
+        let width = img.width;
+        let height = img.height;
+
+        if (width > height && width > MAX_DIM) {
+          height = Math.round((height * MAX_DIM) / width);
+          width = MAX_DIM;
+        } else if (height > MAX_DIM) {
+          width = Math.round((width * MAX_DIM) / height);
+          height = MAX_DIM;
+        }
+
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, width, height);
+        const compressedBase64 = canvas.toDataURL('image/jpeg', 0.82);
+
+        setFormData(prev => ({ ...prev, [field]: compressedBase64 }));
       };
-      reader.readAsDataURL(file);
-    }
+      img.src = event.target?.result;
+    };
+    reader.readAsDataURL(file);
   };
 
   // Funções para Canvas de Assinatura

@@ -72,5 +72,12 @@
 	<string>O MDSync necessita de acesso à galeria para anexar evidências fotográficas às coletas de campo.</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>O MDSync necessita de acesso ao GPS para georreferenciar pontos de coleta e localização dos instrumentos geotécnicos.</string>
+	<key>NSAppTransportSecurity</key>
+	<dict>
+		<key>NSAllowsArbitraryLoadsInWebContent</key>
+		<true/>
+		<key>NSAllowsLocalNetworking</key>
+		<true/>
+	</dict>
 </dict>
 </plist>
