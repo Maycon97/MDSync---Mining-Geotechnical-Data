@@ -105,7 +105,7 @@ export const FieldCollectionTab = ({ preSelectedInstrument, initialSubTab = 'lei
   const [selectedPhotoModal, setSelectedPhotoModal] = useState(null); // Lightbox modal
 
   // Integração com Clima e Sazonalidade Geotécnica baseada no GPS do Site
-  const { chuva7d, estacao, sazonalidade } = useSiteWeather(
+  const { weatherLive, weatherLoading, chuva7d, estacao, sazonalidade } = useSiteWeather(
     coords,
     selectedStructId,
     pluviometria
