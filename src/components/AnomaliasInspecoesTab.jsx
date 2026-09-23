@@ -19,7 +19,8 @@ import {
   X, 
   ExternalLink,
   LifeBuoy,
-  ClipboardCheck
+  ClipboardCheck,
+  ShieldCheck
 } from 'lucide-react';
 import { FirSurvey123Form } from './FirSurvey123Form';
 
@@ -29,6 +30,7 @@ export const AnomaliasInspecoesTab = ({ onNavigateTab }) => {
     anomaliasGeotecnicas = [], 
     inspecoesGeotecnicas = [], 
     planosAcao = [],
+    anomalies = [],
     addAnomaliaGeotecnica,
     updateAnomaliaGeotecnica,
     addInspecaoGeotecnica,
@@ -478,11 +480,213 @@ export const AnomaliasInspecoesTab = ({ onNavigateTab }) => {
           <Wrench size={16} />
           <span>Planos de Ação 5W2H ({planosAcao.length})</span>
         </button>
+
+        <button
+          onClick={() => setActiveSubTab('anomalias_pcmi')}
+          style={{
+            padding: '0.65rem 1.15rem',
+            border: 'none',
+            borderBottom: activeSubTab === 'anomalias_pcmi' ? '2px solid var(--primary-accent)' : '2px solid transparent',
+            background: 'transparent',
+            color: activeSubTab === 'anomalias_pcmi' ? 'var(--primary-accent)' : 'var(--text-muted)',
+            fontWeight: activeSubTab === 'anomalias_pcmi' ? 800 : 600,
+            fontSize: '0.85rem',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.4rem',
+            whiteSpace: 'nowrap'
+          }}
+        >
+          <ShieldAlert size={16} />
+          <span>Anomalias Piezométricas PCMI ({anomalies.length})</span>
+          <span className="badge-pill-clean" style={{ backgroundColor: 'rgba(16, 185, 129, 0.15)', color: '#10b981', fontSize: '0.65rem', padding: '0.1rem 0.4rem', borderRadius: '4px' }}>
+            VALIDADO PCMI
+          </span>
+        </button>
       </div>
 
       {/* ABA 0: FICHA FIR SURVEY123 (PORTARIA ANM 95/2022) */}
       {activeSubTab === 'fir_survey123' && (
         <FirSurvey123Form />
+      )}
+
+      {/* ABA 0.5: ANOMALIAS PIEZOMÉTRICAS CONFRONTADAS COM O BANCO PCMI */}
+      {activeSubTab === 'anomalias_pcmi' && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.2rem' }}>
+          {/* Card de Auditoria Geotécnica com o Banco Central */}
+          <div className="card-panel glass-panel" style={{
+            padding: '1.25rem',
+            border: '1px solid rgba(56, 189, 248, 0.3)',
+            backgroundColor: 'rgba(15, 23, 42, 0.75)',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '0.75rem'
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.5rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+                <div style={{
+                  width: '36px',
+                  height: '36px',
+                  borderRadius: '8px',
+                  backgroundColor: 'rgba(56, 189, 248, 0.15)',
+                  color: 'var(--primary-accent)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center'
+                }}>
+                  <ShieldCheck size={22} />
+                </div>
+                <div>
+                  <h3 style={{ fontSize: '1.1rem', fontWeight: 800, color: 'var(--text-main)', margin: 0 }}>
+                    Auditoria e Reconciliação com o Banco Central PCMI (Itaminas)
+                  </h3>
+                  <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                    Origem dos Dados: <code style={{ color: 'var(--primary-accent)', fontSize: '0.72rem' }}>C:\Users\maycon.nascimento\ITAMINAS\SPLO - General\03) Geotecnia\01) PCMI</code>
+                  </span>
+                </div>
+              </div>
+              <span className="badge" style={{ backgroundColor: 'rgba(16, 185, 129, 0.15)', color: '#10b981', fontWeight: 800, fontSize: '0.75rem' }}>
+                ✓ 32.311 LEITURAS AUDITADAS
+              </span>
+            </div>
+
+            <p style={{ fontSize: '0.825rem', color: 'var(--text-muted)', lineHeight: '1.5', margin: 0 }}>
+              Todas as anomalias detectadas pelo sistema foram confrontadas e auditadas contra o banco histórico oficial de monitoramento da Itaminas (<strong style={{ color: 'var(--text-main)' }}>Banco_De_Dados.xlsx</strong> e <strong style={{ color: 'var(--text-main)' }}>CARTA DE RISCO.xlsx</strong>). As 7 anomalias da Pilha B2 e Barragem B4 eram decorrentes de falso-positivo de igualdade de topo ou tubo seco com status oficial <strong>NORMAL</strong>, tendo sido baixadas tecnicamente. Permanece como <strong>Prioridade Máxima Operacional</strong> a sobrelevação de nível freático no piezômetro <strong>07/04 na Cava Jangada</strong> (+1.0m acima da atenção).
+            </p>
+
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '0.75rem', marginTop: '0.25rem' }}>
+              <div style={{ padding: '0.65rem 0.85rem', borderRadius: '8px', backgroundColor: 'var(--bg-secondary)', border: '1px solid var(--border-subtle)' }}>
+                <span style={{ fontSize: '0.7rem', color: 'var(--text-faint)' }}>Total de Eventos Auditados</span>
+                <div style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--text-main)' }}>{anomalies.length}</div>
+              </div>
+              <div style={{ padding: '0.65rem 0.85rem', borderRadius: '8px', backgroundColor: 'rgba(16, 185, 129, 0.1)', border: '1px solid rgba(16, 185, 129, 0.3)' }}>
+                <span style={{ fontSize: '0.7rem', color: '#10b981' }}>Resolvidas / Baixadas PCMI</span>
+                <div style={{ fontSize: '1.25rem', fontWeight: 800, color: '#10b981' }}>
+                  {anomalies.filter(a => a.status === 'RESOLVIDA').length}
+                </div>
+              </div>
+              <div style={{ padding: '0.65rem 0.85rem', borderRadius: '8px', backgroundColor: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.3)' }}>
+                <span style={{ fontSize: '0.7rem', color: '#ef4444' }}>Em Monitoramento Prioritário</span>
+                <div style={{ fontSize: '1.25rem', fontWeight: 800, color: '#ef4444' }}>
+                  {anomalies.filter(a => a.status !== 'RESOLVIDA').length}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Cards das Anomalias Piezométricas */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(360px, 1fr))', gap: '1rem' }}>
+            {anomalies.map(anom => {
+              const isResolvida = anom.status === 'RESOLVIDA';
+              const corStatus = isResolvida ? '#10b981' : '#ef4444';
+              const bgStatus = isResolvida ? 'rgba(16, 185, 129, 0.1)' : 'rgba(239, 68, 68, 0.12)';
+
+              return (
+                <div 
+                  key={anom.id}
+                  className="card-panel glass-panel"
+                  style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    justifyContent: 'space-between',
+                    borderLeft: `4px solid ${corStatus}`,
+                    padding: '1.15rem',
+                    gap: '0.85rem'
+                  }}
+                >
+                  <div>
+                    {/* Cabeçalho */}
+                    <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '0.5rem', marginBottom: '0.5rem' }}>
+                      <div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', flexWrap: 'wrap' }}>
+                          <strong style={{ fontSize: '1.05rem', color: 'var(--text-main)' }}>
+                            {anom.tipo} - {anom.instrumentoId}
+                          </strong>
+                          <span className="badge" style={{ backgroundColor: 'rgba(56, 189, 248, 0.15)', color: 'var(--primary-accent)', fontSize: '0.7rem' }}>
+                            {anom.estruturaNome || anom.estrutura}
+                          </span>
+                        </div>
+                        <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                          ID: {anom.id} • Data: {anom.dataHora}
+                        </span>
+                      </div>
+                      <span className="badge" style={{ backgroundColor: bgStatus, color: corStatus, fontSize: '0.7rem', fontWeight: 800 }}>
+                        {anom.statusLabel || anom.status}
+                      </span>
+                    </div>
+
+                    {/* Descrição */}
+                    <p style={{ fontSize: '0.825rem', color: 'var(--text-main)', margin: '0.35rem 0', fontWeight: 600 }}>
+                      {anom.descricao}
+                    </p>
+
+                    {/* Parecer Geotécnico */}
+                    <div style={{
+                      padding: '0.65rem 0.85rem',
+                      borderRadius: '8px',
+                      backgroundColor: isResolvida ? 'rgba(16, 185, 129, 0.06)' : 'rgba(239, 68, 68, 0.06)',
+                      border: isResolvida ? '1px solid rgba(16, 185, 129, 0.2)' : '1px solid rgba(239, 68, 68, 0.25)',
+                      marginTop: '0.5rem',
+                      fontSize: '0.775rem',
+                      lineHeight: '1.45',
+                      color: 'var(--text-main)'
+                    }}>
+                      <div style={{ fontWeight: 800, color: corStatus, fontSize: '0.7rem', marginBottom: '3px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                        <span>PARECER TÉCNICO OFICIAL (BANCO PCMI)</span>
+                      </div>
+                      {anom.parecerGeotecnico}
+                    </div>
+
+                    {/* Cotas & Limites */}
+                    <div style={{
+                      display: 'grid',
+                      gridTemplateColumns: '1fr 1fr',
+                      gap: '0.4rem',
+                      fontSize: '0.75rem',
+                      backgroundColor: 'var(--bg-secondary)',
+                      padding: '0.5rem 0.75rem',
+                      borderRadius: '6px',
+                      marginTop: '0.6rem'
+                    }}>
+                      <div>
+                        <span style={{ color: 'var(--text-faint)' }}>Cota Lida:</span>{' '}
+                        <strong className="font-mono" style={{ color: 'var(--text-main)' }}>{anom.cotaAtual} m</strong>
+                      </div>
+                      <div>
+                        <span style={{ color: 'var(--text-faint)' }}>Limite Atenção:</span>{' '}
+                        <strong className="font-mono" style={{ color: isResolvida ? 'var(--text-main)' : '#ef4444' }}>{anom.limite} m</strong>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Rodapé e Ações */}
+                  <div style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    paddingTop: '0.65rem',
+                    borderTop: '1px solid var(--border-subtle)',
+                    fontSize: '0.725rem',
+                    color: 'var(--text-muted)'
+                  }}>
+                    <span>Validado: <strong>{anom.responsavelAuditoria || anom.responsavelResolucao || 'Eng. Geotécnico'}</strong></span>
+                    <button
+                      onClick={() => {
+                        if (onNavigateTab) onNavigateTab('gis');
+                      }}
+                      className="btn-secondary"
+                      style={{ padding: '0.3rem 0.65rem', fontSize: '0.72rem', display: 'flex', alignItems: 'center', gap: '4px' }}
+                    >
+                      <MapPin size={12} />
+                      <span>Ver na Planta GIS</span>
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
       )}
 
       {/* ABA 1: MATRIZ DE ANOMALIAS */}

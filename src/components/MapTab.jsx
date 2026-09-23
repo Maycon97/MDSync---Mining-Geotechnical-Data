@@ -20,11 +20,13 @@ import {
   X,
   RotateCcw,
   Sliders,
-  Maximize2
+  Maximize2,
+  ExternalLink,
+  Wrench
 } from 'lucide-react';
 
 export const MapTab = ({ onNavigateTab, onSelectInstrumentForReading }) => {
-  const { structures, instruments, activeStructureId, selectStructure } = useGeotechData();
+  const { structures, instruments, fluigTickets = [], activeStructureId, selectStructure } = useGeotechData();
   const mapContainerRef = useRef(null);
   const mapInstanceRef = useRef(null);
   const markersLayerRef = useRef(null);
@@ -35,11 +37,27 @@ export const MapTab = ({ onNavigateTab, onSelectInstrumentForReading }) => {
   const [filterType, setFilterType] = useState('TODOS');
   const [filterStatus, setFilterStatus] = useState('TODOS');
   const [selectedInstrument, setSelectedInstrument] = useState(null);
+  const [selectedTicket, setSelectedTicket] = useState(null);
   const [useClustering, setUseClustering] = useState(true);
   const [showPerimeters, setShowPerimeters] = useState(true);
+  const [showTickets, setShowTickets] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [cursorCoords, setCursorCoords] = useState(null);
   const [mapZoom, setMapZoom] = useState(15);
+
+  // Chamados georreferenciados do Banco Central PCMI
+  const georeferencedTickets = useMemo(() => {
+    return (fluigTickets || []).filter(t => {
+      if (!t.lat || !t.lon) return false;
+      if (activeStructureId !== 'TODAS') {
+        const structNorm = (t.estrutura || '').toUpperCase().replace(/\s+/g, '_');
+        if (!structNorm.includes(activeStructureId) && !activeStructureId.includes(structNorm)) {
+          return false;
+        }
+      }
+      return true;
+    });
+  }, [fluigTickets, activeStructureId]);
 
   // Inicializar o mapa Leaflet com ciclo de vida robusto e camadas anti-blecaute
   useEffect(() => {
@@ -463,7 +481,59 @@ export const MapTab = ({ onNavigateTab, onSelectInstrumentForReading }) => {
       marker.on('click', () => handleSelectInstrument(inst));
       layer.addLayer(marker);
     });
-  }, [structures, filteredInstruments, activeStructureId, selectedInstrument, handleSelectStructure, handleSelectInstrument]);
+
+    // 3. Marcadores de Chamados e Anomalias de Campo (Banco Central PCMI)
+    if (showTickets && georeferencedTickets.length > 0) {
+      georeferencedTickets.forEach(t => {
+        const isSelected = selectedTicket && selectedTicket.protocolo === t.protocolo;
+        const isCritica = t.criticidade?.includes('A') || t.criticidadeNivel?.includes('Alerta') || t.criticidadeNivel?.includes('Emergência');
+        
+        const ticketIcon = L.divIcon({
+          className: 'custom-fluig-ticket-marker',
+          html: `
+            <div style="
+              background: ${isCritica ? '#ef4444' : '#f59e0b'};
+              color: #ffffff;
+              border: ${isSelected ? '3px solid #38bdf8' : '2px solid #ffffff'};
+              border-radius: 8px;
+              padding: 3px 8px;
+              font-family: 'Inter', sans-serif;
+              font-size: 10px;
+              font-weight: 800;
+              box-shadow: 0 4px 14px rgba(0,0,0,0.65);
+              display: flex;
+              align-items: center;
+              gap: 4px;
+              white-space: nowrap;
+              cursor: pointer;
+              transform: translate(-50%, -50%);
+              backdrop-filter: blur(4px);
+              transition: all 0.2s ease;
+            ">
+              <span>⚡ #${t.protocolo}</span>
+            </div>
+          `,
+          iconSize: [0, 0]
+        });
+
+        const ticketMarker = L.marker([t.lat, t.lon], { icon: ticketIcon, zIndexOffset: 700 });
+        ticketMarker.bindTooltip(`
+          <div style="font-family: 'Inter', sans-serif; font-size: 11px; padding: 2px 4px; max-width: 260px;">
+            <strong style="color: #f59e0b;">Chamado PCMI #${t.protocolo}</strong><br/>
+            <strong>${t.titulo}</strong><br/>
+            <span style="color: #94a3b8;">${t.estrutura} - ${t.localizacao || ''}</span><br/>
+            <span style="font-size: 10px; color: #38bdf8;">Ação: ${t.acaoRecomendada || t.descricao || '-'}</span>
+          </div>
+        `, { sticky: true, opacity: 0.95 });
+
+        ticketMarker.on('click', () => {
+          setSelectedInstrument(null);
+          setSelectedTicket(t);
+        });
+        layer.addLayer(ticketMarker);
+      });
+    }
+  }, [structures, filteredInstruments, georeferencedTickets, showTickets, activeStructureId, selectedInstrument, selectedTicket, handleSelectStructure, handleSelectInstrument]);
 
   // Atualizar marcadores quando filtros ou seleção mudarem
   useEffect(() => {
@@ -774,6 +844,22 @@ export const MapTab = ({ onNavigateTab, onSelectInstrumentForReading }) => {
           >
             {showPerimeters ? 'Perímetros On' : 'Perímetros Off'}
           </button>
+
+          <button
+            onClick={() => setShowTickets(!showTickets)}
+            className={`btn-subtle ${showTickets ? 'active' : ''}`}
+            style={{
+              padding: '0.25rem 0.55rem',
+              fontSize: '0.72rem',
+              borderRadius: '6px',
+              backgroundColor: showTickets ? 'rgba(245, 158, 11, 0.18)' : 'var(--bg-secondary)',
+              color: showTickets ? '#f59e0b' : 'var(--text-muted)',
+              border: showTickets ? '1px solid rgba(245, 158, 11, 0.4)' : '1px solid var(--border-subtle)'
+            }}
+            title="Exibir/Ocultar chamados de campo reais do PCMI/Fluig georreferenciados"
+          >
+            {showTickets ? `🔧 Chamados PCMI (${georeferencedTickets.length})` : '🔧 Chamados Off'}
+          </button>
         </div>
 
         {/* 7. Botão Visão Geral com Reset de Câmera */}
@@ -995,6 +1081,121 @@ export const MapTab = ({ onNavigateTab, onSelectInstrumentForReading }) => {
               <Eye size={14} />
               <span>Curvas Piezométricas</span>
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* Card Flutuante: Detalhes do Chamado PCMI Selecionado */}
+      {selectedTicket && (
+        <div className="card-panel glass-panel animate-page-enter" style={{
+          position: 'absolute',
+          top: '80px',
+          right: '16px',
+          width: '360px',
+          maxWidth: 'calc(100vw - 32px)',
+          zIndex: 1000,
+          boxShadow: 'var(--shadow-2xl)',
+          border: '1px solid var(--border-medium)',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '0.75rem',
+          backdropFilter: 'blur(20px)',
+          transition: 'all 0.3s cubic-bezier(0.16, 1, 0.3, 1)'
+        }}>
+          <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
+            <div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <span style={{ 
+                  fontSize: '0.7rem', 
+                  fontWeight: 800, 
+                  color: '#f59e0b', 
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.5px'
+                }}>
+                  Chamado PCMI #{selectedTicket.protocolo}
+                </span>
+                <span className="badge-status badge-atencao" style={{ fontSize: '0.65rem', padding: '0.1rem 0.35rem' }}>
+                  {selectedTicket.criticidade || 'Nível Alerta'}
+                </span>
+              </div>
+              <h3 style={{ fontSize: '1.05rem', fontWeight: 800, color: 'var(--text-main)', margin: '4px 0 2px' }}>
+                {selectedTicket.titulo}
+              </h3>
+              <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                {selectedTicket.estrutura} • {selectedTicket.localizacao}
+              </span>
+            </div>
+            <button
+              onClick={() => setSelectedTicket(null)}
+              className="btn-icon"
+              title="Fechar painel"
+              style={{ width: '28px', height: '28px', borderRadius: '50%' }}
+            >
+              ✕
+            </button>
+          </div>
+
+          <div style={{
+            padding: '0.6rem 0.75rem',
+            borderRadius: '8px',
+            backgroundColor: 'var(--bg-secondary)',
+            fontSize: '0.75rem',
+            border: '1px solid var(--border-subtle)',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '4px'
+          }}>
+            <div style={{ color: 'var(--text-faint)', fontSize: '0.68rem', fontWeight: 700 }}>ANOMALIA / OCORRÊNCIA</div>
+            <div style={{ color: 'var(--text-main)' }}>{selectedTicket.descricao}</div>
+          </div>
+
+          <div style={{
+            padding: '0.6rem 0.75rem',
+            borderRadius: '8px',
+            backgroundColor: 'rgba(56, 189, 248, 0.08)',
+            fontSize: '0.75rem',
+            border: '1px solid rgba(56, 189, 248, 0.25)',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '4px'
+          }}>
+            <div style={{ color: 'var(--primary-accent)', fontSize: '0.68rem', fontWeight: 700 }}>AÇÃO RECOMENDADA (PCMI)</div>
+            <div style={{ color: 'var(--text-main)' }}>{selectedTicket.acaoRecomendada || 'Acompanhamento e intervenção corretiva em campo.'}</div>
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem', fontSize: '0.75rem' }}>
+            <div style={{ padding: '0.45rem', backgroundColor: 'var(--bg-secondary)', borderRadius: '6px', border: '1px solid var(--border-subtle)' }}>
+              <div style={{ color: 'var(--text-faint)', fontSize: '0.68rem' }}>Setor Responsável</div>
+              <strong>{selectedTicket.setorResponsavel || selectedTicket.setorResponsavelSigla || 'Manutenção Civil'}</strong>
+            </div>
+            <div style={{ padding: '0.45rem', backgroundColor: 'var(--bg-secondary)', borderRadius: '6px', border: '1px solid var(--border-subtle)' }}>
+              <div style={{ color: 'var(--text-faint)', fontSize: '0.68rem' }}>Prazo SLA</div>
+              <strong style={{ color: '#f59e0b' }}>{selectedTicket.prazoSla || 'Ativo'}</strong>
+            </div>
+          </div>
+
+          <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.2rem' }}>
+            <button
+              onClick={() => {
+                if (onNavigateTab) onNavigateTab('chamados');
+              }}
+              className="btn-primary"
+              style={{ flex: 1, fontSize: '0.75rem', padding: '0.5rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px' }}
+            >
+              <span>Ver no Painel TOTVS Fluig</span>
+            </button>
+            {selectedTicket.urlFluig && (
+              <a
+                href={selectedTicket.urlFluig}
+                target="_blank"
+                rel="noreferrer"
+                className="btn-secondary"
+                style={{ fontSize: '0.75rem', padding: '0.5rem 0.75rem', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                title="Abrir no portal Fluig"
+              >
+                <ExternalLink size={14} />
+              </a>
+            )}
           </div>
         </div>
       )}
