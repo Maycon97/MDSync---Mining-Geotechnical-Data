@@ -49498,10 +49498,13 @@
   ],
   "importacoesPcmi": [
     {
+      "id": "IMP-000",
+      "tipo": "Base Consolidada PCMI",
       "data": "18/09/2026 16:00:34",
       "origem": "C:\\Users\\maycon.nascimento\\ITAMINAS\\SPLO - General\\03) Geotecnia\\01) PCMI\\02) Monitoramentos\\00) Leituras\\Banco_De_Dados.xlsx",
       "totalInstrumentos": 218,
       "totalLeituras": 32296,
+      "registrosImportados": 32296,
       "hashIntegridade": "9ef4afc758cf6fbb...",
       "status": "SINCRONIZADO COM SUCESSO"
     },
