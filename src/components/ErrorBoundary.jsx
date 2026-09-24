@@ -73,9 +73,9 @@ export class ErrorBoundary extends Component {
               Ocorreu um erro inesperado ao processar os dados deste módulo. O restante do MDSync continua operando normalmente.
             </p>
 
-            {this.state.error?.message && (
+            {this.state.error && (
               <div style={{
-                background: 'rgba(0, 0, 0, 0.2)',
+                background: 'rgba(0, 0, 0, 0.25)',
                 borderRadius: '8px',
                 padding: '0.75rem',
                 fontSize: '0.75rem',
@@ -84,9 +84,9 @@ export class ErrorBoundary extends Component {
                 textAlign: 'left',
                 overflowX: 'auto',
                 marginBottom: '1.5rem',
-                maxHeight: '100px'
+                maxHeight: '120px'
               }}>
-                {this.state.error.message}
+                {this.state.error.message || String(this.state.error)}
               </div>
             )}
 

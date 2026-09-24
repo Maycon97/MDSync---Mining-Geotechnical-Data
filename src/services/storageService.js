@@ -14,6 +14,7 @@ const STORAGE_KEYS = {
   ACTIVE_SESSIONS: 'mdsync_active_sessions',
   TERMS_ACCEPTANCE: 'mdsync_terms_accepted',
   USER_ROLE: 'mdsync_user_role',
+  PERSISTENT_PROFILE: 'mdsync_persistent_profile',
   LOCAL_READINGS: 'mdsync_local_readings',
   LOCAL_ANOMALIES: 'mdsync_local_anomalies',
   LOCAL_CHECKLISTS: 'mdsync_local_checklists',
@@ -31,7 +32,10 @@ const STORAGE_KEYS = {
   INSPECOES_GEOTECNICAS: 'mdsync_inspecoes_geotecnicas',
   PLANOS_ACAO: 'mdsync_planos_acao',
   DOCUMENTOS_ESTRUTURAS: 'mdsync_documentos_estruturas',
-  COMUNICADOS_OPERACIONAIS: 'mdsync_comunicados_operacionais'
+  COMUNICADOS_OPERACIONAIS: 'mdsync_comunicados_operacionais',
+  RECORD_ID_TEMPLATE: 'mdsync_record_id_template',
+  INSPECTION_RULES: 'mdsync_inspection_rules',
+  ESTRUTURAS_EMPREENDIMENTO: 'mdsync_estruturas_empreendimento'
 };
 
 export const storageService = {
@@ -147,6 +151,31 @@ export const storageService = {
       localStorage.setItem(STORAGE_KEYS.NOTIFICATION_CONFIG, JSON.stringify(config));
     } catch (e) {
       console.error('Erro ao salvar configuração de notificações:', e);
+    }
+  },
+
+  // Perfil Persistente de Usuário (Mantém dados até outro login)
+  getPersistentProfile() {
+    try {
+      const data = localStorage.getItem(STORAGE_KEYS.PERSISTENT_PROFILE);
+      return data ? JSON.parse(data) : null;
+    } catch {
+      return null;
+    }
+  },
+  savePersistentProfile(profile) {
+    try {
+      if (!profile) return;
+      localStorage.setItem(STORAGE_KEYS.PERSISTENT_PROFILE, JSON.stringify(profile));
+    } catch (e) {
+      console.error('Erro ao salvar perfil persistente:', e);
+    }
+  },
+  clearPersistentProfile() {
+    try {
+      localStorage.removeItem(STORAGE_KEYS.PERSISTENT_PROFILE);
+    } catch (e) {
+      console.error('Erro ao remover perfil persistente:', e);
     }
   },
 
@@ -1607,12 +1636,304 @@ export const storageService = {
     }
   },
 
-  // Histórico de lotes despachados
-  getStagedBatchesHistory() {
+  // ============================================================
+  // TEMPLATE DO IDENTIFICADOR DO REGISTRO (INSPIRADO NO SYSDAM)
+  // ============================================================
+  getRecordIdTemplate() {
     try {
-      return JSON.parse(localStorage.getItem('mdsync_staged_batches_history') || '[]');
+      return localStorage.getItem(STORAGE_KEYS.RECORD_ID_TEMPLATE) || '{SIGLA_EMPREENDIMENTO} - {NOME_SINTOMA}';
+    } catch {
+      return '{SIGLA_EMPREENDIMENTO} - {NOME_SINTOMA}';
+    }
+  },
+  saveRecordIdTemplate(template) {
+    try {
+      localStorage.setItem(STORAGE_KEYS.RECORD_ID_TEMPLATE, template || '{SIGLA_EMPREENDIMENTO} - {NOME_SINTOMA}');
+      window.dispatchEvent(new CustomEvent('mdsync:template-changed', { detail: { template } }));
+      return true;
+    } catch (e) {
+      console.error('Erro ao salvar template:', e);
+      return false;
+    }
+  },
+
+  // ============================================================
+  // REGRAS & PARÂMETROS OPERACIONAIS DE INSPEÇÃO (INSPIRADO NO SYSDAM)
+  // ============================================================
+  getInspectionRules() {
+    try {
+      if (typeof localStorage === 'undefined') {
+        return {
+          habilitarRegistroAvulso: true,
+          permitirHistoricosOutrosRegistros: true,
+          dataCorteHistorico: '2026-01-01',
+          exigirPinInspecao: false,
+          configuracaoPinInspecoes: false,
+          pinInspecao: '1234',
+          habilitarLiveInspection: true
+        };
+      }
+      const data = localStorage.getItem(STORAGE_KEYS.INSPECTION_RULES);
+      if (data) {
+        const parsed = JSON.parse(data);
+        return {
+          habilitarRegistroAvulso: true,
+          permitirHistoricosOutrosRegistros: true,
+          dataCorteHistorico: '2026-01-01',
+          exigirPinInspecao: false,
+          configuracaoPinInspecoes: parsed.configuracaoPinInspecoes ?? parsed.exigirPinInspecao ?? false,
+          pinInspecao: '1234',
+          habilitarLiveInspection: true,
+          ...parsed
+        };
+      }
+      return {
+        habilitarRegistroAvulso: true,
+        permitirHistoricosOutrosRegistros: true,
+        dataCorteHistorico: '2026-01-01',
+        exigirPinInspecao: false,
+        configuracaoPinInspecoes: false,
+        pinInspecao: '1234',
+        habilitarLiveInspection: true
+      };
+    } catch {
+      return {
+        habilitarRegistroAvulso: true,
+        permitirHistoricosOutrosRegistros: true,
+        dataCorteHistorico: '2026-01-01',
+        exigirPinInspecao: false,
+        configuracaoPinInspecoes: false,
+        pinInspecao: '1234',
+        habilitarLiveInspection: true
+      };
+    }
+  },
+  saveInspectionRules(rules) {
+    try {
+      if (typeof localStorage !== 'undefined') {
+        localStorage.setItem(STORAGE_KEYS.INSPECTION_RULES, JSON.stringify(rules));
+      }
+      if (typeof window !== 'undefined' && window.dispatchEvent) {
+        window.dispatchEvent(new CustomEvent('mdsync:inspection-rules-changed', { detail: rules }));
+      }
+      return true;
+    } catch (e) {
+      console.error('Erro ao salvar regras de inspeção:', e);
+      return false;
+    }
+  },
+
+  // ============================================================
+  // CATÁLOGO DE ESTRUTURAS DO EMPREENDIMENTO (INSPIRADO NO SYSDAM)
+  // ============================================================
+  getEstruturasEmpreendimento() {
+    try {
+      const data = localStorage.getItem(STORAGE_KEYS.ESTRUTURAS_EMPREENDIMENTO);
+      if (data) return JSON.parse(data);
+
+      const defaultEstruturas = [
+        {
+          id: 'B1',
+          sigla: 'B1',
+          nome: 'Barragem B1',
+          nomeCompleto: 'Barragem B1 (Maciço Principal & Reservatório)',
+          tipo: 'BARRAGEM',
+          tipoLetra: 'B',
+          faseProjeto: 'Em Operação / Descaracterização em Planejamento',
+          tipoSecao: 'Terra compactada homogênea com enrocamento',
+          tipoEstrutura: 'Barragem de Contenção de Rejeitos',
+          finalidade: 'Contenção de Rejeitos de Minério de Ferro e Água',
+          estruturaAssoc: 'Vertedouro Tulipa, Bacia de Decantação e Dique Auxiliar B1',
+          orgaoFiscalizador: 'ANM & FEAM',
+          dpa: 'Alto',
+          cri: 'Baixo',
+          statusDce: 'DCE Válida (Emitida)',
+          cotaCrista: 851.66,
+          alturaMaxima: 56.4,
+          volumeAtual: '4.820.000 m³',
+          coordenadas: { lat: -20.063824, lon: -44.114686 }
+        },
+        {
+          id: 'B4',
+          sigla: 'B4',
+          nome: 'Barragem B4',
+          nomeCompleto: 'Barragem B4 (Contenção & Vertedouro)',
+          tipo: 'BARRAGEM',
+          tipoLetra: 'B',
+          faseProjeto: 'Em Operação / Monitoramento Intensivo',
+          tipoSecao: 'Maciço de Solo Reforçado com Enrocamento de Jusante',
+          tipoEstrutura: 'Barragem de Sedimentos e Rejeito Arenoso',
+          finalidade: 'Contenção de Sedimentos Pluviais e Rejeito',
+          estruturaAssoc: 'Canal de Desvio Margem Direita e Dreno de Fundo D-03',
+          orgaoFiscalizador: 'ANM & FEAM',
+          dpa: 'Alto',
+          cri: 'Médio',
+          statusDce: 'DCE Válida (Emitida)',
+          cotaCrista: 1166.0,
+          alturaMaxima: 42.0,
+          volumeAtual: '1.250.000 m³',
+          coordenadas: { lat: -20.089000, lon: -44.100584 }
+        },
+        {
+          id: 'ES',
+          sigla: 'ES',
+          nome: 'Cava Engenho Seco',
+          nomeCompleto: 'Cava Engenho Seco (Lavra Ativa)',
+          tipo: 'CAVA',
+          tipoLetra: 'C',
+          faseProjeto: 'Operação / Lavra Ativa a Céu Aberto',
+          tipoSecao: 'Taludes Escavados em Rocha e Solo Alterado',
+          tipoEstrutura: 'Cava Minerária a Céu Aberto',
+          finalidade: 'Extração Mineral e Rebaixamento de Lençol Freático',
+          estruturaAssoc: 'Sistema de Bombeamento e Drenos Horizontais Profundos (DHPs)',
+          orgaoFiscalizador: 'ANM',
+          dpa: 'Médio',
+          cri: 'Baixo',
+          statusDce: 'Conforme laudo geotécnico semestral',
+          cotaCrista: 980.0,
+          alturaMaxima: 190.0,
+          volumeAtual: 'Em operação de lavra',
+          coordenadas: { lat: -20.095810, lon: -44.111803 }
+        },
+        {
+          id: 'JGD',
+          sigla: 'JGD',
+          nome: 'Cava Jangada',
+          nomeCompleto: 'Cava Jangada & Vertedouros',
+          tipo: 'CAVA',
+          tipoLetra: 'C',
+          faseProjeto: 'Desativação / Monitoramento Hidrogeológico',
+          tipoSecao: 'Bancadas e Taludes Estabilizados',
+          tipoEstrutura: 'Cava Minerária em Processo de Recuperação',
+          finalidade: 'Reservatório de Amortecimento Hidráulico e Controle Ambiental',
+          estruturaAssoc: 'Vertedouro Superficial e Vertedor Soleira Livre',
+          orgaoFiscalizador: 'ANM & FEAM',
+          dpa: 'Médio',
+          cri: 'Baixo',
+          statusDce: 'Inspeções Periódicas Regulares',
+          cotaCrista: 890.0,
+          alturaMaxima: 150.0,
+          volumeAtual: 'Amortecimento controlado',
+          coordenadas: { lat: -20.097198, lon: -44.092516 }
+        },
+        {
+          id: 'ES1',
+          sigla: 'ES1',
+          nome: 'PDE Engenho Seco I',
+          nomeCompleto: 'Pilha de Disposição de Estéril Engenho Seco I',
+          tipo: 'PILHA',
+          tipoLetra: 'P',
+          faseProjeto: 'Operação de Deposição Controlada',
+          tipoSecao: 'Bancadas Ascendentes com Bermas de 10m',
+          tipoEstrutura: 'Pilha de Estéril (PDE)',
+          finalidade: 'Disposição de Estéril e Rocha Sã Provenientes da Lavra',
+          estruturaAssoc: 'Canaletas Periféricas e Drenos de Pé de Rocha',
+          orgaoFiscalizador: 'ANM & FEAM',
+          dpa: 'Médio',
+          cri: 'Baixo',
+          statusDce: 'Em conformidade com PNSB',
+          cotaCrista: 835.0,
+          alturaMaxima: 65.0,
+          volumeAtual: '3.100.000 m³',
+          coordenadas: { lat: -20.091028, lon: -44.110613 }
+        },
+        {
+          id: 'JC',
+          sigla: 'JC',
+          nome: 'PDE Jacó',
+          nomeCompleto: 'Pilha de Disposição de Estéril Jacó',
+          tipo: 'PILHA',
+          tipoLetra: 'P',
+          faseProjeto: 'Pós-Fechamento / Revegetação em Andamento',
+          tipoSecao: 'Taludes Conformados e Hidrossemeados',
+          tipoEstrutura: 'Pilha de Estéril (PDE Concluída)',
+          finalidade: 'Estabilização Geotécnica e Revegetação de Encosta',
+          estruturaAssoc: 'Bacia de Sedimentação e Escada Hidráulica Dissipadora',
+          orgaoFiscalizador: 'ANM & FEAM',
+          dpa: 'Baixo',
+          cri: 'Baixo',
+          statusDce: 'Estabilidade Geotécnica Certificada',
+          cotaCrista: 870.0,
+          alturaMaxima: 45.0,
+          volumeAtual: '1.800.000 m³',
+          coordenadas: { lat: -20.102932, lon: -44.095021 }
+        },
+        {
+          id: 'MGB',
+          sigla: 'MGB',
+          nome: 'PDE Mangaba',
+          nomeCompleto: 'Pilha de Disposição de Estéril Mangaba',
+          tipo: 'PILHA',
+          tipoLetra: 'P',
+          faseProjeto: 'Operação Regular',
+          tipoSecao: 'Camadas Compactadas de Estéril Friável',
+          tipoEstrutura: 'Pilha de Estéril (PDE)',
+          finalidade: 'Deposição Geotécnica de Estéril Itabirítico',
+          estruturaAssoc: 'Dique de Contenção de Pé e Rede de Canaletas Escalonadas',
+          orgaoFiscalizador: 'ANM & FEAM',
+          dpa: 'Médio',
+          cri: 'Baixo',
+          statusDce: 'DCE Vigente',
+          cotaCrista: 840.0,
+          alturaMaxima: 50.0,
+          volumeAtual: '2.400.000 m³',
+          coordenadas: { lat: -20.088788, lon: -44.092452 }
+        },
+        {
+          id: 'PB2',
+          sigla: 'PB2',
+          nome: 'PDR B2',
+          nomeCompleto: 'Pilha de Disposição de Rejeito B2 (PDR B2)',
+          tipo: 'PILHA',
+          tipoLetra: 'P',
+          faseProjeto: 'Operação / Desaguamento e Empilhamento a Seco',
+          tipoSecao: 'Rejeito Filtrado Compactado com Drenos Sub-superficiais',
+          tipoEstrutura: 'Pilha de Rejeito Filtrado (Dry Stacking)',
+          finalidade: 'Empilhamento a Seco de Rejeito Arenoso Desaguado',
+          estruturaAssoc: 'Planta de Filtragem a Vácuo e Bacia de Retenção de Chuva',
+          orgaoFiscalizador: 'ANM & FEAM',
+          dpa: 'Médio',
+          cri: 'Baixo',
+          statusDce: 'Projeto Aprovado ANM',
+          cotaCrista: 865.0,
+          alturaMaxima: 38.0,
+          volumeAtual: '950.000 m³',
+          coordenadas: { lat: -20.080850, lon: -44.111500 }
+        }
+      ];
+
+      localStorage.setItem(STORAGE_KEYS.ESTRUTURAS_EMPREENDIMENTO, JSON.stringify(defaultEstruturas));
+      return defaultEstruturas;
     } catch {
       return [];
+    }
+  },
+  saveEstruturaEmpreendimento(estrutura) {
+    try {
+      const estruturas = this.getEstruturasEmpreendimento();
+      const idx = estruturas.findIndex(e => e.id === estrutura.id || e.sigla === estrutura.sigla);
+      if (idx !== -1) {
+        estruturas[idx] = { ...estruturas[idx], ...estrutura };
+      } else {
+        estruturas.push(estrutura);
+      }
+      localStorage.setItem(STORAGE_KEYS.ESTRUTURAS_EMPREENDIMENTO, JSON.stringify(estruturas));
+      window.dispatchEvent(new CustomEvent('mdsync:estruturas-changed', { detail: estruturas }));
+      return true;
+    } catch (e) {
+      console.error('Erro ao salvar estrutura:', e);
+      return false;
+    }
+  },
+  deleteEstruturaEmpreendimento(id) {
+    try {
+      const estruturas = this.getEstruturasEmpreendimento().filter(e => e.id !== id && e.sigla !== id);
+      localStorage.setItem(STORAGE_KEYS.ESTRUTURAS_EMPREENDIMENTO, JSON.stringify(estruturas));
+      window.dispatchEvent(new CustomEvent('mdsync:estruturas-changed', { detail: estruturas }));
+      return true;
+    } catch (e) {
+      console.error('Erro ao excluir estrutura:', e);
+      return false;
     }
   }
 };

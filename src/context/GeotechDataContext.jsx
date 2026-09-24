@@ -152,10 +152,14 @@ export const GeotechDataProvider = ({ children }) => {
         }
       }
 
-      let data = validData;
       if (data) {
         try {
-          localStorage.setItem('mdsync_cached_master_data', JSON.stringify(data));
+          const lightweightCache = {
+            ...data,
+            leiturasPiezometricas: (data.leiturasPiezometricas || []).slice(-1000),
+            leiturasVertedouro: (data.leiturasVertedouro || []).slice(-500)
+          };
+          localStorage.setItem('mdsync_cached_master_data', JSON.stringify(lightweightCache));
         } catch (storageErr) {
           console.warn('Aviso: Armazenamento local indisponível para cache offline:', storageErr);
         }

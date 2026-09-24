@@ -4,7 +4,8 @@ import { useGeotechData } from '../context/GeotechDataContext';
 import { 
   Wifi, 
   WifiOff, 
-  Menu
+  Menu,
+  Smartphone
 } from 'lucide-react';
 import { GithubIcon } from './GithubIcon';
 
@@ -15,6 +16,8 @@ const TAB_TITLES = {
   secoes: 'Seções 2D (Cortes & Estabilidade)',
   anomalias_inspecoes: 'Anomalias & ISR',
   campo: 'Coleta de Campo (Inspect)',
+  mobile_inspecao: 'App de Campo (APK SYSDAM)',
+  estruturas_empreendimento: 'Estruturas do Empreendimento',
   coletas: 'Coletas de Campo',
   fila_sync: 'Fila de Sincronização',
   checklist: 'CheckList FIR',
@@ -34,7 +37,7 @@ const TAB_TITLES = {
   configuracoes_perfil: 'Configurações & Perfil'
 };
 
-export const Header = ({ onToggleDrawer, onOpenProfile, activeTab = 'home' }) => {
+export const Header = ({ onToggleDrawer, onOpenProfile, onNavigateTab, activeTab = 'home' }) => {
   const { currentUser } = useAuth();
   const { isOnline } = useGeotechData();
 
@@ -162,6 +165,30 @@ export const Header = ({ onToggleDrawer, onOpenProfile, activeTab = 'home' }) =>
           <span>{isOnline ? 'ONLINE' : 'OFFLINE'}</span>
         </div>
 
+        {/* Botão Rápido para Alternar ao Modo de Campo Mobile (APK) */}
+        <button
+          onClick={() => onNavigateTab && onNavigateTab('mobile_inspecao')}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.35rem',
+            fontSize: '0.72rem',
+            fontWeight: 800,
+            color: activeTab === 'mobile_inspecao' ? '#ffffff' : '#0284c7',
+            padding: '0.35rem 0.65rem',
+            backgroundColor: activeTab === 'mobile_inspecao' ? '#0284c7' : 'rgba(2, 132, 199, 0.12)',
+            borderRadius: '8px',
+            border: '1.5px solid rgba(2, 132, 199, 0.35)',
+            boxShadow: '0 2px 4px rgba(0,0,0,0.06)',
+            cursor: 'pointer',
+            transition: 'all 0.15s ease'
+          }}
+          title="Abrir interface de inspeção de campo para smartphone/tablet (Padrão SYSDAM APK)"
+        >
+          <Smartphone size={13} />
+          <span>APP CAMPO (APK)</span>
+        </button>
+
         {/* Card Rápido de Perfil 3D que abre Configurações de Perfil */}
         <button
           onClick={onOpenProfile || onToggleDrawer}
@@ -191,9 +218,14 @@ export const Header = ({ onToggleDrawer, onOpenProfile, activeTab = 'home' }) =>
             justifyContent: 'center',
             fontWeight: 800,
             fontSize: '0.75rem',
-            border: '1.5px solid var(--primary-accent)'
+            border: '1.5px solid var(--primary-accent)',
+            overflow: 'hidden'
           }}>
-            {currentUser?.avatar || currentUser?.nome?.charAt(0) || 'M'}
+            {currentUser?.foto ? (
+              <img src={currentUser.foto} alt={currentUser.nome} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+            ) : (
+              currentUser?.avatar || currentUser?.nome?.charAt(0) || 'M'
+            )}
           </div>
           <span className="hide-mobile" style={{ fontSize: '0.75rem', fontWeight: 700 }}>
             {currentUser?.nome?.split(' ')[0] || 'Usuário'}

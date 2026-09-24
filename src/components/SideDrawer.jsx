@@ -155,6 +155,15 @@ export const SideDrawer = ({
       category: 'Monitoramento & Multiperspectiva',
       items: [
         {
+          id: 'estruturas_empreendimento',
+          title: 'Estruturas do Empreendimento',
+          icon: Building2,
+          type: 'tab',
+          tabId: 'estruturas_empreendimento',
+          badge: 'SYSDAM',
+          badgeColor: '#0284c7'
+        },
+        {
           id: 'mapa',
           title: '1. Planta (GIS / Satélite)',
           icon: MapPin,
@@ -189,6 +198,15 @@ export const SideDrawer = ({
     {
       category: 'Operação de Campo & Anomalias',
       items: [
+        {
+          id: 'mobile_inspecao',
+          title: 'App de Campo (APK SYSDAM)',
+          icon: Smartphone,
+          type: 'tab',
+          tabId: 'mobile_inspecao',
+          badge: 'APK',
+          badgeColor: '#10b981'
+        },
         {
           id: 'anomalias_inspecoes',
           title: 'Anomalias & Inspeções (ISR/ISE)',

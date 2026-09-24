@@ -3,6 +3,7 @@ import { useAuth, ROLES } from '../context/AuthContext';
 import { useGeotechData } from '../context/GeotechDataContext';
 import { storageService } from '../services/storageService';
 import { TRANSLATIONS, getTranslation } from '../i18n/translations';
+import { recordIdTemplateService, AVAILABLE_VARIABLES } from '../services/recordIdTemplateService';
 import { 
   ShieldCheck, 
   Camera, 
@@ -117,6 +118,13 @@ export const ProfileSettingsTab = ({ onNavigateTab }) => {
   // ==========================================
   const [activePolicyDoc, setActivePolicyDoc] = useState('art');
 
+  // ==========================================
+  // 9. REGRAS DE INSPEÇÃO & IDENTIFICADORES (SYSDAM)
+  // ==========================================
+  const [inspectionRules, setInspectionRules] = useState(() => storageService.getInspectionRules());
+  const [recordTemplate, setRecordTemplate] = useState(() => storageService.getRecordIdTemplate());
+  const [showVarsGuide, setShowVarsGuide] = useState(false);
+
   // Estados de feedback e loading geral
   const [feedback, setFeedback] = useState({ type: '', message: '' });
   const [isSaving, setIsSaving] = useState(false);
@@ -166,7 +174,7 @@ export const ProfileSettingsTab = ({ onNavigateTab }) => {
     setIsSaving(true);
 
     try {
-      updateProfile({
+      const updated = updateProfile({
         nome: nome.trim(),
         email: email.trim(),
         setor,
@@ -175,6 +183,10 @@ export const ProfileSettingsTab = ({ onNavigateTab }) => {
         empresa: empresa.trim(),
         foto
       });
+
+      if (updated) {
+        storageService.savePersistentProfile(updated);
+      }
 
       setFeedback({ type: 'success', message: 'Dados cadastrais e profissionais atualizados com sucesso!' });
       if (setSystemToast) {
@@ -524,7 +536,8 @@ Todas as alterações em cotas de alerta, limiares críticos e aprovações de l
     { id: 'notificacoes', label: '5. Alertas & Sirene', icon: Bell, badge: 'Som' },
     { id: 'armazenamento_backup', label: '6. Armazenamento', icon: Database, badge: storageStats.usedFormatted },
     { id: 'versao_pwa', label: '7. Versão & PWA', icon: RefreshCw, badge: 'v2.5.0' },
-    { id: 'politicas_compliance', label: '8. Políticas & Compliance', icon: FileCheck2, badge: 'ANM 95' }
+    { id: 'politicas_compliance', label: '8. Políticas & Compliance', icon: FileCheck2, badge: 'ANM 95' },
+    { id: 'regras_inspecao', label: '9. Regras de Inspeção', icon: Sliders, badge: 'SYSDAM' }
   ];
 
   return (
@@ -1098,9 +1111,14 @@ Todas as alterações em cotas de alerta, limiares críticos e aprovações de l
                           alignItems: 'center',
                           justifyContent: 'center',
                           fontWeight: 800,
-                          fontSize: '0.75rem'
+                          fontSize: '0.75rem',
+                          overflow: 'hidden'
                         }}>
-                          {usr.avatar}
+                          {usr.foto ? (
+                            <img src={usr.foto} alt={usr.nome} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                          ) : (
+                            usr.avatar
+                          )}
                         </div>
                         <div>
                           <div style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-main)' }}>
@@ -2501,6 +2519,431 @@ Todas as alterações em cotas de alerta, limiares críticos e aprovações de l
               <span>Revisão: 2026.1</span>
             </div>
           </div>
+        </div>
+      )}
+
+      {/* ------------------------------------------------------------
+          9. SUB-ABA: REGRAS DE INSPEÇÃO & IDENTIFICADORES (SYSDAM)
+          ------------------------------------------------------------ */}
+      {activeSection === 'regras_inspecao' && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+          
+          {/* PAINEL 1: 4 REGRAS OPERACIONAIS DE INSPEÇÃO (INSPIRADO NO SYSDAM) */}
+          <div className="card-panel" style={{
+            padding: '1.5rem',
+            borderRadius: '8px',
+            border: '1px solid var(--border-medium)',
+            backgroundColor: 'var(--bg-surface)'
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.25rem', borderBottom: '1px solid var(--border-subtle)', paddingBottom: '0.75rem', flexWrap: 'wrap', gap: '0.5rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+                <Sliders size={20} style={{ color: 'var(--primary-accent)' }} />
+                <div>
+                  <h3 style={{ fontSize: '1.05rem', fontWeight: 800, color: 'var(--text-main)', margin: 0 }}>
+                    Parâmetros Operacionais de Inspeção (Padrão SYSDAM)
+                  </h3>
+                  <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', margin: '2px 0 0 0' }}>
+                    Controle de inserção avulsa, histórico retroativo com data de corte, autenticação PIN e sincronismo ao vivo
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => {
+                  storageService.saveInspectionRules(inspectionRules);
+                  storageService.saveRecordIdTemplate(recordTemplate);
+                  if (setSystemToast) {
+                    setSystemToast({
+                      type: 'success',
+                      message: 'Regras de inspeção e template SYSDAM salvos com sucesso!'
+                    });
+                  }
+                }}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.4rem',
+                  padding: '0.45rem 0.9rem',
+                  borderRadius: '6px',
+                  backgroundColor: 'var(--primary-accent)',
+                  color: '#ffffff',
+                  border: 'none',
+                  fontSize: '0.75rem',
+                  fontWeight: 700,
+                  cursor: 'pointer'
+                }}
+              >
+                <Save size={14} />
+                <span>Salvar Parâmetros</span>
+              </button>
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+              
+              {/* Regra 1: Registro Avulso */}
+              <div style={{
+                padding: '1.2rem',
+                borderRadius: '8px',
+                border: '1px solid var(--border-subtle)',
+                backgroundColor: 'var(--bg-card)'
+              }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '1rem', flexWrap: 'wrap' }}>
+                  <div style={{ flex: 1, minWidth: '240px' }}>
+                    <div style={{ display: 'inline-block', backgroundColor: 'rgba(56, 189, 248, 0.15)', color: 'var(--primary-accent)', padding: '0.2rem 0.5rem', borderRadius: '4px', fontSize: '0.85rem', fontWeight: 800, marginBottom: '0.4rem' }}>
+                      Habilitar a inserção de registro avulso
+                    </div>
+                    <p style={{ margin: 0, fontSize: '0.78rem', color: 'var(--text-muted)', lineHeight: 1.5 }}>
+                      Permite a inserção de registros avulsos no aplicativo. Quando desabilitada, os registros só poderão ser inseridos dentro de uma campanha de inspeção. Esta funcionalidade oferece maior flexibilidade para os inspetores registrarem ocorrências independentes.
+                    </p>
+                  </div>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', cursor: 'pointer' }}>
+                    <input
+                      type="checkbox"
+                      checked={inspectionRules.habilitarRegistroAvulso}
+                      onChange={(e) => {
+                        const updated = { ...inspectionRules, habilitarRegistroAvulso: e.target.checked };
+                        setInspectionRules(updated);
+                        storageService.saveInspectionRules(updated);
+                      }}
+                      style={{ width: '18px', height: '18px', cursor: 'pointer', accentColor: 'var(--primary-accent)' }}
+                    />
+                    <span style={{ fontSize: '0.75rem', fontWeight: 700, color: inspectionRules.habilitarRegistroAvulso ? 'var(--primary-accent)' : 'var(--text-faint)' }}>
+                      {inspectionRules.habilitarRegistroAvulso ? 'Registro avulso habilitado' : 'Registro avulso desabilitado'}
+                    </span>
+                  </label>
+                </div>
+              </div>
+
+              {/* Regra 2: Permitir históricos em outros registros */}
+              <div style={{
+                padding: '1.2rem',
+                borderRadius: '8px',
+                border: '1.5px solid var(--border-highlight)',
+                backgroundColor: 'var(--bg-card)'
+              }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '1rem', flexWrap: 'wrap', marginBottom: '0.75rem' }}>
+                  <div style={{ flex: 1, minWidth: '240px' }}>
+                    <div style={{ fontSize: '0.85rem', fontWeight: 800, color: 'var(--primary-accent)', marginBottom: '0.4rem' }}>
+                      Permitir históricos em outros registros
+                    </div>
+                    <p style={{ margin: 0, fontSize: '0.78rem', color: 'var(--text-muted)', lineHeight: 1.5 }}>
+                      Quando habilitado, passa a ser permitido adicionar históricos em outros registros a partir da data de corte, e os registros com histórico dentro desse período passam a ser exibidos no aplicativo.
+                    </p>
+                  </div>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', cursor: 'pointer' }}>
+                    <input
+                      type="checkbox"
+                      checked={inspectionRules.permitirHistoricosOutrosRegistros}
+                      onChange={(e) => {
+                        const updated = { ...inspectionRules, permitirHistoricosOutrosRegistros: e.target.checked };
+                        setInspectionRules(updated);
+                        storageService.saveInspectionRules(updated);
+                      }}
+                      style={{ width: '18px', height: '18px', cursor: 'pointer', accentColor: 'var(--primary-accent)' }}
+                    />
+                    <span style={{ fontSize: '0.75rem', fontWeight: 700, color: inspectionRules.permitirHistoricosOutrosRegistros ? 'var(--primary-accent)' : 'var(--text-faint)' }}>
+                      {inspectionRules.permitirHistoricosOutrosRegistros ? 'Histórico habilitado' : 'Histórico desabilitado'}
+                    </span>
+                  </label>
+                </div>
+
+                {/* Alerta de Registro Retroativo */}
+                <div style={{
+                  padding: '0.7rem 0.9rem',
+                  borderRadius: '6px',
+                  backgroundColor: 'rgba(245, 158, 11, 0.1)',
+                  border: '1px solid rgba(245, 158, 11, 0.3)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.5rem',
+                  fontSize: '0.74rem',
+                  color: '#f59e0b',
+                  marginBottom: '0.75rem'
+                }}>
+                  <AlertCircle size={16} style={{ flexShrink: 0 }} />
+                  <span>
+                    Para registros anteriores, crie um novo registro após essa data e use a função de <strong>fundir registros</strong> para agrupá-los. Em caso de dúvida, contate o suporte.
+                  </span>
+                </div>
+
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem', fontSize: '0.75rem' }}>
+                  <span style={{ color: 'var(--text-muted)' }}>Data de corte do histórico:</span>
+                  <input
+                    type="date"
+                    value={inspectionRules.dataCorteHistorico || '2026-01-01'}
+                    onChange={(e) => {
+                      const updated = { ...inspectionRules, dataCorteHistorico: e.target.value };
+                      setInspectionRules(updated);
+                      storageService.saveInspectionRules(updated);
+                    }}
+                    style={{
+                      padding: '0.35rem 0.6rem',
+                      borderRadius: '4px',
+                      border: '1px solid var(--border-medium)',
+                      backgroundColor: 'var(--bg-surface)',
+                      color: 'var(--text-main)',
+                      fontSize: '0.75rem'
+                    }}
+                  />
+                </div>
+              </div>
+
+              {/* Regra 3: Configuração de PIN */}
+              <div style={{
+                padding: '1.2rem',
+                borderRadius: '8px',
+                border: '1px solid var(--border-subtle)',
+                backgroundColor: 'var(--bg-card)'
+              }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '1rem', flexWrap: 'wrap' }}>
+                  <div style={{ flex: 1, minWidth: '240px' }}>
+                    <div style={{ fontSize: '0.85rem', fontWeight: 800, color: 'var(--primary-accent)', marginBottom: '0.4rem' }}>
+                      Configuração de PIN para inspeções
+                    </div>
+                    <p style={{ margin: 0, fontSize: '0.78rem', color: 'var(--text-muted)', lineHeight: 1.5 }}>
+                      Exigir PIN (senha) para envio de registros ou campanhas de inspeção do aplicativo mobile para a web. O PIN é individual e intransferível, podendo ser configurado pelo próprio usuário na tela de configurações do portal.
+                    </p>
+                  </div>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', cursor: 'pointer' }}>
+                    <input
+                      type="checkbox"
+                      checked={inspectionRules.configuracaoPinInspecoes}
+                      onChange={(e) => {
+                        const updated = { ...inspectionRules, configuracaoPinInspecoes: e.target.checked };
+                        setInspectionRules(updated);
+                        storageService.saveInspectionRules(updated);
+                      }}
+                      style={{ width: '18px', height: '18px', cursor: 'pointer', accentColor: 'var(--primary-accent)' }}
+                    />
+                    <span style={{ fontSize: '0.75rem', fontWeight: 700, color: inspectionRules.configuracaoPinInspecoes ? 'var(--primary-accent)' : 'var(--text-faint)' }}>
+                      {inspectionRules.configuracaoPinInspecoes ? 'PIN exigido nas inspeções' : 'PIN não exigido nas inspeções'}
+                    </span>
+                  </label>
+                </div>
+              </div>
+
+              {/* Regra 4: Live Inspection */}
+              <div style={{
+                padding: '1.2rem',
+                borderRadius: '8px',
+                border: '1px solid var(--border-subtle)',
+                backgroundColor: 'var(--bg-card)'
+              }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '1rem', flexWrap: 'wrap' }}>
+                  <div style={{ flex: 1, minWidth: '240px' }}>
+                    <div style={{ fontSize: '0.85rem', fontWeight: 800, color: 'var(--primary-accent)', marginBottom: '0.4rem' }}>
+                      Habilitar Live Inspection
+                    </div>
+                    <p style={{ margin: 0, fontSize: '0.78rem', color: 'var(--text-muted)', lineHeight: 1.5 }}>
+                      Permite a sincronização de inspeções em tempo real no aplicativo para a web, quando houver conexão com a internet. Ajuda a melhorar a eficiência e a precisão das inspeções, além de melhorar a experiência do usuário.
+                    </p>
+                  </div>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', cursor: 'pointer' }}>
+                    <input
+                      type="checkbox"
+                      checked={inspectionRules.habilitarLiveInspection}
+                      onChange={(e) => {
+                        const updated = { ...inspectionRules, habilitarLiveInspection: e.target.checked };
+                        setInspectionRules(updated);
+                        storageService.saveInspectionRules(updated);
+                      }}
+                      style={{ width: '18px', height: '18px', cursor: 'pointer', accentColor: 'var(--primary-accent)' }}
+                    />
+                    <span style={{ fontSize: '0.75rem', fontWeight: 700, color: inspectionRules.habilitarLiveInspection ? '#10b981' : 'var(--text-faint)' }}>
+                      {inspectionRules.habilitarLiveInspection ? 'Live Inspection ativada' : 'Live Inspection desativada'}
+                    </span>
+                  </label>
+                </div>
+              </div>
+
+            </div>
+          </div>
+
+          {/* PAINEL 2: MOTOR DE TEMPLATE DO IDENTIFICADOR DO REGISTRO (SCREENSHOT 5) */}
+          <div className="card-panel" style={{
+            padding: '1.5rem',
+            borderRadius: '8px',
+            border: '1px solid var(--border-medium)',
+            backgroundColor: 'var(--bg-surface)'
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.25rem', borderBottom: '1px solid var(--border-subtle)', paddingBottom: '0.75rem', flexWrap: 'wrap', gap: '0.5rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+                <FileText size={20} style={{ color: 'var(--primary-accent)' }} />
+                <div>
+                  <h3 style={{ fontSize: '1.05rem', fontWeight: 800, color: 'var(--text-main)', margin: 0 }}>
+                    Identificador do Registro — Sintaxe Customizada
+                  </h3>
+                  <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', margin: '2px 0 0 0' }}>
+                    Formatação dinâmica do código das anomalias e ocorrências geotécnicas
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => {
+                  const defaultTpl = '{SIGLA_EMPREENDIMENTO} - {NOME_SINTOMA}';
+                  setRecordTemplate(defaultTpl);
+                  storageService.saveRecordIdTemplate(defaultTpl);
+                  if (setSystemToast) {
+                    setSystemToast({ type: 'info', message: 'Template restaurado para o padrão SYSDAM!' });
+                  }
+                }}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.35rem',
+                  padding: '0.4rem 0.8rem',
+                  borderRadius: '4px',
+                  backgroundColor: 'var(--bg-secondary)',
+                  color: 'var(--text-muted)',
+                  border: '1px solid var(--border-subtle)',
+                  fontSize: '0.72rem',
+                  cursor: 'pointer'
+                }}
+              >
+                <RefreshCw size={12} />
+                <span>Restaurar Padrão</span>
+              </button>
+            </div>
+
+            {/* Banner de Ajuda com Borda Azul Lateral */}
+            <div style={{
+              borderLeft: '4px solid var(--primary-accent)',
+              backgroundColor: 'rgba(56, 189, 248, 0.08)',
+              padding: '0.85rem 1rem',
+              borderRadius: '0 6px 6px 0',
+              fontSize: '0.78rem',
+              lineHeight: 1.5,
+              color: 'var(--text-main)',
+              marginBottom: '1.25rem'
+            }}>
+              Utilize <strong>'@'</strong> para ver as variáveis disponíveis para o template do identificador do registro. Caso não seja informado um template do identificador, será utilizado o formato padrão.
+            </div>
+
+            {/* Input do Template */}
+            <div style={{ marginBottom: '1.25rem' }}>
+              <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-main)', marginBottom: '0.4rem' }}>
+                Template do identificador:
+              </label>
+              <input
+                type="text"
+                value={recordTemplate}
+                onChange={(e) => {
+                  setRecordTemplate(e.target.value);
+                  storageService.saveRecordIdTemplate(e.target.value);
+                }}
+                placeholder="{SIGLA_EMPREENDIMENTO} - {NOME_SINTOMA}"
+                style={{
+                  width: '100%',
+                  padding: '0.75rem 1rem',
+                  borderRadius: '6px',
+                  border: '1.5px solid var(--border-medium)',
+                  backgroundColor: 'var(--bg-card)',
+                  color: 'var(--text-main)',
+                  fontFamily: 'monospace',
+                  fontSize: '0.85rem',
+                  outline: 'none',
+                  boxSizing: 'border-box'
+                }}
+              />
+            </div>
+
+            {/* Pré-visualização Dinâmica */}
+            <div style={{
+              padding: '1rem 1.25rem',
+              borderRadius: '6px',
+              backgroundColor: 'var(--bg-secondary)',
+              border: '1px solid var(--border-subtle)',
+              marginBottom: '1.25rem'
+            }}>
+              <div style={{ fontSize: '0.75rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '0.35rem' }}>
+                Pré-visualização:
+              </div>
+              <div style={{ fontSize: '1.05rem', fontWeight: 800, color: 'var(--primary-accent)', fontFamily: 'monospace' }}>
+                {recordIdTemplateService.interpolateTemplate(recordTemplate, {
+                  siglaEstrutura: 'B1',
+                  siglaEmpreendimento: 'IT',
+                  sintoma: 'Erosão',
+                  id: '1',
+                  contador: 1
+                }) || '—'}
+              </div>
+            </div>
+
+            {/* Inserção Rápida de Variáveis */}
+            <div style={{ marginBottom: '1.25rem' }}>
+              <div style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '0.5rem' }}>
+                Inserir variável rapidamente:
+              </div>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.4rem' }}>
+                {AVAILABLE_VARIABLES.map(v => (
+                  <button
+                    key={v.token}
+                    type="button"
+                    onClick={() => {
+                      const updated = (recordTemplate ? recordTemplate + ' ' : '') + v.token;
+                      setRecordTemplate(updated);
+                      storageService.saveRecordIdTemplate(updated);
+                    }}
+                    style={{
+                      padding: '0.3rem 0.6rem',
+                      borderRadius: '4px',
+                      backgroundColor: 'rgba(56, 189, 248, 0.1)',
+                      border: '1px solid var(--border-highlight)',
+                      color: 'var(--primary-accent)',
+                      fontSize: '0.72rem',
+                      fontFamily: 'monospace',
+                      fontWeight: 700,
+                      cursor: 'pointer'
+                    }}
+                  >
+                    + {v.token}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Dicionário de Variáveis */}
+            <div>
+              <button
+                type="button"
+                onClick={() => setShowVarsGuide(!showVarsGuide)}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  color: 'var(--primary-accent)',
+                  fontSize: '0.76rem',
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                  padding: 0,
+                  marginBottom: '0.75rem'
+                }}
+              >
+                {showVarsGuide ? 'Esconder variáveis disponíveis' : 'Mostrar variáveis disponíveis'}
+              </button>
+
+              {showVarsGuide && (
+                <div style={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '0.65rem',
+                  padding: '1rem',
+                  borderRadius: '6px',
+                  backgroundColor: 'var(--bg-secondary)',
+                  border: '1px solid var(--border-subtle)',
+                  fontSize: '0.75rem',
+                  lineHeight: 1.5
+                }}>
+                  {AVAILABLE_VARIABLES.map(v => (
+                    <div key={v.token}>
+                      <strong style={{ color: 'var(--text-main)', fontFamily: 'monospace' }}>{v.token}:</strong>{' '}
+                      <span style={{ color: 'var(--text-muted)' }}>{v.description}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+          </div>
+
         </div>
       )}
 

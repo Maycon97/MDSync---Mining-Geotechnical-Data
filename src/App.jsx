@@ -36,6 +36,8 @@ import { GeotechCrossSectionTab } from './components/GeotechCrossSectionTab';
 import { AnomaliasInspecoesTab } from './components/AnomaliasInspecoesTab';
 import { GestaoDocumentalTab } from './components/GestaoDocumentalTab';
 import { CentralComunicacaoTab } from './components/CentralComunicacaoTab';
+import { EstruturasEmpreendimentoTab } from './components/EstruturasEmpreendimentoTab';
+import { MobileInspectionView } from './components/MobileInspectionView';
 import { 
   Activity, 
   AlertCircle, 
@@ -145,11 +147,21 @@ export function App() {
     );
   }
 
+  // Se o usuário alternar para o Modo Aplicativo Móvel (APK / Smartphone)
+  if (activeTab === 'mobile_inspecao') {
+    return (
+      <ErrorBoundary onNavigateHome={() => handleNavigateTab('home')}>
+        <MobileInspectionView onExit={() => handleNavigateTab('home')} />
+      </ErrorBoundary>
+    );
+  }
+
   return (
     <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', backgroundColor: 'var(--bg-primary)' }}>
       {/* Barra de Topo com Botão MENU e Identificação da Sessão */}
       <Header 
         activeTab={activeTab}
+        onNavigateTab={handleNavigateTab}
         onOpenAuth={() => { setAuthModalTab('login'); setAuthModalOpen(true); }}
         onOpenSync={() => handleNavigateTab('fila_sync')}
         onOpenReport={() => handleNavigateTab('lotes_relatorios')}
@@ -314,12 +326,16 @@ export function App() {
           <ProfileSettingsTab onNavigateTab={handleNavigateTab} />
         )}
 
+        {activeTab === 'estruturas_empreendimento' && (
+          <EstruturasEmpreendimentoTab onNavigateTab={handleNavigateTab} />
+        )}
+
         {![
           'home', 'dashboard', 'analises', 'coletas', 'importacoes', 'ordens_servico',
           'lotes_relatorios', 'clientes', 'contratos', 'mapa', 'secoes', 'campo',
           'fila_sync', 'anomalias_inspecoes', 'checklist', 'chamados', 'piezometria',
           'vazao', 'documentos', 'comunicacao', 'laudo', 'historico', 'ia',
-          'cadastro', 'configuracoes_perfil'
+          'cadastro', 'configuracoes_perfil', 'estruturas_empreendimento', 'mobile_inspecao'
         ].includes(activeTab) && (
           <div className="card-panel" style={{ padding: '2.5rem', textAlign: 'center' }}>
             <h3 style={{ fontSize: '1.2rem', fontWeight: 800, color: 'var(--text-main)', marginBottom: '0.5rem' }}>

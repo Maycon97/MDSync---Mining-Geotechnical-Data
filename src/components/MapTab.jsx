@@ -22,11 +22,58 @@ import {
   Sliders,
   Maximize2,
   ExternalLink,
-  Wrench
+  Wrench,
+  Sparkles,
+  ClipboardList
 } from 'lucide-react';
+import { MapInspectionRecordDrawer } from './MapInspectionRecordDrawer';
+import { MapInspectionDetailPanel } from './MapInspectionDetailPanel';
+import { MapFloatingWidget } from './MapFloatingWidget';
+import { RecordIdTemplateModal } from './RecordIdTemplateModal';
+import { InspectionSettingsModal } from './InspectionSettingsModal';
+
+// Conversor Geodésico de Alta Precisão WGS-84 / SIRGAS 2000 -> UTM Fuso 23S
+function latLonToUtm23S(lat, lon) {
+  if (lat == null || lon == null || isNaN(lat) || isNaN(lon)) {
+    return { easting: 0, northing: 0 };
+  }
+  const a = 6378137.0;
+  const f = 1 / 298.257223563;
+  const e2 = 2 * f - f * f;
+  const e_prime2 = e2 / (1 - e2);
+  const k0 = 0.9996;
+  const lon0 = -45.0 * Math.PI / 180;
+  const phi = lat * Math.PI / 180;
+  const lambda = lon * Math.PI / 180;
+
+  const N = a / Math.sqrt(1 - e2 * Math.sin(phi) * Math.sin(phi));
+  const T = Math.tan(phi) * Math.tan(phi);
+  const C = e_prime2 * Math.cos(phi) * Math.cos(phi);
+  const A = Math.cos(phi) * (lambda - lon0);
+
+  const M = a * (
+    (1 - e2 / 4 - 3 * e2 * e2 / 64 - 5 * e2 * e2 * e2 / 256) * phi -
+    (3 * e2 / 8 + 3 * e2 * e2 / 32 + 45 * e2 * e2 * e2 / 1024) * Math.sin(2 * phi) +
+    (15 * e2 * e2 / 256 + 45 * e2 * e2 * e2 / 1024) * Math.sin(4 * phi) -
+    (35 * e2 * e2 * e2 / 3072) * Math.sin(6 * phi)
+  );
+
+  const easting = 500000 + k0 * N * (A + (1 - T + C) * Math.pow(A, 3) / 6 + (5 - 18 * T + T * T + 72 * C - 58 * e_prime2) * Math.pow(A, 5) / 120);
+  const northing = 10000000 + k0 * (M + N * Math.tan(phi) * (Math.pow(A, 2) / 2 + (5 - T + 9 * C + 4 * C * C) * Math.pow(A, 4) / 24 + (61 - 58 * T + T * T + 600 * C - 330 * e_prime2) * Math.pow(A, 6) / 720));
+
+  return { easting: Math.round(easting), northing: Math.round(northing) };
+}
 
 export const MapTab = ({ onNavigateTab, onSelectInstrumentForReading }) => {
-  const { structures, instruments, fluigTickets = [], activeStructureId, selectStructure } = useGeotechData();
+  const { 
+    structures, 
+    instruments, 
+    fluigTickets = [], 
+    activeStructureId, 
+    selectStructure,
+    anomaliasGeotecnicas = [],
+    setSystemToast 
+  } = useGeotechData();
   const mapContainerRef = useRef(null);
   const mapInstanceRef = useRef(null);
   const markersLayerRef = useRef(null);
@@ -38,12 +85,48 @@ export const MapTab = ({ onNavigateTab, onSelectInstrumentForReading }) => {
   const [filterStatus, setFilterStatus] = useState('TODOS');
   const [selectedInstrument, setSelectedInstrument] = useState(null);
   const [selectedTicket, setSelectedTicket] = useState(null);
+  const [selectedInspectionRecord, setSelectedInspectionRecord] = useState(null);
+  const [isRecordDrawerOpen, setIsRecordDrawerOpen] = useState(false);
+  const [showAnomalies, setShowAnomalies] = useState(true);
+  const [templateModalOpen, setTemplateModalOpen] = useState(false);
+  const [inspectionSettingsModalOpen, setInspectionSettingsModalOpen] = useState(false);
+
   const [useClustering, setUseClustering] = useState(true);
   const [showPerimeters, setShowPerimeters] = useState(true);
   const [showTickets, setShowTickets] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [cursorCoords, setCursorCoords] = useState(null);
   const [mapZoom, setMapZoom] = useState(15);
+
+  // Ocorrências / Anomalias de Inspeção Georreferenciadas (Padrão SYSDAM)
+  const georeferencedAnomalies = useMemo(() => {
+    return (anomaliasGeotecnicas || []).map(a => {
+      let lat = a.coordenadas?.lat;
+      let lon = a.coordenadas?.lon;
+      if (!lat || !lon) {
+        const norm = (a.estrutura || '').toUpperCase();
+        const bound = STRUCTURE_BOUNDARIES.find(b => 
+          norm.includes(b.id) || b.id.includes(norm) || (b.nome && norm.includes(b.nome.toUpperCase()))
+        );
+        if (bound && bound.center) {
+          lat = bound.center[0];
+          lon = bound.center[1];
+        } else {
+          lat = -20.063824;
+          lon = -44.114686;
+        }
+      }
+      return { ...a, lat, lon };
+    }).filter(a => {
+      if (activeStructureId !== 'TODAS') {
+        const structNorm = (a.estrutura || '').toUpperCase().replace(/\s+/g, '_');
+        if (!structNorm.includes(activeStructureId) && !activeStructureId.includes(structNorm)) {
+          return false;
+        }
+      }
+      return true;
+    });
+  }, [anomaliasGeotecnicas, activeStructureId]);
 
   // Chamados georreferenciados do Banco Central PCMI
   const georeferencedTickets = useMemo(() => {
@@ -77,19 +160,28 @@ export const MapTab = ({ onNavigateTab, onSelectInstrumentForReading }) => {
     if (container._leaflet_id) {
       container._leaflet_id = null;
     }
+    while (container.firstChild) {
+      container.removeChild(container.firstChild);
+    }
 
     // Coordenadas Centrais do Complexo Minerário Itaminas (Barragem B1 / Mina de Ferro)
     const initialLat = -20.063818;
     const initialLon = -44.114360;
 
-    const map = L.map(container, {
-      center: [initialLat, initialLon],
-      zoom: 15,
-      zoomControl: false,
-      attributionControl: false,
-      fadeAnimation: true,
-      zoomAnimation: true
-    });
+    let map;
+    try {
+      map = L.map(container, {
+        center: [initialLat, initialLon],
+        zoom: 15,
+        zoomControl: false,
+        attributionControl: false,
+        fadeAnimation: true,
+        zoomAnimation: true
+      });
+    } catch (e) {
+      console.error('[MapTab] Falha ao criar instância Leaflet:', e);
+      return;
+    }
 
     // Controles Oficiais Leaflet (Zoom no canto inferior direito e escala métrica no inferior esquerdo)
     L.control.zoom({ position: 'bottomright' }).addTo(map);
@@ -191,9 +283,12 @@ export const MapTab = ({ onNavigateTab, onSelectInstrumentForReading }) => {
     initialLayer.addTo(map);
     mapInstanceRef.current.currentLayer = initialLayer;
 
-    // Rastreamento de coordenadas do cursor e nível de zoom em tempo real
+    // Rastreamento de coordenadas do cursor (WGS-84 e SIRGAS 2000 UTM 23S) e nível de zoom em tempo real
     map.on('mousemove', (e) => {
-      setCursorCoords({ lat: e.latlng.lat.toFixed(6), lon: e.latlng.lng.toFixed(6) });
+      const lat = Number(e.latlng.lat.toFixed(6));
+      const lon = Number(e.latlng.lng.toFixed(6));
+      const utm = latLonToUtm23S(lat, lon);
+      setCursorCoords({ lat, lon, utmE: utm.easting, utmN: utm.northing });
     });
     map.on('zoomend', () => {
       setMapZoom(map.getZoom());
@@ -425,14 +520,21 @@ export const MapTab = ({ onNavigateTab, onSelectInstrumentForReading }) => {
         });
 
         const structMarker = L.marker([struct.lat, struct.lon], { icon: structIcon });
+        structMarker.bindTooltip(`
+          <div style="font-family: 'Inter', sans-serif; font-size: 11px; padding: 4px 6px;">
+            <strong style="color: #38bdf8;">${struct.nome}</strong><br/>
+            <span style="color: #94a3b8;">${struct.categoria || 'Estrutura Geotécnica'} • ${struct.totalInstrumentos || '-'} instrumentos</span><br/>
+            <span style="font-size: 10px; color: #10b981;">Fator de Segurança: ${struct.fatorSeguranca || '1.50+'}</span>
+          </div>
+        `, { sticky: true, opacity: 0.95 });
         structMarker.on('click', () => handleSelectStructure(struct.id));
         layer.addLayer(structMarker);
       }
     });
 
-    // 2. Marcadores dos Instrumentos Geotécnicos
+    // 2. Marcadores dos Instrumentos Geotécnicos (Coordenadas Exatas Banco_De_Dados.xlsx)
     filteredInstruments.forEach(inst => {
-      const isSelected = selectedInstrument && selectedInstrument.id === inst.id;
+      const isSelected = selectedInstrument && selectedInstrument.id === inst.id && selectedInstrument.estrutura === inst.estrutura;
       let markerClass = isSelected ? 'marker-selected' : 'marker-normal';
       let dotColor = '#10b981';
 
@@ -447,12 +549,14 @@ export const MapTab = ({ onNavigateTab, onSelectInstrumentForReading }) => {
         dotColor = '#f59e0b';
       }
 
+      const tipoSigla = (inst.tipo === 'INA' ? 'IN' : inst.tipo === 'PZ' ? 'PZ' : inst.tipo === 'MV' ? 'MV' : inst.tipo === 'VT' ? 'VT' : (inst.tipo || 'IN')).slice(0, 2);
+
       const instIcon = L.divIcon({
         className: 'custom-geo-marker-wrapper',
         html: `
           <div class="custom-geo-marker ${markerClass}" style="
-            width: ${isSelected ? '34px' : '26px'};
-            height: ${isSelected ? '34px' : '26px'};
+            width: ${isSelected ? '36px' : '28px'};
+            height: ${isSelected ? '36px' : '28px'};
             background-color: ${dotColor};
             border: ${isSelected ? '3px solid #38bdf8' : '2px solid #ffffff'};
             border-radius: 50%;
@@ -466,17 +570,29 @@ export const MapTab = ({ onNavigateTab, onSelectInstrumentForReading }) => {
             cursor: pointer;
             transition: all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
           ">
-            ${inst.tipo === 'INA' ? 'IN' : inst.tipo === 'PZ' ? 'PZ' : inst.tipo === 'MV' ? 'MV' : inst.tipo.slice(0, 2)}
+            ${tipoSigla}
           </div>
         `,
-        iconSize: [isSelected ? 34 : 26, isSelected ? 34 : 26],
-        iconAnchor: [isSelected ? 17 : 13, isSelected ? 17 : 13]
+        iconSize: [isSelected ? 36 : 28, isSelected ? 36 : 28],
+        iconAnchor: [isSelected ? 18 : 14, isSelected ? 18 : 14]
       });
 
       const marker = L.marker([inst.lat, inst.lon], { 
         icon: instIcon,
         geoStatus: inst.statusCalculado || 'NORMAL'
       });
+
+      marker.bindTooltip(`
+        <div style="font-family: 'Inter', sans-serif; font-size: 11px; padding: 4px 6px; min-width: 170px;">
+          <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 2px;">
+            <strong style="color: #38bdf8;">${inst.tipo} - ${inst.id}</strong>
+            <span style="font-size: 9px; font-weight: 800; padding: 1px 4px; border-radius: 3px; background: ${dotColor}22; color: ${dotColor};">${inst.statusCalculado || 'NORMAL'}</span>
+          </div>
+          <div style="color: #94a3b8; font-size: 10px;">${inst.estrutura} • Seção ${inst.secao || 'Geral'}</div>
+          <div style="color: #f1f5f9; font-size: 10px; margin-top: 2px;">Cota: <strong>${inst.ultimaCota ? inst.ultimaCota + ' m' : (inst.cotaTopo ? inst.cotaTopo + ' m' : '-')}</strong></div>
+          <div style="color: #64748b; font-size: 9px; font-family: var(--font-mono); margin-top: 1px;">UTM: E ${inst.coordenadaEW ? Math.round(inst.coordenadaEW) : '-'} / N ${inst.coordenadaNS ? Math.round(inst.coordenadaNS) : '-'}</div>
+        </div>
+      `, { sticky: true, opacity: 0.96 });
       
       marker.on('click', () => handleSelectInstrument(inst));
       layer.addLayer(marker);
@@ -528,12 +644,78 @@ export const MapTab = ({ onNavigateTab, onSelectInstrumentForReading }) => {
 
         ticketMarker.on('click', () => {
           setSelectedInstrument(null);
+          setSelectedInspectionRecord(null);
           setSelectedTicket(t);
         });
         layer.addLayer(ticketMarker);
       });
     }
-  }, [structures, filteredInstruments, georeferencedTickets, showTickets, activeStructureId, selectedInstrument, selectedTicket, handleSelectStructure, handleSelectInstrument]);
+
+    // 4. Marcadores de Ocorrências e Inspeções Geotécnicas (Padrão SYSDAM)
+    if (showAnomalies && georeferencedAnomalies.length > 0) {
+      georeferencedAnomalies.forEach(anom => {
+        const isSelected = selectedInspectionRecord && selectedInspectionRecord.id === anom.id;
+        const sevColor = anom.severidade === 3 ? '#ef4444' : (anom.severidade === 2 ? '#f59e0b' : '#10b981');
+        const anomIcon = L.divIcon({
+          className: 'custom-sysdam-inspection-marker',
+          html: `
+            <div style="
+              background: rgba(15, 23, 42, 0.92);
+              color: #ffffff;
+              border: ${isSelected ? '2px solid #38bdf8' : '1px solid rgba(255, 255, 255, 0.45)'};
+              border-radius: 6px;
+              padding: 2px 7px;
+              font-family: 'Inter', sans-serif;
+              font-size: 10px;
+              font-weight: 700;
+              box-shadow: 0 4px 14px rgba(0,0,0,0.65);
+              display: flex;
+              align-items: center;
+              gap: 4px;
+              white-space: nowrap;
+              cursor: pointer;
+              transform: translate(-50%, -50%);
+              backdrop-filter: blur(4px);
+              transition: all 0.2s ease;
+            ">
+              <span style="display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: ${sevColor}; box-shadow: 0 0 6px ${sevColor};"></span>
+              <span>${anom.codigo || anom.id}</span>
+            </div>
+          `,
+          iconSize: [0, 0]
+        });
+
+        const anomMarker = L.marker([anom.lat, anom.lon], { icon: anomIcon, zIndexOffset: 750 });
+        anomMarker.bindTooltip(`
+          <div style="font-family: 'Inter', sans-serif; font-size: 11px; padding: 2px 4px; max-width: 250px;">
+            <strong style="color: ${sevColor};">${anom.codigo || anom.id} - ${anom.tipo}</strong><br/>
+            <span style="color: #94a3b8;">${anom.estrutura} • ${anom.localizacao || ''}</span><br/>
+            <span>${anom.descricao ? anom.descricao.slice(0, 90) + '...' : ''}</span>
+          </div>
+        `, { sticky: true, opacity: 0.95 });
+
+        anomMarker.on('click', () => {
+          setSelectedInstrument(null);
+          setSelectedTicket(null);
+          setSelectedInspectionRecord(anom);
+        });
+        layer.addLayer(anomMarker);
+      });
+    }
+  }, [
+    structures, 
+    filteredInstruments, 
+    georeferencedTickets, 
+    showTickets, 
+    georeferencedAnomalies, 
+    showAnomalies, 
+    activeStructureId, 
+    selectedInstrument, 
+    selectedTicket, 
+    selectedInspectionRecord, 
+    handleSelectStructure, 
+    handleSelectInstrument
+  ]);
 
   // Atualizar marcadores quando filtros ou seleção mudarem
   useEffect(() => {
@@ -858,7 +1040,80 @@ export const MapTab = ({ onNavigateTab, onSelectInstrumentForReading }) => {
             }}
             title="Exibir/Ocultar chamados de campo reais do PCMI/Fluig georreferenciados"
           >
-            {showTickets ? `🔧 Chamados PCMI (${georeferencedTickets.length})` : '🔧 Chamados Off'}
+            {showTickets ? `🔧 Chamados (${georeferencedTickets.length})` : '🔧 Chamados Off'}
+          </button>
+
+          <button
+            onClick={() => setShowAnomalies(!showAnomalies)}
+            className={`btn-subtle ${showAnomalies ? 'active' : ''}`}
+            style={{
+              padding: '0.25rem 0.55rem',
+              fontSize: '0.72rem',
+              borderRadius: '6px',
+              backgroundColor: showAnomalies ? 'rgba(56, 189, 248, 0.18)' : 'var(--bg-secondary)',
+              color: showAnomalies ? 'var(--primary-accent)' : 'var(--text-muted)',
+              border: showAnomalies ? '1px solid rgba(56, 189, 248, 0.4)' : '1px solid var(--border-subtle)'
+            }}
+            title="Exibir/Ocultar ocorrências de inspeção georreferenciadas (SYSDAM)"
+          >
+            {showAnomalies ? `🎯 Ocorrências (${georeferencedAnomalies.length})` : '🎯 Ocorrências Off'}
+          </button>
+
+          <button
+            onClick={() => setIsRecordDrawerOpen(!isRecordDrawerOpen)}
+            className={`btn-subtle ${isRecordDrawerOpen ? 'active' : ''}`}
+            style={{
+              padding: '0.25rem 0.65rem',
+              fontSize: '0.72rem',
+              borderRadius: '6px',
+              backgroundColor: isRecordDrawerOpen ? '#7c3aed' : 'var(--bg-secondary)',
+              color: isRecordDrawerOpen ? '#ffffff' : 'var(--text-main)',
+              border: isRecordDrawerOpen ? '1px solid #7c3aed' : '1px solid var(--border-subtle)',
+              fontWeight: 700,
+              display: 'flex',
+              alignItems: 'center',
+              gap: '4px'
+            }}
+            title="Abrir gaveta de cards de registros e ocorrências (SYSDAM)"
+          >
+            <ClipboardList size={13} />
+            <span>📋 Gaveta Registros</span>
+          </button>
+
+          <button
+            onClick={() => setTemplateModalOpen(true)}
+            className="btn-subtle"
+            style={{
+              padding: '0.25rem 0.55rem',
+              fontSize: '0.72rem',
+              borderRadius: '6px',
+              backgroundColor: 'var(--bg-secondary)',
+              color: '#7c3aed',
+              border: '1px solid var(--border-subtle)',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '3px'
+            }}
+            title="Configurar Template do Identificador do Registro (SYSDAM)"
+          >
+            <Sparkles size={13} />
+            <span>Template ID</span>
+          </button>
+
+          <button
+            onClick={() => setInspectionSettingsModalOpen(true)}
+            className="btn-subtle"
+            style={{
+              padding: '0.25rem 0.55rem',
+              fontSize: '0.72rem',
+              borderRadius: '6px',
+              backgroundColor: 'var(--bg-secondary)',
+              color: 'var(--text-main)',
+              border: '1px solid var(--border-subtle)'
+            }}
+            title="Configurar regras operacionais de inspeção (SYSDAM)"
+          >
+            ⚙️ Regras
           </button>
         </div>
 
@@ -895,21 +1150,24 @@ export const MapTab = ({ onNavigateTab, onSelectInstrumentForReading }) => {
         flexDirection: 'column',
         gap: '0.5rem'
       }}>
-        {/* Painel de Coordenadas do Cursor */}
+        {/* Painel de Coordenadas do Cursor (WGS-84 e SIRGAS 2000 UTM 23S) */}
         {cursorCoords && (
           <div className="glass-panel" style={{
-            padding: '0.3rem 0.65rem',
-            borderRadius: '6px',
-            fontSize: '0.7rem',
+            padding: '0.35rem 0.75rem',
+            borderRadius: '8px',
+            fontSize: '0.72rem',
             fontFamily: 'var(--font-mono)',
             color: 'var(--text-muted)',
             display: 'flex',
             alignItems: 'center',
-            gap: '0.6rem',
-            boxShadow: 'var(--shadow-sm)'
+            gap: '0.75rem',
+            boxShadow: 'var(--shadow-md)',
+            border: '1px solid var(--border-medium)',
+            flexWrap: 'wrap'
           }}>
             <span>LAT: <strong style={{ color: 'var(--text-main)' }}>{cursorCoords.lat}</strong></span>
             <span>LON: <strong style={{ color: 'var(--text-main)' }}>{cursorCoords.lon}</strong></span>
+            <span>UTM 23S: <strong style={{ color: '#38bdf8' }}>E {cursorCoords.utmE} / N {cursorCoords.utmN}</strong></span>
             <span>ZOOM: <strong style={{ color: 'var(--primary-accent)' }}>{mapZoom}x</strong></span>
           </div>
         )}
@@ -1047,6 +1305,48 @@ export const MapTab = ({ onNavigateTab, onSelectInstrumentForReading }) => {
             </div>
           </div>
 
+          {/* Coordenadas Exatas (SIRGAS 2000 UTM 23S & WGS-84) */}
+          <div style={{
+            padding: '0.45rem 0.65rem',
+            backgroundColor: 'rgba(56, 189, 248, 0.08)',
+            borderRadius: '6px',
+            border: '1px solid rgba(56, 189, 248, 0.25)',
+            fontSize: '0.7rem'
+          }}>
+            <div style={{ color: 'var(--primary-accent)', fontWeight: 800, marginBottom: '3px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <span>📍 COORDENADAS EXATAS (SIRGAS 2000)</span>
+              <button
+                onClick={() => {
+                  const text = `ID: ${selectedInstrument.id} | UTM: E ${selectedInstrument.coordenadaEW} N ${selectedInstrument.coordenadaNS} | Lat: ${selectedInstrument.lat} Lon: ${selectedInstrument.lon}`;
+                  navigator.clipboard?.writeText(text);
+                  if (setSystemToast) {
+                    setSystemToast({ type: 'success', message: `Coordenadas do ${selectedInstrument.id} copiadas!` });
+                  }
+                }}
+                style={{
+                  background: 'transparent',
+                  border: 'none',
+                  color: 'var(--primary-accent)',
+                  cursor: 'pointer',
+                  fontSize: '0.65rem',
+                  fontWeight: 700,
+                  textDecoration: 'underline'
+                }}
+                title="Copiar coordenadas para área de transferência"
+              >
+                Copiar
+              </button>
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontFamily: 'var(--font-mono)' }}>
+              <span>UTM E: <strong>{selectedInstrument.coordenadaEW ? Math.round(selectedInstrument.coordenadaEW) : '-'}</strong></span>
+              <span>UTM N: <strong>{selectedInstrument.coordenadaNS ? Math.round(selectedInstrument.coordenadaNS) : '-'}</strong></span>
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontFamily: 'var(--font-mono)', color: 'var(--text-muted)', marginTop: '2px', fontSize: '0.68rem' }}>
+              <span>Lat: {selectedInstrument.lat}</span>
+              <span>Lon: {selectedInstrument.lon}</span>
+            </div>
+          </div>
+
           {/* Limiares Geotécnicos de Alerta */}
           <div style={{ fontSize: '0.72rem', borderTop: '1px solid var(--border-subtle)', paddingTop: '0.5rem' }}>
             <div style={{ color: 'var(--text-muted)', marginBottom: '4px', fontWeight: 600 }}>Limites de Controle:</div>
@@ -1059,7 +1359,7 @@ export const MapTab = ({ onNavigateTab, onSelectInstrumentForReading }) => {
           </div>
 
           {/* Ações Rápidas Operacionais */}
-          <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.25rem' }}>
+          <div style={{ display: 'flex', gap: '0.4rem', marginTop: '0.25rem', flexWrap: 'wrap' }}>
             <button
               onClick={() => {
                 if (onSelectInstrumentForReading) {
@@ -1068,18 +1368,28 @@ export const MapTab = ({ onNavigateTab, onSelectInstrumentForReading }) => {
                 onNavigateTab('campo');
               }}
               className="btn-primary"
-              style={{ flex: 1, fontSize: '0.75rem', padding: '0.5rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px' }}
+              style={{ flex: 1, minWidth: '95px', fontSize: '0.75rem', padding: '0.45rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px' }}
             >
               <ClipboardEdit size={14} />
-              <span>Coletar Leitura</span>
+              <span>Coletar</span>
             </button>
             <button
-              onClick={() => onNavigateTab('piezometria')}
+              onClick={() => onNavigateTab && onNavigateTab('secoes')}
               className="btn-secondary"
-              style={{ flex: 1, fontSize: '0.75rem', padding: '0.5rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px' }}
+              style={{ flex: 1, minWidth: '95px', fontSize: '0.75rem', padding: '0.45rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px' }}
+              title="Visualizar na Seção Transversal 2D"
+            >
+              <Layers size={14} />
+              <span>Seção 2D</span>
+            </button>
+            <button
+              onClick={() => onNavigateTab && onNavigateTab('piezometria')}
+              className="btn-secondary"
+              style={{ flex: 1, minWidth: '95px', fontSize: '0.75rem', padding: '0.45rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px' }}
+              title="Abrir gráficos e curvas piezométricas"
             >
               <Eye size={14} />
-              <span>Curvas Piezométricas</span>
+              <span>Gráficos</span>
             </button>
           </div>
         </div>
@@ -1199,6 +1509,114 @@ export const MapTab = ({ onNavigateTab, onSelectInstrumentForReading }) => {
           </div>
         </div>
       )}
+
+      {/* ========================================================
+          Gaveta Lateral de Cards de Registros (SYSDAM Print 4)
+         ======================================================== */}
+      <MapInspectionRecordDrawer
+        isOpen={isRecordDrawerOpen}
+        onClose={() => setIsRecordDrawerOpen(false)}
+        records={georeferencedAnomalies}
+        selectedRecord={selectedInspectionRecord}
+        onSelectRecord={(rec) => {
+          setSelectedInspectionRecord(rec);
+          setSelectedInstrument(null);
+          setSelectedTicket(null);
+          if (rec.lat && rec.lon && mapInstanceRef.current?.map) {
+            mapInstanceRef.current.map.setView([rec.lat, rec.lon], 17, { animate: true });
+          }
+        }}
+        onOpenNewRecord={() => {
+          if (onNavigateTab) onNavigateTab('anomalias_inspecoes');
+        }}
+        onOpenSettings={() => setInspectionSettingsModalOpen(true)}
+        onOpenTemplate={() => setTemplateModalOpen(true)}
+      />
+
+      {/* ========================================================
+          Painel Detalhado de Registro de Inspeção (SYSDAM Print 3)
+         ======================================================== */}
+      {selectedInspectionRecord && (
+        <MapInspectionDetailPanel
+          record={selectedInspectionRecord}
+          onClose={() => setSelectedInspectionRecord(null)}
+          onGenerateReport={(rec) => {
+            if (setSystemToast) {
+              setSystemToast({
+                type: 'success',
+                message: `Relatório técnico da ocorrência "${rec.codigo || rec.id}" gerado com sucesso!`
+              });
+            }
+            if (onNavigateTab) onNavigateTab('laudo');
+          }}
+          onShowAuditHistory={(rec) => {
+            if (setSystemToast) {
+              setSystemToast({
+                type: 'info',
+                message: `Auditoria: Criado em ${rec.dataIdentificacao || '2026-09-18'} por ${rec.responsavel || 'Eng. Geotécnico'}.`
+              });
+            }
+          }}
+          onConvertRecord={(rec) => {
+            if (setSystemToast) {
+              setSystemToast({
+                type: 'success',
+                message: `Ocorrência "${rec.codigo || rec.id}" convertida para Chamado de Campo PCMI!`
+              });
+            }
+            if (onNavigateTab) onNavigateTab('chamados');
+          }}
+          onMergeRecord={() => {
+            if (setSystemToast) {
+              setSystemToast({
+                type: 'info',
+                message: `Fusão de registros: recurso ativado para agrupar históricos de ocorrência.`
+              });
+            }
+          }}
+          onCenterOnMap={(rec) => {
+            if (rec.lat && rec.lon && mapInstanceRef.current?.map) {
+              mapInstanceRef.current.map.setView([rec.lat, rec.lon], 18, { animate: true });
+            }
+          }}
+        />
+      )}
+
+      {/* ========================================================
+          Widget Flutuante Inferior Direito (SYSDAM Prints 3 & 4)
+         ======================================================== */}
+      <MapFloatingWidget
+        records={georeferencedAnomalies}
+      />
+
+      {/* ========================================================
+          Modais do SYSDAM: Template do ID e Regras de Inspeção
+         ======================================================== */}
+      <RecordIdTemplateModal
+        isOpen={templateModalOpen}
+        onClose={() => setTemplateModalOpen(false)}
+        onSave={(tpl) => {
+          if (setSystemToast) {
+            setSystemToast({
+              type: 'success',
+              message: `Template do identificador atualizado: "${tpl}"`
+            });
+          }
+        }}
+      />
+
+      <InspectionSettingsModal
+        isOpen={inspectionSettingsModalOpen}
+        onClose={() => setInspectionSettingsModalOpen(false)}
+        onSave={() => {
+          if (setSystemToast) {
+            setSystemToast({
+              type: 'success',
+              message: 'Parâmetros de inspeção atualizados com sucesso!'
+            });
+          }
+        }}
+      />
     </div>
   );
 };

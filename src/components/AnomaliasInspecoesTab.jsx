@@ -20,9 +20,16 @@ import {
   ExternalLink,
   LifeBuoy,
   ClipboardCheck,
-  ShieldCheck
+  ShieldCheck,
+  Sparkles,
+  Settings,
+  Flame
 } from 'lucide-react';
 import { FirSurvey123Form } from './FirSurvey123Form';
+import { RecordIdTemplateModal } from './RecordIdTemplateModal';
+import { InspectionSettingsModal } from './InspectionSettingsModal';
+import { recordIdTemplateService } from '../services/recordIdTemplateService';
+import { storageService } from '../services/storageService';
 
 export const AnomaliasInspecoesTab = ({ onNavigateTab }) => {
   const { 
@@ -35,7 +42,8 @@ export const AnomaliasInspecoesTab = ({ onNavigateTab }) => {
     updateAnomaliaGeotecnica,
     addInspecaoGeotecnica,
     addPlanoAcao,
-    updatePlanoAcao
+    updatePlanoAcao,
+    setSystemToast
   } = useGeotechData();
 
   const [activeSubTab, setActiveSubTab] = useState('anomalias'); // 'anomalias', 'inspecoes', 'planos', 'radar'
@@ -49,6 +57,8 @@ export const AnomaliasInspecoesTab = ({ onNavigateTab }) => {
   const [modalInspecaoOpen, setModalInspecaoOpen] = useState(false);
   const [modalPlanoOpen, setModalPlanoOpen] = useState(false);
   const [selectedAnomaliaParaPlano, setSelectedAnomaliaParaPlano] = useState(null);
+  const [templateModalOpen, setTemplateModalOpen] = useState(false);
+  const [inspectionSettingsModalOpen, setInspectionSettingsModalOpen] = useState(false);
 
   // Formulário Nova Anomalia
   const [novaAnomalia, setNovaAnomalia] = useState({
@@ -126,14 +136,41 @@ export const AnomaliasInspecoesTab = ({ onNavigateTab }) => {
       alert('Por favor, preencha a localização e a descrição da anomalia.');
       return;
     }
+
+    const rules = storageService.getInspectionRules();
+    if (rules.habilitarRegistroAvulso === false) {
+      alert('Atenção: A inserção de registro avulso está desabilitada nas configurações do sistema. Os registros só podem ser criados dentro de uma campanha formal de inspeção.');
+      return;
+    }
+
     const struct = structures.find(s => s.nome === novaAnomalia.estrutura || s.id === novaAnomalia.estrutura);
     const categoria = struct ? (struct.categoria || 'Barragens') : 'Barragens';
 
+    // Gerar código usando o template engine do SYSDAM
+    const template = storageService.getRecordIdTemplate();
+    const nextCounter = anomaliasGeotecnicas.length + 1;
+    const codigoGerado = recordIdTemplateService.interpolateTemplate(template, {
+      siglaEmpreendimento: 'IT',
+      estrutura: novaAnomalia.estrutura,
+      nomeSintoma: novaAnomalia.tipo,
+      id: String(nextCounter),
+      dataOcorrencia: new Date()
+    }, nextCounter);
+
     addAnomaliaGeotecnica({
       ...novaAnomalia,
+      codigo: codigoGerado,
       categoria,
       status: 'Identificada'
     });
+
+    if (setSystemToast) {
+      setSystemToast({
+        type: 'success',
+        message: `Ocorrência "${codigoGerado}" registrada com sucesso!`
+      });
+    }
+
     setModalAnomaliaOpen(false);
     setNovaAnomalia({
       estrutura: 'BARRAGEM B1',
@@ -245,6 +282,46 @@ export const AnomaliasInspecoesTab = ({ onNavigateTab }) => {
 
         {/* Botões de Ação Rápida */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
+          <button
+            onClick={() => setTemplateModalOpen(true)}
+            className="btn-subtle"
+            style={{
+              padding: '0.5rem 0.85rem',
+              fontSize: '0.8rem',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.4rem',
+              backgroundColor: 'rgba(124, 58, 237, 0.1)',
+              borderColor: 'rgba(124, 58, 237, 0.3)',
+              color: '#a855f7',
+              fontWeight: 700
+            }}
+            title="Configurar Template do Identificador do Registro (SYSDAM)"
+          >
+            <Sparkles size={16} />
+            <span>Template ID</span>
+          </button>
+
+          <button
+            onClick={() => setInspectionSettingsModalOpen(true)}
+            className="btn-subtle"
+            style={{
+              padding: '0.5rem 0.85rem',
+              fontSize: '0.8rem',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.4rem',
+              backgroundColor: 'var(--bg-secondary)',
+              border: '1px solid var(--border-subtle)',
+              color: 'var(--text-main)',
+              fontWeight: 600
+            }}
+            title="Configurar regras operacionais de inspeção (SYSDAM)"
+          >
+            <Settings size={16} />
+            <span>Regras SYSDAM</span>
+          </button>
+
           <button
             onClick={() => setActiveSubTab('fir_survey123')}
             className="btn-secondary"
@@ -1385,6 +1462,33 @@ export const AnomaliasInspecoesTab = ({ onNavigateTab }) => {
           </div>
         </div>
       )}
+
+      {/* Modais SYSDAM: Template do Identificador e Regras de Inspeção */}
+      <RecordIdTemplateModal
+        isOpen={templateModalOpen}
+        onClose={() => setTemplateModalOpen(false)}
+        onSave={(tpl) => {
+          if (setSystemToast) {
+            setSystemToast({
+              type: 'success',
+              message: `Template do identificador atualizado: "${tpl}"`
+            });
+          }
+        }}
+      />
+
+      <InspectionSettingsModal
+        isOpen={inspectionSettingsModalOpen}
+        onClose={() => setInspectionSettingsModalOpen(false)}
+        onSave={() => {
+          if (setSystemToast) {
+            setSystemToast({
+              type: 'success',
+              message: 'Parâmetros de inspeção atualizados com sucesso!'
+            });
+          }
+        }}
+      />
     </div>
   );
 };

@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useAuth, ROLES } from '../context/AuthContext';
+import { storageService } from '../services/storageService';
 import { 
   X, 
   Lock, 
@@ -16,7 +17,9 @@ import {
   UserCheck,
   Camera,
   Save,
-  UserCog
+  UserCog,
+  LogOut,
+  Key
 } from 'lucide-react';
 
 export const AuthModal = ({ isOpen, onClose, initialTab = 'login', onNavigateToProfileTab }) => {
@@ -104,7 +107,7 @@ export const AuthModal = ({ isOpen, onClose, initialTab = 'login', onNavigateToP
 
   const handleQuickSelectUser = (user) => {
     try {
-      login(user.email, user.senhaHash);
+      login(user.usuario || user.email, user.senhaHash || 'itaminas123');
       setFeedback({ type: 'success', message: `Conectado como ${user.nome.split(' ')[0]}` });
       setTimeout(() => {
         onClose();
@@ -134,7 +137,7 @@ export const AuthModal = ({ isOpen, onClose, initialTab = 'login', onNavigateToP
     e.preventDefault();
     setFeedback({ type: '', message: '' });
     try {
-      updateProfile({
+      const updated = updateProfile({
         nome: profileNome,
         email: profileEmail,
         setor: profileSetor,
@@ -142,7 +145,10 @@ export const AuthModal = ({ isOpen, onClose, initialTab = 'login', onNavigateToP
         senhaHash: profileSenha,
         foto: profileFoto
       });
-      setFeedback({ type: 'success', message: 'Perfil atualizado com sucesso!' });
+      if (updated) {
+        storageService.savePersistentProfile(updated);
+      }
+      setFeedback({ type: 'success', message: 'Perfil atualizado e retido com sucesso no MDSync!' });
       setTimeout(() => {
         onClose();
         setFeedback({ type: '', message: '' });
@@ -490,6 +496,33 @@ export const AuthModal = ({ isOpen, onClose, initialTab = 'login', onNavigateToP
               <Save size={16} />
               <span>Salvar Alterações do Perfil</span>
             </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                setTab('login');
+                setFeedback({ type: 'info', message: 'Sessão pronta para novo acesso. Selecione um perfil ou digite suas credenciais.' });
+              }}
+              style={{
+                width: '100%',
+                padding: '0.65rem',
+                fontSize: '0.8rem',
+                fontWeight: 700,
+                marginTop: '0.35rem',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '0.5rem',
+                backgroundColor: 'var(--bg-secondary)',
+                border: '1px solid var(--border-subtle)',
+                borderRadius: '6px',
+                color: 'var(--text-muted)',
+                cursor: 'pointer'
+              }}
+            >
+              <LogOut size={15} />
+              <span>Fazer Login com Outra Conta</span>
+            </button>
           </form>
         ) : tab === 'login' ? (
           <div>
@@ -533,9 +566,14 @@ export const AuthModal = ({ isOpen, onClose, initialTab = 'login', onNavigateToP
                         justifyContent: 'center',
                         fontSize: '0.75rem',
                         fontWeight: 800,
-                        flexShrink: 0
+                        flexShrink: 0,
+                        overflow: 'hidden'
                       }}>
-                        {u.avatar}
+                        {u.foto ? (
+                          <img src={u.foto} alt={u.nome} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                        ) : (
+                          u.avatar
+                        )}
                       </div>
                       <div style={{ overflow: 'hidden' }}>
                         <div style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-main)', whiteSpace: 'nowrap', textOverflow: 'ellipsis', overflow: 'hidden' }}>
@@ -562,18 +600,19 @@ export const AuthModal = ({ isOpen, onClose, initialTab = 'login', onNavigateToP
             <form onSubmit={handleLoginSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '0.9rem' }}>
               <div>
                 <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '0.35rem' }}>
-                  E-mail Corporativo
+                  E-mail Corporativo ou Usuário (Login) *
                 </label>
                 <div style={{ position: 'relative' }}>
                   <Mail size={16} style={{ position: 'absolute', left: '0.85rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-faint)' }} />
                   <input
-                    type="email"
+                    type="text"
                     required
-                    placeholder="exemplo@itaminas.com.br"
+                    placeholder="maycon.nascimento@itaminas.com.br ou Maycon1897"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     className="form-input"
                     style={{ paddingLeft: '2.5rem', width: '100%' }}
+                    autoComplete="username"
                   />
                 </div>
               </div>
@@ -606,10 +645,28 @@ export const AuthModal = ({ isOpen, onClose, initialTab = 'login', onNavigateToP
                       color: 'var(--text-faint)',
                       cursor: 'pointer'
                     }}
+                    title={showPassword ? 'Ocultar senha' : 'Exibir senha'}
+                    aria-label={showPassword ? 'Ocultar senha' : 'Exibir senha'}
                   >
                     {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                   </button>
                 </div>
+              </div>
+
+              {/* Dica de Acesso Rápido */}
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.5rem',
+                padding: '0.5rem 0.75rem',
+                borderRadius: '6px',
+                backgroundColor: 'rgba(2, 132, 199, 0.08)',
+                border: '1px solid rgba(2, 132, 199, 0.25)',
+                fontSize: '0.72rem',
+                color: 'var(--text-muted)'
+              }}>
+                <Key size={14} style={{ color: 'var(--primary-accent)', flexShrink: 0 }} />
+                <span>Dica de Acesso: Senha padrão <strong>itaminas123</strong> (ou selecione seu perfil acima para login com 1 clique).</span>
               </div>
 
               <button
@@ -620,7 +677,7 @@ export const AuthModal = ({ isOpen, onClose, initialTab = 'login', onNavigateToP
                   padding: '0.75rem',
                   fontSize: '0.9rem',
                   fontWeight: 700,
-                  marginTop: '0.5rem',
+                  marginTop: '0.25rem',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
