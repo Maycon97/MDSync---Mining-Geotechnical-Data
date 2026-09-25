@@ -521,7 +521,7 @@ export const PiezometryTab = ({ onNavigateTab }) => {
                 {dataInicio || dataFim ? (
                   <span> ({dataInicio ? 'de ' + dataInicio.split('-').reverse().join('/') : ''} {dataFim ? 'até ' + dataFim.split('-').reverse().join('/') : ''})</span>
                 ) : ' (amostra recente)'}
-                {statsIntervalo?.minCota !== null && (
+                {statsIntervalo && statsIntervalo.minCota != null && statsIntervalo.maxCota != null && (
                   <span style={{ color: 'var(--primary-accent)' }}> • Cotas: {statsIntervalo.minCota.toFixed(2)} m a {statsIntervalo.maxCota.toFixed(2)} m</span>
                 )}
               </span>

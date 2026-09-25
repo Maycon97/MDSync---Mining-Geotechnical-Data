@@ -38,7 +38,7 @@ export const ReadingsHistoryTab = () => {
         ...r,
         tipoGeral: 'Piezometria (N.A)',
         unidade: 'm',
-        valorExibido: r.cotaLeitura !== null ? r.cotaLeitura : r.leitura
+        valorExibido: r.cotaLeitura != null ? r.cotaLeitura : (r.leitura != null ? r.leitura : '-')
       });
     });
 

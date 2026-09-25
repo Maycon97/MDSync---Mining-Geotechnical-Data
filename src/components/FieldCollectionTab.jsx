@@ -255,14 +255,15 @@ export const FieldCollectionTab = ({ preSelectedInstrument, initialSubTab = 'lei
 
   // ÚLTIMA LEITURA REALIZADA DO INSTRUMENTO
   const lastHistoricalReading = useMemo(() => {
-    if (instrumentHistory.length > 0) {
-      return instrumentHistory[instrumentHistory.length - 1];
+    if (Array.isArray(instrumentHistory) && instrumentHistory.length > 0) {
+      const last = instrumentHistory[instrumentHistory.length - 1];
+      if (last) return last;
     }
     if (currentInst) {
       return {
         data: currentInst.ultimaData || 'Inspeção anterior',
-        leitura: currentInst.ultimaLeituraPiu !== undefined ? currentInst.ultimaLeituraPiu : null,
-        cota: currentInst.ultimaCota || null,
+        leitura: (currentInst.ultimaLeituraPiu != null && !isNaN(Number(currentInst.ultimaLeituraPiu))) ? Number(currentInst.ultimaLeituraPiu) : null,
+        cota: (currentInst.ultimaCota != null && !isNaN(Number(currentInst.ultimaCota))) ? Number(currentInst.ultimaCota) : null,
         status: currentInst.statusCalculado || 'NORMAL',
         responsavel: 'Registro Operacional PCMI',
         origem: currentInst.origem || 'Banco Mestre'
@@ -273,16 +274,23 @@ export const FieldCollectionTab = ({ preSelectedInstrument, initialSubTab = 'lei
 
   // Penúltima leitura para cálculo de delta da última medição
   const previousHistoricalReading = useMemo(() => {
-    if (instrumentHistory.length > 1) {
-      return instrumentHistory[instrumentHistory.length - 2];
+    if (Array.isArray(instrumentHistory) && instrumentHistory.length > 1) {
+      return instrumentHistory[instrumentHistory.length - 2] || null;
     }
     return null;
   }, [instrumentHistory]);
 
   // Delta da última leitura histórica
   const lastDeltaCm = useMemo(() => {
-    if (lastHistoricalReading?.leitura !== null && previousHistoricalReading?.leitura !== null) {
-      const diff = lastHistoricalReading.leitura - previousHistoricalReading.leitura;
+    if (
+      lastHistoricalReading &&
+      previousHistoricalReading &&
+      lastHistoricalReading.leitura != null &&
+      previousHistoricalReading.leitura != null &&
+      !isNaN(Number(lastHistoricalReading.leitura)) &&
+      !isNaN(Number(previousHistoricalReading.leitura))
+    ) {
+      const diff = Number(lastHistoricalReading.leitura) - Number(previousHistoricalReading.leitura);
       return Number((diff * 100).toFixed(1));
     }
     return null;
@@ -357,11 +365,21 @@ export const FieldCollectionTab = ({ preSelectedInstrument, initialSubTab = 'lei
 
   // Tendência histórica do instrumento (Últimas leituras)
   const trendAnalysis = useMemo(() => {
-    if (instrumentHistory.length < 2) return { status: 'ESTÁVEL', icon: '↔', color: 'var(--geo-normal)' };
+    if (!Array.isArray(instrumentHistory) || instrumentHistory.length < 2) {
+      return { status: 'ESTÁVEL', icon: '↔', color: 'var(--geo-normal)' };
+    }
     const recent = instrumentHistory.slice(-4);
-    const firstVal = recent[0].cota || recent[0].leitura;
-    const lastVal = recent[recent.length - 1].cota || recent[recent.length - 1].leitura;
-    const diff = lastVal - firstVal;
+    const firstItem = recent[0];
+    const lastItem = recent[recent.length - 1];
+    if (!firstItem || !lastItem) {
+      return { status: 'ESTÁVEL', icon: '↔', color: 'var(--geo-normal)' };
+    }
+    const firstVal = firstItem.cota ?? firstItem.leitura;
+    const lastVal = lastItem.cota ?? lastItem.leitura;
+    if (firstVal == null || lastVal == null || isNaN(Number(firstVal)) || isNaN(Number(lastVal))) {
+      return { status: 'ESTÁVEL', icon: '↔', color: 'var(--geo-normal)' };
+    }
+    const diff = Number(lastVal) - Number(firstVal);
 
     if (diff > 0.15) {
       return { status: 'ELEVAÇÃO (↗)', icon: '↗', color: 'var(--geo-atencao)' };
@@ -384,13 +402,14 @@ export const FieldCollectionTab = ({ preSelectedInstrument, initialSubTab = 'lei
 
   // LEITURA DO PIU ANTERIOR & LIMITE INDISPENSÁVEL DE 3 CM (0,03 m)
   const isPiuInstrument = isPiezoInstrument;
-  const ultimaLeituraPiu = lastHistoricalReading?.leitura !== null && lastHistoricalReading?.leitura !== undefined
+  const ultimaLeituraPiu = (lastHistoricalReading && lastHistoricalReading.leitura != null && !isNaN(Number(lastHistoricalReading.leitura)))
     ? Number(lastHistoricalReading.leitura)
-    : (currentInst?.ultimaLeituraPiu ?? (
-        (currentInst?.cotaTopo && currentInst?.ultimaCota && isPiuInstrument) 
-          ? Number((currentInst.cotaTopo - currentInst.ultimaCota).toFixed(3)) 
-          : null
-      ));
+    : (currentInst?.ultimaLeituraPiu != null && !isNaN(Number(currentInst.ultimaLeituraPiu))
+        ? Number(currentInst.ultimaLeituraPiu)
+        : ((currentInst?.cotaTopo != null && currentInst?.ultimaCota != null && isPiuInstrument) 
+            ? Number((Number(currentInst.cotaTopo) - Number(currentInst.ultimaCota)).toFixed(3)) 
+            : null
+          ));
 
   let deltaPiuMetros = null;
   let deltaPiuCm = null;
@@ -1004,7 +1023,7 @@ export const FieldCollectionTab = ({ preSelectedInstrument, initialSubTab = 'lei
                         {isHistoricallyNA ? 'Piu (Espelho N.A.):' : 'Piu (Fundo Seco):'}
                       </span>
                       <strong className="font-mono" style={{ fontSize: '0.9rem', color: 'var(--primary-accent)' }}>
-                        {lastHistoricalReading?.leitura !== null && lastHistoricalReading?.leitura !== undefined ? `${Number(lastHistoricalReading.leitura).toFixed(3)} m` : '-'}
+                        {lastHistoricalReading && lastHistoricalReading.leitura != null && !isNaN(Number(lastHistoricalReading.leitura)) ? `${Number(lastHistoricalReading.leitura).toFixed(3)} m` : '-'}
                       </strong>
                     </div>
 
@@ -1014,7 +1033,7 @@ export const FieldCollectionTab = ({ preSelectedInstrument, initialSubTab = 'lei
                         {isHistoricallyNA ? 'Cota N.A.:' : 'Cota de Fundo:'}
                       </span>
                       <strong className="font-mono" style={{ fontSize: '0.88rem', color: isHistoricallyNA ? '#38bdf8' : '#f59e0b' }}>
-                        {lastHistoricalReading?.cota !== null && lastHistoricalReading?.cota !== undefined ? `${Number(lastHistoricalReading.cota).toFixed(3)} m` : '-'}
+                        {lastHistoricalReading && lastHistoricalReading.cota != null && !isNaN(Number(lastHistoricalReading.cota)) ? `${Number(lastHistoricalReading.cota).toFixed(3)} m` : '-'}
                       </strong>
                     </div>
 
@@ -1269,10 +1288,10 @@ export const FieldCollectionTab = ({ preSelectedInstrument, initialSubTab = 'lei
                               <strong className="font-mono">{r.data ? r.data.split(' ')[0] : '-'}</strong>
                             </td>
                             <td className="font-mono" style={{ padding: '5px 10px', color: 'var(--primary-accent)', fontWeight: 600 }}>
-                              {r.leitura !== null ? `${Number(r.leitura).toFixed(3)} m` : '-'}
+                              {r.leitura != null && !isNaN(Number(r.leitura)) ? `${Number(r.leitura).toFixed(3)} m` : '-'}
                             </td>
                             <td className="font-mono" style={{ padding: '5px 10px', color: 'var(--text-main)', fontWeight: 700 }}>
-                              {r.cota !== null ? `${Number(r.cota).toFixed(3)} m` : '-'}
+                              {r.cota != null && !isNaN(Number(r.cota)) ? `${Number(r.cota).toFixed(3)} m` : '-'}
                             </td>
                             <td style={{ padding: '5px 10px' }}>
                               <span className={`badge-status ${r.status === 'EMERGÊNCIA' ? 'badge-emergencia' : r.status === 'ATENÇÃO' ? 'badge-atencao' : 'badge-normal'}`} style={{ fontSize: '0.62rem', padding: '0.1rem 0.4rem' }}>
