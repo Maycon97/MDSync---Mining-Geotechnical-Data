@@ -1728,8 +1728,10 @@ export const storageService = {
   // ============================================================
   getEstruturasEmpreendimento() {
     try {
-      const data = localStorage.getItem(STORAGE_KEYS.ESTRUTURAS_EMPREENDIMENTO);
-      if (data) return JSON.parse(data);
+      if (typeof window !== 'undefined' && typeof localStorage !== 'undefined') {
+        const data = localStorage.getItem(STORAGE_KEYS.ESTRUTURAS_EMPREENDIMENTO);
+        if (data) return JSON.parse(data);
+      }
 
       const defaultEstruturas = [
         {
@@ -1901,9 +1903,34 @@ export const storageService = {
           coordenadas: { lat: -20.080850, lon: -44.111500 }
         }
       ];
+ 
+      const defaultInstrumentCounts = {
+        B1: 84,
+        B4: 62,
+        ES: 18,
+        JGD: 14,
+        ES1: 12,
+        JC: 10,
+        MGB: 10,
+        PB2: 8
+      };
 
-      localStorage.setItem(STORAGE_KEYS.ESTRUTURAS_EMPREENDIMENTO, JSON.stringify(defaultEstruturas));
-      return defaultEstruturas;
+      const normalizedEstruturas = defaultEstruturas.map(e => ({
+        ...e,
+        categoria: e.categoria || e.tipo,
+        dce: e.dce || e.statusDce || 'DCE Válida (Emitida)',
+        lat: e.lat ?? e.coordenadas?.lat,
+        lon: e.lon ?? e.coordenadas?.lon,
+        volume: e.volume || e.volumeAtual,
+        totalInstrumentos: e.totalInstrumentos || defaultInstrumentCounts[e.sigla] || 10
+      }));
+
+      if (typeof window !== 'undefined' && typeof localStorage !== 'undefined') {
+        try {
+          localStorage.setItem(STORAGE_KEYS.ESTRUTURAS_EMPREENDIMENTO, JSON.stringify(normalizedEstruturas));
+        } catch (_) {}
+      }
+      return normalizedEstruturas;
     } catch {
       return [];
     }

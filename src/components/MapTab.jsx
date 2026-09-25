@@ -24,13 +24,18 @@ import {
   ExternalLink,
   Wrench,
   Sparkles,
-  ClipboardList
+  ClipboardList,
+  Save,
+  Copy,
+  Check
 } from 'lucide-react';
 import { MapInspectionRecordDrawer } from './MapInspectionRecordDrawer';
 import { MapInspectionDetailPanel } from './MapInspectionDetailPanel';
 import { MapFloatingWidget } from './MapFloatingWidget';
 import { RecordIdTemplateModal } from './RecordIdTemplateModal';
 import { InspectionSettingsModal } from './InspectionSettingsModal';
+import { SysdamEmpreendimentosPanel } from './SysdamEmpreendimentosPanel';
+import { storageService } from '../services/storageService';
 
 // Conversor Geodésico de Alta Precisão WGS-84 / SIRGAS 2000 -> UTM Fuso 23S
 function latLonToUtm23S(lat, lon) {
@@ -98,6 +103,32 @@ export const MapTab = ({ onNavigateTab, onSelectInstrumentForReading }) => {
   const [cursorCoords, setCursorCoords] = useState(null);
   const [mapZoom, setMapZoom] = useState(15);
 
+  // Estruturas e Empreendimentos Georreferenciados (Padrão SysDam Portal)
+  const estruturas = useMemo(() => storageService.getEstruturasEmpreendimento(), []);
+  const [selectedEstrutura, setSelectedEstrutura] = useState(() => {
+    return estruturas.find(e => e.id === activeStructureId || e.sigla === activeStructureId) || estruturas[0] || null;
+  });
+  const [isSiderCollapsed, setIsSiderCollapsed] = useState(false);
+  const [isSiderFlipped, setIsSiderFlipped] = useState(false);
+  const [isMapPresetModified, setIsMapPresetModified] = useState(false);
+  const [copiedCoords, setCopiedCoords] = useState(false);
+  const structureTooltipsRef = useRef([]);
+
+  // Sincronizar selectedEstrutura quando activeStructureId mudar
+  useEffect(() => {
+    if (activeStructureId && activeStructureId !== 'TODAS') {
+      const match = estruturas.find(e => 
+        e.id === activeStructureId || 
+        e.sigla === activeStructureId || 
+        activeStructureId.includes(e.sigla) ||
+        (e.nome && activeStructureId.includes(e.nome.toUpperCase()))
+      );
+      if (match) {
+        setSelectedEstrutura(match);
+      }
+    }
+  }, [activeStructureId, estruturas]);
+
   // Ocorrências / Anomalias de Inspeção Georreferenciadas (Padrão SYSDAM)
   const georeferencedAnomalies = useMemo(() => {
     return (anomaliasGeotecnicas || []).map(a => {
@@ -164,15 +195,32 @@ export const MapTab = ({ onNavigateTab, onSelectInstrumentForReading }) => {
       container.removeChild(container.firstChild);
     }
 
-    // Coordenadas Centrais do Complexo Minerário Itaminas (Barragem B1 / Mina de Ferro)
-    const initialLat = -20.063818;
-    const initialLon = -44.114360;
+    // Coordenadas Centrais do Complexo Minerário Itaminas (com restauração de preset salvo SysDam)
+    let initialLat = -20.063818;
+    let initialLon = -44.114360;
+    let initialZoom = 15;
+
+    try {
+      const savedPresetRaw = localStorage.getItem('mdsync_map_preset');
+      if (savedPresetRaw) {
+        const preset = JSON.parse(savedPresetRaw);
+        if (preset.center && Array.isArray(preset.center) && preset.center.length === 2) {
+          initialLat = preset.center[0];
+          initialLon = preset.center[1];
+        }
+        if (preset.zoom && typeof preset.zoom === 'number') {
+          initialZoom = preset.zoom;
+        }
+      }
+    } catch (e) {
+      console.warn('Erro ao restaurar preset do mapa:', e);
+    }
 
     let map;
     try {
       map = L.map(container, {
         center: [initialLat, initialLon],
-        zoom: 15,
+        zoom: initialZoom,
         zoomControl: false,
         attributionControl: false,
         fadeAnimation: true,
@@ -290,9 +338,45 @@ export const MapTab = ({ onNavigateTab, onSelectInstrumentForReading }) => {
       const utm = latLonToUtm23S(lat, lon);
       setCursorCoords({ lat, lon, utmE: utm.easting, utmN: utm.northing });
     });
-    map.on('zoomend', () => {
-      setMapZoom(map.getZoom());
-    });
+
+    const handleCameraChange = () => {
+      const currentZoom = map.getZoom();
+      const currentCenter = map.getCenter();
+      setMapZoom(currentZoom);
+
+      // Controle de visibilidade de tooltips dos empreendimentos no zoom (Padrão SysDam zoomend)
+      if (structureTooltipsRef.current && structureTooltipsRef.current.length > 0) {
+        structureTooltipsRef.current.forEach(m => {
+          if (currentZoom < 14) {
+            m.closeTooltip && m.closeTooltip();
+          } else {
+            m.openTooltip && m.openTooltip();
+          }
+        });
+      }
+
+      // Verificação se enquadramento foi modificado em relação ao preset salvo
+      try {
+        const savedRaw = localStorage.getItem('mdsync_map_preset');
+        if (savedRaw) {
+          const p = JSON.parse(savedRaw);
+          const isDiff = Math.abs(p.center[0] - currentCenter.lat) > 0.0005 ||
+                         Math.abs(p.center[1] - currentCenter.lng) > 0.0005 ||
+                         p.zoom !== currentZoom;
+          setIsMapPresetModified(isDiff);
+        } else {
+          const isDiff = Math.abs(initialLat - currentCenter.lat) > 0.0005 ||
+                         Math.abs(initialLon - currentCenter.lng) > 0.0005 ||
+                         initialZoom !== currentZoom;
+          setIsMapPresetModified(isDiff);
+        }
+      } catch (err) {
+        setIsMapPresetModified(true);
+      }
+    };
+
+    map.on('zoomend', handleCameraChange);
+    map.on('moveend', handleCameraChange);
 
     // Múltiplos invalidates debounced para adaptação perfeita a qualquer viewport
     const t1 = setTimeout(() => map.invalidateSize(), 100);
@@ -430,6 +514,52 @@ export const MapTab = ({ onNavigateTab, onSelectInstrumentForReading }) => {
     }
   }, []);
 
+  // Salvar enquadramento atual de câmera no localStorage (Padrão SysDam)
+  const handleSaveMapPreset = useCallback(() => {
+    if (!mapInstanceRef.current?.map) return;
+    const map = mapInstanceRef.current.map;
+    const center = [Number(map.getCenter().lat.toFixed(6)), Number(map.getCenter().lng.toFixed(6))];
+    const zoom = map.getZoom();
+    localStorage.setItem('mdsync_map_preset', JSON.stringify({ center, zoom }));
+    setIsMapPresetModified(false);
+    if (setSystemToast) {
+      setSystemToast({
+        message: `Enquadramento georreferenciado salvo com sucesso! (Centro: ${center[0]}, ${center[1]} | Zoom: ${zoom}x)`,
+        type: 'success'
+      });
+    }
+  }, [setSystemToast]);
+
+  // Restaurar enquadramento mestre do Complexo Minerário Itaminas
+  const handleResetMapPreset = useCallback(() => {
+    localStorage.removeItem('mdsync_map_preset');
+    if (mapInstanceRef.current?.map) {
+      mapInstanceRef.current.map.flyTo([-20.063818, -44.114360], 15, { duration: 1.2 });
+    }
+    setIsMapPresetModified(false);
+    if (setSystemToast) {
+      setSystemToast({
+        message: 'Enquadramento padrão do Complexo Minerário Itaminas restaurado.',
+        type: 'info'
+      });
+    }
+  }, [setSystemToast]);
+
+  // Copiar coordenadas geodésicas (WGS-84 e SIRGAS 2000 UTM 23S) para a área de transferência
+  const handleCopyCoords = useCallback(() => {
+    if (!cursorCoords) return;
+    const text = `WGS-84: Lat ${cursorCoords.lat}, Lon ${cursorCoords.lon} | SIRGAS 2000 UTM 23S: E ${cursorCoords.utmE}, N ${cursorCoords.utmN}`;
+    navigator.clipboard.writeText(text);
+    setCopiedCoords(true);
+    setTimeout(() => setCopiedCoords(false), 2000);
+    if (setSystemToast) {
+      setSystemToast({
+        message: 'Coordenadas geodésicas copiadas para a área de transferência!',
+        type: 'success'
+      });
+    }
+  }, [cursorCoords, setSystemToast]);
+
   // Renderizar Perímetros das 8 Estruturas da Mina
   useEffect(() => {
     if (!polygonsLayerRef.current || !mapInstanceRef.current?.map) return;
@@ -461,6 +591,12 @@ export const MapTab = ({ onNavigateTab, onSelectInstrumentForReading }) => {
 
         polygon.on('click', () => {
           handleSelectStructure(boundary.id);
+          const match = estruturas.find(e => e.id === boundary.id || e.sigla === boundary.id || boundary.id.includes(e.sigla));
+          if (match) {
+            setSelectedEstrutura(match);
+          }
+          setIsSiderCollapsed(false);
+          setIsSiderFlipped(true);
         });
 
         layer.addLayer(polygon);
@@ -478,13 +614,14 @@ export const MapTab = ({ onNavigateTab, onSelectInstrumentForReading }) => {
         layer.addLayer(crest);
       }
     });
-  }, [showPerimeters, activeStructureId, handleSelectStructure]);
+  }, [showPerimeters, activeStructureId, handleSelectStructure, estruturas]);
 
   // Função para renderizar marcadores de instrumentos
   const renderMarkers = useCallback(() => {
     if (!mapInstanceRef.current || !markersLayerRef.current) return;
     const layer = markersLayerRef.current;
     layer.clearLayers();
+    structureTooltipsRef.current = [];
 
     // 1. Badges das Estruturas da Mina
     structures.forEach(struct => {
@@ -520,15 +657,25 @@ export const MapTab = ({ onNavigateTab, onSelectInstrumentForReading }) => {
         });
 
         const structMarker = L.marker([struct.lat, struct.lon], { icon: structIcon });
-        structMarker.bindTooltip(`
-          <div style="font-family: 'Inter', sans-serif; font-size: 11px; padding: 4px 6px;">
-            <strong style="color: #38bdf8;">${struct.nome}</strong><br/>
-            <span style="color: #94a3b8;">${struct.categoria || 'Estrutura Geotécnica'} • ${struct.totalInstrumentos || '-'} instrumentos</span><br/>
-            <span style="font-size: 10px; color: #10b981;">Fator de Segurança: ${struct.fatorSeguranca || '1.50+'}</span>
-          </div>
-        `, { sticky: true, opacity: 0.95 });
-        structMarker.on('click', () => handleSelectStructure(struct.id));
+        structMarker.bindTooltip(struct.nome, {
+          permanent: true,
+          direction: 'top',
+          offset: [0, -14],
+          className: 'leaflet-tooltip-empreendimento'
+        });
+        
+        structMarker.on('click', () => {
+          handleSelectStructure(struct.id);
+          const match = estruturas.find(e => e.id === struct.id || e.sigla === struct.id || struct.id.includes(e.sigla));
+          if (match) {
+            setSelectedEstrutura(match);
+          }
+          setIsSiderCollapsed(false);
+          setIsSiderFlipped(true);
+        });
+        
         layer.addLayer(structMarker);
+        structureTooltipsRef.current.push(structMarker);
       }
     });
 
@@ -740,25 +887,72 @@ export const MapTab = ({ onNavigateTab, onSelectInstrumentForReading }) => {
       <div ref={mapContainerRef} style={{ width: '100%', height: '100%', background: '#090d16' }} />
 
       {/* ========================================================
+          Sider Flutuante SysDam: Empreendimentos, 3D Flip Card & Módulos
+         ======================================================== */}
+      <SysdamEmpreendimentosPanel
+        estruturas={estruturas}
+        selectedEstrutura={selectedEstrutura}
+        onSelectEstrutura={(est) => {
+          setSelectedEstrutura(est);
+          if (est?.id) {
+            handleSelectStructure(est.id);
+          }
+        }}
+        isCollapsed={isSiderCollapsed}
+        onToggleCollapse={() => setIsSiderCollapsed(prev => !prev)}
+        isFlipped={isSiderFlipped}
+        onFlipChange={(flipped) => setIsSiderFlipped(flipped)}
+        onNavigateModule={(modId, est) => {
+          if (setSystemToast) {
+            setSystemToast({
+              message: `Abrindo módulo [${modId}] da estrutura ${est?.nome || ''}...`,
+              type: 'info'
+            });
+          }
+          const customEvent = new CustomEvent('mdsync:navigate-module', {
+            detail: { moduleId: modId, estrutura: est }
+          });
+          window.dispatchEvent(customEvent);
+        }}
+      />
+
+      {/* ========================================================
           Barra Flutuante Superior: Filtros, Camadas e Busca
          ======================================================== */}
-      <div className="glass-panel" style={{
-        position: 'absolute',
-        top: '12px',
-        left: '12px',
-        right: '12px',
-        padding: '0.65rem 1rem',
-        borderRadius: '12px',
-        zIndex: 1000,
-        display: 'flex',
-        flexWrap: 'wrap',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        gap: '0.6rem 0.8rem',
-        boxShadow: '0 8px 32px rgba(0, 0, 0, 0.35)',
-        border: '1px solid var(--border-medium)',
-        backdropFilter: 'blur(16px)'
-      }}>
+      <div className={`glass-panel sysdam-map-topbar ${isSiderCollapsed ? 'sider-collapsed' : 'sider-open'}`}>
+        {/* 0. Botão Alternador do Sider de Empreendimentos */}
+        <button
+          onClick={() => setIsSiderCollapsed(prev => !prev)}
+          className="btn-subtle"
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '6px',
+            padding: '0.25rem 0.65rem',
+            borderRadius: '8px',
+            backgroundColor: !isSiderCollapsed ? 'rgba(0, 148, 234, 0.18)' : 'var(--bg-secondary)',
+            color: !isSiderCollapsed ? '#38bdf8' : 'var(--text-muted)',
+            border: !isSiderCollapsed ? '1px solid rgba(0, 148, 234, 0.45)' : '1px solid var(--border-subtle)',
+            fontSize: '0.74rem',
+            fontWeight: 600,
+            cursor: 'pointer'
+          }}
+          title="Alternar visibilidade do Painel de Empreendimentos (Padrão SysDam)"
+        >
+          <Building2 size={14} style={{ color: '#38bdf8' }} />
+          <span>Empreendimentos</span>
+          <span style={{
+            backgroundColor: 'rgba(56, 189, 248, 0.25)',
+            color: '#38bdf8',
+            padding: '1px 5px',
+            borderRadius: '999px',
+            fontSize: '0.65rem',
+            fontWeight: 700
+          }}>
+            {estruturas.length}
+          </span>
+        </button>
+
         {/* 1. Alternador de Camada de Fundo */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem' }}>
           <Layers size={16} style={{ color: 'var(--primary-accent)' }} />
@@ -1117,25 +1311,56 @@ export const MapTab = ({ onNavigateTab, onSelectInstrumentForReading }) => {
           </button>
         </div>
 
-        {/* 7. Botão Visão Geral com Reset de Câmera */}
-        <button
-          onClick={() => {
-            handleSelectStructure('TODAS');
-            setSelectedInstrument(null);
-          }}
-          className="btn-secondary"
-          title="Resetar câmera para visualização de todo o complexo minerário"
-          style={{ 
-            padding: '0.28rem 0.65rem', 
-            fontSize: '0.75rem', 
-            display: 'flex', 
-            alignItems: 'center', 
-            gap: '0.35rem'
-          }}
-        >
-          <Compass size={14} style={{ color: 'var(--primary-accent)' }} />
-          <span>Visão Geral</span>
-        </button>
+        {/* 7. Ações de Enquadramento e Persistência do Mapa (SysDam) */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+          {isMapPresetModified && (
+            <button
+              onClick={handleSaveMapPreset}
+              className="sysdam-save-map-btn"
+              title="Salvar enquadramento atual de câmera como preset inicial padrão"
+            >
+              <Save size={13} />
+              <span>Salvar alterações do mapa</span>
+            </button>
+          )}
+
+          {typeof window !== 'undefined' && localStorage.getItem('mdsync_map_preset') && (
+            <button
+              onClick={handleResetMapPreset}
+              className="btn-subtle"
+              style={{
+                padding: '0.25rem 0.5rem',
+                fontSize: '0.7rem',
+                borderRadius: '6px',
+                color: 'var(--text-muted)',
+                backgroundColor: 'var(--bg-secondary)',
+                border: '1px solid var(--border-subtle)'
+              }}
+              title="Restaurar enquadramento mestre original do Complexo Minerário Itaminas"
+            >
+              Restaurar Padrão
+            </button>
+          )}
+
+          <button
+            onClick={() => {
+              handleSelectStructure('TODAS');
+              setSelectedInstrument(null);
+            }}
+            className="btn-secondary"
+            title="Resetar câmera para visualização de todo o complexo minerário"
+            style={{ 
+              padding: '0.28rem 0.65rem', 
+              fontSize: '0.75rem', 
+              display: 'flex', 
+              alignItems: 'center', 
+              gap: '0.35rem'
+            }}
+          >
+            <Compass size={14} style={{ color: 'var(--primary-accent)' }} />
+            <span>Visão Geral</span>
+          </button>
+        </div>
       </div>
 
       {/* ========================================================
@@ -1169,6 +1394,28 @@ export const MapTab = ({ onNavigateTab, onSelectInstrumentForReading }) => {
             <span>LON: <strong style={{ color: 'var(--text-main)' }}>{cursorCoords.lon}</strong></span>
             <span>UTM 23S: <strong style={{ color: '#38bdf8' }}>E {cursorCoords.utmE} / N {cursorCoords.utmN}</strong></span>
             <span>ZOOM: <strong style={{ color: 'var(--primary-accent)' }}>{mapZoom}x</strong></span>
+            <button
+              onClick={handleCopyCoords}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '4px',
+                padding: '2px 8px',
+                borderRadius: '5px',
+                backgroundColor: copiedCoords ? 'rgba(34, 197, 94, 0.2)' : 'rgba(255, 255, 255, 0.08)',
+                color: copiedCoords ? '#22c55e' : 'var(--text-muted)',
+                border: copiedCoords ? '1px solid #22c55e' : '1px solid var(--border-subtle)',
+                cursor: 'pointer',
+                fontSize: '0.68rem',
+                fontWeight: 600,
+                transition: 'all 0.2s ease',
+                marginLeft: '4px'
+              }}
+              title="Copiar Coordenadas Geodésicas (WGS-84 e UTM 23S)"
+            >
+              {copiedCoords ? <Check size={12} /> : <Copy size={12} />}
+              <span>{copiedCoords ? 'Copiado!' : 'Copiar'}</span>
+            </button>
           </div>
         )}
 
