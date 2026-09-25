@@ -5,7 +5,8 @@ import {
   Wifi, 
   WifiOff, 
   Menu,
-  Smartphone
+  Smartphone,
+  RefreshCw
 } from 'lucide-react';
 import { GithubIcon } from './GithubIcon';
 
@@ -255,6 +256,42 @@ export const Header = ({ onToggleDrawer, onOpenProfile, onNavigateTab, activeTab
         >
           <GithubIcon size={16} />
         </a>
+
+        {/* Botão Limpar Cache & Forçar Atualização */}
+        <button
+          onClick={async () => {
+            try {
+              if (typeof window !== 'undefined' && 'caches' in window) {
+                const names = await window.caches.keys();
+                await Promise.all(names.map(name => window.caches.delete(name)));
+              }
+              if (typeof navigator !== 'undefined' && 'serviceWorker' in navigator) {
+                const regs = await navigator.serviceWorker.getRegistrations();
+                await Promise.all(regs.map(r => r.unregister()));
+              }
+            } catch (err) {
+              console.warn('Erro ao limpar cache local:', err);
+            }
+            window.location.reload(true);
+          }}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            width: '32px',
+            height: '32px',
+            borderRadius: '8px',
+            backgroundColor: 'var(--bg-secondary)',
+            border: '1px solid var(--border-subtle)',
+            color: 'var(--text-muted)',
+            cursor: 'pointer',
+            transition: 'all 0.15s ease'
+          }}
+          title="Limpar Cache do Navegador e Recarregar Última Versão"
+          className="hide-mobile"
+        >
+          <RefreshCw size={15} />
+        </button>
 
       </div>
     </header>
