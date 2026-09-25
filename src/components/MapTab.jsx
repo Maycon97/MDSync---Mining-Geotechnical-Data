@@ -36,6 +36,8 @@ import { RecordIdTemplateModal } from './RecordIdTemplateModal';
 import { InspectionSettingsModal } from './InspectionSettingsModal';
 import { SysdamEmpreendimentosPanel } from './SysdamEmpreendimentosPanel';
 import { storageService } from '../services/storageService';
+import { ENGENHO_SECO_SECTORS } from '../data/engenhoSecoBlockModelData';
+import { EngenhoSecoBlockModelViewer } from './EngenhoSecoBlockModelViewer';
 
 // Conversor Geodésico de Alta Precisão WGS-84 / SIRGAS 2000 -> UTM Fuso 23S
 function latLonToUtm23S(lat, lon) {
@@ -95,6 +97,7 @@ export const MapTab = ({ onNavigateTab, onSelectInstrumentForReading }) => {
   const [showAnomalies, setShowAnomalies] = useState(true);
   const [templateModalOpen, setTemplateModalOpen] = useState(false);
   const [inspectionSettingsModalOpen, setInspectionSettingsModalOpen] = useState(false);
+  const [blockModelModalOpen, setBlockModelModalOpen] = useState(false);
 
   const [useClustering, setUseClustering] = useState(true);
   const [showPerimeters, setShowPerimeters] = useState(true);
@@ -612,6 +615,34 @@ export const MapTab = ({ onNavigateTab, onSelectInstrumentForReading }) => {
         });
         crest.bindTooltip(`Crista ${boundary.nome} (Cota ${boundary.cotaCrista || '-'}m)`, { sticky: true });
         layer.addLayer(crest);
+      }
+    });
+
+    // 3. Setores Poligonais Georreferenciados da Mina Engenho Seco (Modelo de Blocos CP Datamine)
+    ENGENHO_SECO_SECTORS.forEach(sec => {
+      if (sec.perimetroWgs84 && sec.perimetroWgs84.length > 0) {
+        const secPoly = L.polygon(sec.perimetroWgs84, {
+          color: '#10b981',
+          weight: 2,
+          fillColor: '#059669',
+          fillOpacity: 0.20,
+          dashArray: '5, 5'
+        });
+
+        secPoly.bindTooltip(`
+          <div style="font-family: 'Inter', sans-serif; font-size: 11px; padding: 4px 6px;">
+            <strong style="color: #10b981;">📦 ${sec.nome}</strong><br/>
+            <span style="color: #cbd5e1;">${sec.descricao}</span><br/>
+            <span style="color: #38bdf8; font-weight: 600;">Cotas: ${sec.cotaMin}m a ${sec.cotaMax}m</span><br/>
+            <span style="color: #f59e0b; font-size: 10px; font-weight: 600;">⚡ Clique para abrir Modelo de Blocos</span>
+          </div>
+        `, { sticky: true, opacity: 0.95 });
+
+        secPoly.on('click', () => {
+          setBlockModelModalOpen(true);
+        });
+
+        layer.addLayer(secPoly);
       }
     });
   }, [showPerimeters, activeStructureId, handleSelectStructure, estruturas]);
@@ -1360,6 +1391,26 @@ export const MapTab = ({ onNavigateTab, onSelectInstrumentForReading }) => {
             <Compass size={14} style={{ color: 'var(--primary-accent)' }} />
             <span>Visão Geral</span>
           </button>
+
+          <button
+            onClick={() => setBlockModelModalOpen(true)}
+            className="btn-subtle"
+            title="Abrir Visualizador do Modelo de Blocos Curto Prazo (CP) Engenho Seco (Datamine)"
+            style={{ 
+              padding: '0.28rem 0.65rem', 
+              fontSize: '0.75rem', 
+              display: 'flex', 
+              alignItems: 'center', 
+              gap: '0.35rem',
+              backgroundColor: 'rgba(16, 185, 129, 0.15)',
+              color: '#10b981',
+              border: '1px solid rgba(16, 185, 129, 0.4)',
+              fontWeight: 700,
+              borderRadius: '6px'
+            }}
+          >
+            <span>📦 Modelo de Blocos CP</span>
+          </button>
         </div>
       </div>
 
@@ -1864,6 +1915,45 @@ export const MapTab = ({ onNavigateTab, onSelectInstrumentForReading }) => {
           }
         }}
       />
+
+      {/* Modal Interativo do Modelo de Blocos Curto Prazo (CP) Engenho Seco */}
+      {blockModelModalOpen && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: 'rgba(0, 0, 0, 0.85)',
+          backdropFilter: 'blur(6px)',
+          zIndex: 9999,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: '1.5rem'
+        }}>
+          <div style={{
+            width: '100%',
+            maxWidth: '1350px',
+            maxHeight: '92vh',
+            overflowY: 'auto',
+            borderRadius: '16px',
+            boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.75)'
+          }}>
+            <EngenhoSecoBlockModelViewer 
+              onClose={() => setBlockModelModalOpen(false)}
+              onNavigateToMap={(sector) => {
+                setBlockModelModalOpen(false);
+                if (mapInstanceRef.current?.map && sector?.centroideWgs84) {
+                  mapInstanceRef.current.map.flyTo([sector.centroideWgs84.lat, sector.centroideWgs84.lon], 17, {
+                    duration: 1.2
+                  });
+                }
+              }}
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 };

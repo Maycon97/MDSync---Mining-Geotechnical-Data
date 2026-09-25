@@ -6,6 +6,12 @@ import GeotechCrossSectionTab, {
   ITAMINAS_GEOM_CODES, 
   evaluateSlopeGeometry 
 } from '../components/GeotechCrossSectionTab';
+import { 
+  ENGENHO_SECO_BLOCK_MODELS, 
+  ENGENHO_SECO_SECTORS, 
+  DATAMINE_BLOCK_LITHOLOGIES, 
+  generateBlockSlice 
+} from '../data/engenhoSecoBlockModelData';
 
 describe('Datamine Studio RM 2D Cross Section Module', () => {
   it('should export GeotechCrossSectionTab component as default', () => {
@@ -13,8 +19,8 @@ describe('Datamine Studio RM 2D Cross Section Module', () => {
     expect(typeof GeotechCrossSectionTab).toBe('function');
   });
 
-  it('should have all 6 sections defined with azimuth, elevation, and instrument data', () => {
-    expect(SECTIONS_DATA.length).toBe(6);
+  it('should have all 7 sections defined with azimuth, elevation, and instrument data', () => {
+    expect(SECTIONS_DATA.length).toBe(7);
     SECTIONS_DATA.forEach(sec => {
       expect(sec.id).toBeDefined();
       expect(sec.nome).toBeDefined();
@@ -71,7 +77,7 @@ describe('Datamine Studio RM 2D Cross Section Module', () => {
     });
   });
 
-  it('should contain specific sections for B1, B4, PDE ES1, Jangada, PDE Mangaba and PDE Jaco', () => {
+  it('should contain specific sections for B1, B4, PDE ES1, Jangada, PDE Mangaba, PDE Jaco and Engenho Seco', () => {
     const structureIds = SECTIONS_DATA.map(s => s.estruturaId);
     expect(structureIds).toContain('BARRAGEM_B1');
     expect(structureIds).toContain('BARRAGEM_B4');
@@ -79,6 +85,7 @@ describe('Datamine Studio RM 2D Cross Section Module', () => {
     expect(structureIds).toContain('JANGADA');
     expect(structureIds).toContain('PDE_MANGABA');
     expect(structureIds).toContain('PDE_JACO');
+    expect(structureIds).toContain('ENGENHO_SECO');
   });
 
   it('should export all 12 monthly Engemec 2026 topography campaigns (030-MINA)', () => {
@@ -158,5 +165,77 @@ describe('Datamine Studio RM 2D Cross Section Module', () => {
     const strictResult = evaluateSlopeGeometry(testSection, 1, 0.5, 0.1);
     expect(strictResult.totalBancadas).toBe(testSection.bermas.length - 1);
     expect(typeof strictResult.conformidadePercent).toBe('number');
+  });
+});
+
+describe('Mina Engenho Seco - Modelos de Bloco Curto Prazo (CP)', () => {
+  it('should export all 11 monthly block models from Fev/26 to Dez/26', () => {
+    expect(ENGENHO_SECO_BLOCK_MODELS).toBeDefined();
+    expect(ENGENHO_SECO_BLOCK_MODELS.length).toBe(11);
+
+    const modelIds = ENGENHO_SECO_BLOCK_MODELS.map(m => m.id);
+    expect(modelIds).toContain('BM_0226');
+    expect(modelIds).toContain('BM_0826');
+    expect(modelIds).toContain('BM_0926');
+    expect(modelIds).toContain('BM_1226');
+
+    ENGENHO_SECO_BLOCK_MODELS.forEach(m => {
+      expect(m.id).toMatch(/^BM_\d{4}$/);
+      expect(m.mes).toBeDefined();
+      expect(m.arquivo).toBeDefined();
+      expect(m.romEspecial.massa).toBeGreaterThan(0);
+      expect(m.romEspecial.fe).toBeGreaterThan(50);
+      expect(m.romEspecial.sio2).toBeGreaterThan(0);
+      expect(m.romComum.massa).toBeGreaterThan(0);
+      expect(m.esteril.massa).toBeGreaterThan(0);
+      expect(m.bancadasAtivas.length).toBeGreaterThan(0);
+    });
+  });
+
+  it('should define the 4 georeferenced sectors of Mina Engenho Seco', () => {
+    expect(ENGENHO_SECO_SECTORS).toBeDefined();
+    expect(ENGENHO_SECO_SECTORS.length).toBe(4);
+
+    const sectorIds = ENGENHO_SECO_SECTORS.map(s => s.id);
+    expect(sectorIds).toContain('ENS_INDIA');
+    expect(sectorIds).toContain('ENS_OESTE_INF');
+    expect(sectorIds).toContain('ENS_PILHAO_MANGABA');
+    expect(sectorIds).toContain('ENS_SAMAMBAIA');
+
+    ENGENHO_SECO_SECTORS.forEach(sec => {
+      expect(sec.nome).toBeDefined();
+      expect(sec.centroWGS84[0]).toBeLessThan(-20.0);
+      expect(sec.centroWGS84[1]).toBeLessThan(-44.0);
+      expect(sec.centroUTM23S.easting).toBeGreaterThan(500000);
+      expect(sec.centroUTM23S.northing).toBeGreaterThan(7000000);
+      expect(sec.coordinates.length).toBeGreaterThanOrEqual(4);
+    });
+  });
+
+  it('should define Datamine block lithologies with density, geomechanical properties, and colors', () => {
+    const requiredKeys = ['hgo', 'ifr', 'igo', 'if', 'ial', 'ic', 'ia', 'at'];
+    requiredKeys.forEach(k => {
+      const lito = DATAMINE_BLOCK_LITHOLOGIES[k];
+      expect(lito).toBeDefined();
+      expect(lito.codigo).toBe(k);
+      expect(lito.densidadePadrao).toBeGreaterThan(1.5);
+      expect(lito.cor).toMatch(/^#[0-9a-f]{6}$/i);
+    });
+  });
+
+  it('should generate valid 2D block slices for any bench elevation and sector', () => {
+    const sliceIndia850 = generateBlockSlice(850, 'ENS_INDIA', 'BM_0926');
+    expect(sliceIndia850).toBeDefined();
+    expect(sliceIndia850.length).toBeGreaterThan(0);
+
+    sliceIndia850.forEach(b => {
+      expect(b.x).toBeGreaterThanOrEqual(0);
+      expect(b.y).toBeGreaterThanOrEqual(0);
+      expect(b.cota).toBe(850);
+      expect(b.litologia).toBeDefined();
+      expect(b.fe).toBeGreaterThanOrEqual(0);
+      expect(b.sio2).toBeGreaterThanOrEqual(0);
+      expect(b.fsBancada).toBeGreaterThan(0);
+    });
   });
 });

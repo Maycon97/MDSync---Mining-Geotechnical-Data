@@ -44,6 +44,8 @@ import {
   Hash,
   Grid
 } from 'lucide-react';
+import { EngenhoSecoBlockModelViewer } from './EngenhoSecoBlockModelViewer';
+import { ENGENHO_SECO_BLOCK_MODELS } from '../data/engenhoSecoBlockModelData';
 
 // ============================================================================
 // DADOS DAS SEÇÕES TRANSVERSAIS COM INSTRUMENTAÇÃO REAL DO BANCO_DE_DADOS.XLSX
@@ -299,6 +301,49 @@ export const SECTIONS_DATA = [
     instrumentos: [
       { id: 'PZ-JC-01', tipo: 'PZ', x: 380, bocaCota: 915.00, pontaCota: 862.00, naAtual: 874.50, naChuvoso: 878.20, naSeco: 871.00, status: 'NORMAL' },
       { id: 'VT-JC-01', tipo: 'VERTEDOURO', x: 800, bocaCota: 868.00, pontaCota: 865.00, naAtual: 866.40, naChuvoso: 867.20, naSeco: 865.80, status: 'NORMAL' }
+    ]
+  },
+  {
+    id: 'SEC-ENS-01',
+    nome: "Seção ENS-01 - Cava Índia / Engenho Seco",
+    estruturaId: 'ENGENHO_SECO',
+    estruturaNome: 'CAVA ENGENHO SECO',
+    categoria: 'Cavas',
+    estaca: 'Estaca Eixo 14+50 (Cava Índia)',
+    azimute: 125.40,
+    cotaCrista: 910.00,
+    cotaFundacao: 790.00,
+    cotaPe: 800.00,
+    fatorSeguranca: 1.62,
+    fatorSegurancaMin: 1.30,
+    bordaLivre: 12.00,
+    statusEstabilidade: 'Monitoramento Contínuo com Radar & Prismas',
+    descricao: 'Corte transversal representativo da Cava Índia / Mina Engenho Seco, integrando os blocos cubados de curto prazo do Datamine (cota 790 a 910m) com litologias de minério (IF, IFR, IGO, HGO) e estéril.',
+    bermas: [
+      { nome: 'Crista Índia (Sup.)', cota: 910.0, x: 250, largura: 50 },
+      { nome: 'Bancada 880', cota: 880.0, x: 380, largura: 35 },
+      { nome: 'Bancada 850', cota: 850.0, x: 510, largura: 35 },
+      { nome: 'Bancada 820', cota: 820.0, x: 650, largura: 35 },
+      { nome: 'Fundo Cava Índia', cota: 790.0, x: 800, largura: 70 }
+    ],
+    drillholes: [
+      { id: 'DH-ENS-01', estaca: 'Bancada 910', x: 280, bocaCota: 910.0, profundidade: 120.0, nivelAguaFuro: 820.0, rqdMedio: 78, intervalos: [
+        { de: 0, ate: 15.0, litologia: 'CANGA' },
+        { de: 15.0, ate: 45.0, litologia: 'IF' },
+        { de: 45.0, ate: 85.0, litologia: 'HEM' },
+        { de: 85.0, ate: 120.0, litologia: 'BATATAL' }
+      ]},
+      { id: 'DH-ENS-02', estaca: 'Bancada 850', x: 530, bocaCota: 850.0, profundidade: 70.0, nivelAguaFuro: 805.0, rqdMedio: 82, intervalos: [
+        { de: 0, ate: 20.0, litologia: 'IC' },
+        { de: 20.0, ate: 50.0, litologia: 'HEM' },
+        { de: 50.0, ate: 70.0, litologia: 'BATATAL' }
+      ]}
+    ],
+    instrumentos: [
+      { id: 'PZ-ENS-01', tipo: 'PZ', x: 290, bocaCota: 910.00, pontaCota: 800.00, naAtual: 822.40, naChuvoso: 827.10, naSeco: 818.50, status: 'NORMAL' },
+      { id: 'INA-ENS-01', tipo: 'INA', x: 400, bocaCota: 880.00, pontaCota: 795.00, naAtual: 814.20, naChuvoso: 818.90, naSeco: 811.00, status: 'NORMAL' },
+      { id: 'RADAR-ENS-01', tipo: 'RADAR', x: 670, bocaCota: 820.00, pontaCota: 815.00, naAtual: 820.00, naChuvoso: 820.00, naSeco: 820.00, status: 'NORMAL' },
+      { id: 'DP-ENS-01', tipo: 'DRENO', x: 810, bocaCota: 790.00, pontaCota: 785.00, naAtual: 788.10, naChuvoso: 789.50, naSeco: 787.20, status: 'NORMAL' }
     ]
   }
 ];
@@ -663,6 +708,7 @@ export const GeotechCrossSectionTab = ({ onNavigateTab }) => {
   const [tolBerma, setTolBerma] = useState(1.0); // metros
   const [selectedCampaign, setSelectedCampaign] = useState('OS-0341');
   const [geomModalOpen, setGeomModalOpen] = useState(false);
+  const [blockModelModalOpen, setBlockModelModalOpen] = useState(false);
 
   // Estruturas disponíveis
   const availableStructures = useMemo(() => {
@@ -1465,6 +1511,27 @@ ${linhaFreatica.pontos.map(p => `    <Point x="${p.x}" elevation="${(p.cotaNA ||
               <Network size={14} />
               <span>Túnel DataBridge</span>
               <span style={{ fontSize: '0.6rem', padding: '1px 4px', borderRadius: '3px', backgroundColor: '#10b981', color: '#fff' }}>ATIVO</span>
+            </button>
+
+            <button
+              onClick={() => setBlockModelModalOpen(true)}
+              style={{
+                padding: '0.25rem 0.65rem',
+                borderRadius: '6px',
+                backgroundColor: 'rgba(245, 158, 11, 0.15)',
+                color: '#f59e0b',
+                border: '1px solid rgba(245, 158, 11, 0.4)',
+                fontWeight: 700,
+                fontSize: '0.72rem',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.35rem'
+              }}
+              title="Abrir Visualizador Interativo dos Modelos de Bloco CP da Mina Engenho Seco (Fev/26 a Dez/26)"
+            >
+              <Box size={14} />
+              <span>📦 Modelos CP Engenho Seco</span>
             </button>
 
             <button
@@ -3482,6 +3549,35 @@ ${linhaFreatica.pontos.map(p => `    <Point x="${p.x}" elevation="${(p.cotaNA ||
                 Fechar
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Interativo do Modelo de Blocos Curto Prazo (CP) Engenho Seco */}
+      {blockModelModalOpen && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: 'rgba(0, 0, 0, 0.85)',
+          backdropFilter: 'blur(6px)',
+          zIndex: 9999,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: '1.5rem'
+        }}>
+          <div style={{
+            width: '100%',
+            maxWidth: '1350px',
+            maxHeight: '92vh',
+            overflowY: 'auto',
+            borderRadius: '16px',
+            boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.75)'
+          }}>
+            <EngenhoSecoBlockModelViewer onClose={() => setBlockModelModalOpen(false)} />
           </div>
         </div>
       )}
