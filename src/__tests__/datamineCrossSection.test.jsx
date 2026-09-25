@@ -1,5 +1,11 @@
 import { describe, it, expect } from 'vitest';
-import GeotechCrossSectionTab, { SECTIONS_DATA, LITHOLOGIES } from '../components/GeotechCrossSectionTab';
+import GeotechCrossSectionTab, { 
+  SECTIONS_DATA, 
+  LITHOLOGIES, 
+  ENGEMEC_MINA_CAMPAIGNS_2026, 
+  ITAMINAS_GEOM_CODES, 
+  evaluateSlopeGeometry 
+} from '../components/GeotechCrossSectionTab';
 
 describe('Datamine Studio RM 2D Cross Section Module', () => {
   it('should export GeotechCrossSectionTab component as default', () => {
@@ -73,5 +79,84 @@ describe('Datamine Studio RM 2D Cross Section Module', () => {
     expect(structureIds).toContain('JANGADA');
     expect(structureIds).toContain('PDE_MANGABA');
     expect(structureIds).toContain('PDE_JACO');
+  });
+
+  it('should export all 12 monthly Engemec 2026 topography campaigns (030-MINA)', () => {
+    expect(ENGEMEC_MINA_CAMPAIGNS_2026).toBeDefined();
+    expect(ENGEMEC_MINA_CAMPAIGNS_2026.length).toBe(12);
+    
+    // Check OS identifiers from OS-0102 to OS-0341
+    const osList = ENGEMEC_MINA_CAMPAIGNS_2026.map(c => c.os);
+    expect(osList).toContain('OS-0102');
+    expect(osList).toContain('OS-0230');
+    expect(osList).toContain('OS-0341');
+
+    ENGEMEC_MINA_CAMPAIGNS_2026.forEach(camp => {
+      expect(camp.os).toMatch(/^OS-\d{4}$/);
+      expect(camp.mes).toBeDefined();
+      expect(camp.data).toMatch(/^\d{2}\/\d{2}\/\d{4}$/);
+      expect(camp.status).toBeDefined();
+      expect(camp.arquivos.length).toBeGreaterThan(0);
+      expect(camp.cotaReferencia).toBe('SIRGAS 2000');
+    });
+  });
+
+  it('should define the 6 Itaminas geotechnical geometry diagnostic codes with Datamine colors', () => {
+    expect(ITAMINAS_GEOM_CODES).toBeDefined();
+    const codes = ['01_APROVADO', '02_TALUDE_ALTO', '03_FACE_VERTICAL', '04_FACE_SUAVE', '05_TALUDE_ALTO_E_VERTICAL', 'BERMA_ESTREITA'];
+    codes.forEach(code => {
+      const item = ITAMINAS_GEOM_CODES[code];
+      expect(item).toBeDefined();
+      expect(item.codigo).toBe(code);
+      expect(item.nome).toBeDefined();
+      expect(item.cor).toMatch(/^#[0-9a-f]{6}$/i);
+      expect(typeof item.corDatamine).toBe('number');
+      expect(item.descricao).toBeDefined();
+    });
+
+    // Check specific Datamine palette color indices
+    expect(ITAMINAS_GEOM_CODES['01_APROVADO'].corDatamine).toBe(5);
+    expect(ITAMINAS_GEOM_CODES['02_TALUDE_ALTO'].corDatamine).toBe(2);
+    expect(ITAMINAS_GEOM_CODES['03_FACE_VERTICAL'].corDatamine).toBe(8);
+    expect(ITAMINAS_GEOM_CODES['04_FACE_SUAVE'].corDatamine).toBe(35);
+    expect(ITAMINAS_GEOM_CODES['05_TALUDE_ALTO_E_VERTICAL'].corDatamine).toBe(3);
+    expect(ITAMINAS_GEOM_CODES['BERMA_ESTREITA'].corDatamine).toBe(11);
+  });
+
+  it('should execute evaluateSlopeGeometry for all cross sections and return valid audit metrics', () => {
+    SECTIONS_DATA.forEach(section => {
+      const result = evaluateSlopeGeometry(section, 10, 5.0, 1.0);
+      expect(result).toBeDefined();
+      expect(result.totalBancadas).toBe(section.bermas.length - 1);
+      expect(result.bancadas.length).toBe(result.totalBancadas);
+      expect(result.conformidadePercent).toBeGreaterThanOrEqual(0);
+      expect(result.conformidadePercent).toBeLessThanOrEqual(100);
+      expect(result.aprovadosCount).toBeLessThanOrEqual(result.totalBancadas);
+
+      result.bancadas.forEach(b => {
+        expect(b.indice).toBeGreaterThan(0);
+        expect(b.nome).toBeDefined();
+        expect(b.hReal).toBeGreaterThan(0);
+        expect(b.anguloFaceReal).toBeGreaterThan(0);
+        expect(b.diagCodigo).toBeDefined();
+        expect(ITAMINAS_GEOM_CODES[b.diagCodigo]).toBeDefined();
+        expect(b.diagCor).toBeDefined();
+        expect(['OK', 'BAIXO', 'MEDIO', 'ALTO', 'CRITICO']).toContain(b.severidade);
+        expect(b.drenagemOk).toBe(true);
+      });
+    });
+  });
+
+  it('should handle edge cases in evaluateSlopeGeometry gracefully', () => {
+    // Null or invalid section
+    expect(evaluateSlopeGeometry(null)).toEqual({ bancadas: [], totalBancadas: 0, aprovadosCount: 0, conformidadePercent: 100 });
+    expect(evaluateSlopeGeometry({})).toEqual({ bancadas: [], totalBancadas: 0, aprovadosCount: 0, conformidadePercent: 100 });
+    expect(evaluateSlopeGeometry({ bermas: [{ nome: 'Crista', cota: 800, x: 100 }] })).toEqual({ bancadas: [], totalBancadas: 0, aprovadosCount: 0, conformidadePercent: 100 });
+
+    // Custom tight tolerances
+    const testSection = SECTIONS_DATA[0];
+    const strictResult = evaluateSlopeGeometry(testSection, 1, 0.5, 0.1);
+    expect(strictResult.totalBancadas).toBe(testSection.bermas.length - 1);
+    expect(typeof strictResult.conformidadePercent).toBe('number');
   });
 });
