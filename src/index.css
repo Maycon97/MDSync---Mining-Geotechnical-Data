@@ -2017,3 +2017,110 @@ button:focus-visible, .btn-action:focus-visible {
     left: 12px;
   }
 }
+
+/* ============================================================
+   Animações de Carregamento & Telemetria MDSync
+   ============================================================ */
+
+@keyframes pulseGlow {
+  0%, 100% {
+    transform: scale(1);
+    box-shadow: 0 8px 24px rgba(56, 189, 248, 0.4), 0 0 0 0 rgba(56, 189, 248, 0.2);
+  }
+  50% {
+    transform: scale(1.06);
+    box-shadow: 0 12px 36px rgba(56, 189, 248, 0.75), 0 0 24px 8px rgba(56, 189, 248, 0.35);
+  }
+}
+
+@keyframes spinRadar {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes iconBeat {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 0.95;
+  }
+  30% {
+    transform: scale(1.18);
+    opacity: 1;
+    filter: drop-shadow(0 0 8px #ffffff);
+  }
+  60% {
+    transform: scale(0.95);
+    opacity: 0.9;
+  }
+}
+
+@keyframes shimmerRun {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+.mdsync-loading-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  background-color: var(--bg-primary);
+  gap: 1.25rem;
+}
+
+.mdsync-loading-avatar-wrapper {
+  position: relative;
+  width: 96px;
+  height: 96px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.mdsync-loading-radar-ring {
+  position: absolute;
+  inset: -6px;
+  border-radius: 28px;
+  border: 2px dashed rgba(56, 189, 248, 0.7);
+  animation: spinRadar 5s linear infinite;
+  pointer-events: none;
+}
+
+.mdsync-loading-glow-badge {
+  width: 76px;
+  height: 76px;
+  border-radius: 22px;
+  background: linear-gradient(135deg, #0284c7 0%, #38bdf8 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #ffffff;
+  box-shadow: 0 8px 30px rgba(56, 189, 248, 0.5);
+  animation: pulseGlow 2s infinite ease-in-out;
+  position: relative;
+  z-index: 1;
+}
+
+.mdsync-loading-icon-animated {
+  animation: iconBeat 1.8s infinite ease-in-out;
+}
+
+.mdsync-loading-shimmer-bar {
+  width: 220px;
+  height: 5px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, rgba(56, 189, 248, 0.12) 0%, rgba(56, 189, 248, 0.9) 50%, rgba(56, 189, 248, 0.12) 100%);
+  background-size: 200% 100%;
+  animation: shimmerRun 1.6s infinite linear;
+  margin: 12px auto 0;
+}
+

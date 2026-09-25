@@ -81,36 +81,42 @@ export function App() {
 
   if (loading) {
     return (
-      <div style={{
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        justifyContent: 'center',
-        minHeight: '100vh',
-        backgroundColor: 'var(--bg-primary)',
-        gap: '1rem'
-      }}>
-        <div style={{
-          width: '56px',
-          height: '56px',
-          borderRadius: '14px',
-          background: 'linear-gradient(135deg, #0284c7, #38bdf8)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          color: '#ffffff',
-          boxShadow: '0 8px 24px rgba(56, 189, 248, 0.4)',
-          animation: 'pulseGlow 2s infinite ease-in-out'
-        }}>
-          <Activity size={32} />
+      <div className="mdsync-loading-container">
+        {/* Ícone com Anel de Radar Giratório e Pulso Tridimensional */}
+        <div className="mdsync-loading-avatar-wrapper">
+          <div className="mdsync-loading-radar-ring" />
+          <div className="mdsync-loading-glow-badge">
+            <img 
+              src="./logo_mdsync_icon.png" 
+              alt="MDSync Logo" 
+              className="mdsync-loading-icon-animated"
+              style={{
+                width: '46px',
+                height: '46px',
+                objectFit: 'contain',
+                filter: 'drop-shadow(0 2px 8px rgba(0, 0, 0, 0.25))'
+              }}
+              onError={(e) => {
+                e.target.style.display = 'none';
+                if (e.target.nextSibling) e.target.nextSibling.style.display = 'block';
+              }}
+            />
+            <Activity 
+              size={36} 
+              className="mdsync-loading-icon-animated"
+              style={{ display: 'none' }}
+            />
+          </div>
         </div>
+
         <div style={{ textAlign: 'center' }}>
-          <h2 style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--text-main)' }}>
+          <h2 style={{ fontSize: '1.3rem', fontWeight: 800, color: 'var(--text-main)', letterSpacing: '-0.02em' }}>
             MDSync Centralizador
           </h2>
-          <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginTop: '4px' }}>
+          <p style={{ fontSize: '0.82rem', color: 'var(--text-muted)', marginTop: '4px', letterSpacing: '0.02em' }}>
             Carregando 218 instrumentos e telemetria geotécnica...
           </p>
+          <div className="mdsync-loading-shimmer-bar" />
         </div>
       </div>
     );

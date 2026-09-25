@@ -135,7 +135,7 @@ export const GeotechDataProvider = ({ children }) => {
         'data/geotech_master.json'
       ];
 
-      let validData = null;
+      let data = null;
       for (const url of candidates) {
         try {
           const res = await fetch(url, { cache: 'no-store' });
@@ -143,7 +143,7 @@ export const GeotechDataProvider = ({ children }) => {
           if (res.ok && (contentType.includes('application/json') || url.endsWith('.json'))) {
             const parsed = await res.json();
             if (parsed && (parsed.instrumentos || parsed.estruturas)) {
-              validData = parsed;
+              data = parsed;
               break;
             }
           }
