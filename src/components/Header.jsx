@@ -14,7 +14,6 @@ const TAB_TITLES = {
   home: 'Página Inicial',
   dashboard: 'Dashboard Executivo',
   mapa: 'Planta (GIS / Satélite)',
-  secoes: 'Seções 2D (Cortes & Estabilidade)',
   anomalias_inspecoes: 'Anomalias & ISR',
   campo: 'Coleta de Campo (Inspect)',
   mobile_inspecao: 'App de Campo (APK SYSDAM)',

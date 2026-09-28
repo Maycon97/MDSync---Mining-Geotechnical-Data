@@ -612,43 +612,7 @@ export const SysdamEmpreendimentosPanel = ({
                     Módulos Operacionais Disponíveis:
                   </div>
 
-                  {/* 1. Seções 2D Datamine & LEM */}
-                  <div 
-                    onClick={() => onNavigateTab && onNavigateTab('secoes')}
-                    style={{
-                      padding: '0.6rem 0.75rem',
-                      borderRadius: '6px',
-                      backgroundColor: 'var(--bg-surface, #1e293b)',
-                      border: '1px solid var(--border-medium, #334155)',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'space-between',
-                      cursor: 'pointer',
-                      transition: 'background-color 0.15s ease'
-                    }}
-                  >
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
-                      <div style={{
-                        padding: '6px',
-                        borderRadius: '6px',
-                        backgroundColor: 'rgba(56, 189, 248, 0.15)',
-                        color: '#38bdf8'
-                      }}>
-                        <Layers size={16} />
-                      </div>
-                      <div>
-                        <div style={{ fontSize: '0.78rem', fontWeight: 800, color: '#f8fafc' }}>
-                          Seções 2D Datamine Studio & LEM
-                        </div>
-                        <div style={{ fontSize: '0.66rem', color: '#94a3b8' }}>
-                          Cortes transversais, modelo de blocos e Fator de Segurança
-                        </div>
-                      </div>
-                    </div>
-                    <ArrowRight size={14} style={{ color: '#38bdf8' }} />
-                  </div>
-
-                  {/* 2. Monitoramento Piezométrico */}
+                  {/* 1. Monitoramento Piezométrico */}
                   <div 
                     onClick={() => onNavigateTab && onNavigateTab('piezometria')}
                     style={{
@@ -724,7 +688,7 @@ export const SysdamEmpreendimentosPanel = ({
                   <div 
                     onClick={() => {
                       if (onOpenGeomReport) onOpenGeomReport();
-                      else if (onNavigateTab) onNavigateTab('secoes');
+                      else if (onNavigateTab) onNavigateTab('mapa');
                     }}
                     style={{
                       padding: '0.6rem 0.75rem',

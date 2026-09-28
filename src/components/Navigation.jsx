@@ -34,7 +34,6 @@ export const TABS = [
   { id: 'home', label: 'Home', icon: Home, desc: 'Visão geral e informações consolidadas de todos os campos' },
   { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, desc: 'Visão executiva e KPIs' },
   { id: 'mapa', label: 'Planta (GIS)', icon: MapPin, desc: 'Satélite, estruturas e localização espacial dos instrumentos' },
-  { id: 'secoes', label: 'Seções 2D', icon: Layers, desc: 'Perfis geotécnicos transversais com linha freática piezométrica dinâmica' },
   { id: 'anomalias_inspecoes', label: 'Anomalias & ISR', icon: ShieldAlert, desc: 'Gestão de anomalias, inspeções regulares e especiais (ANM 95/2022)' },
   { id: 'campo', label: 'Coleta de Campo', icon: ClipboardEdit, desc: 'Módulo Inspect: fotos, GPS e leituras' },
   { id: 'fila_sync', label: 'Fila de Sincronização Offline', icon: CloudLightning, desc: 'Gestão de coletas offline e envio à nuvem central' },
@@ -61,7 +60,6 @@ export const CORE_TABS = [
   { id: 'home', label: 'Home', icon: Home, desc: 'Visão geral e indicadores' },
   { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, desc: 'Visão executiva e KPIs' },
   { id: 'mapa', label: 'Planta (GIS)', icon: MapPin, desc: 'Satélite e localização espacial dos instrumentos' },
-  { id: 'secoes', label: 'Seções 2D', icon: Layers, desc: 'Cortes 2D com linha freática dinâmica' },
   { id: 'anomalias_inspecoes', label: 'Anomalias & ISR', icon: ShieldAlert, desc: 'Gestão de anomalias e inspeções (ANM 95/2022)' }
 ];
 

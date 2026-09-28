@@ -32,7 +32,6 @@ import { ContratosTerceirosTab } from './components/ContratosTerceirosTab';
 import { ProfileSettingsTab } from './components/ProfileSettingsTab';
 
 // Módulos Especializados Sentnel Mineração
-import { GeotechCrossSectionTab } from './components/GeotechCrossSectionTab';
 import { AnomaliasInspecoesTab } from './components/AnomaliasInspecoesTab';
 import { GestaoDocumentalTab } from './components/GestaoDocumentalTab';
 import { CentralComunicacaoTab } from './components/CentralComunicacaoTab';
@@ -272,9 +271,6 @@ export function App() {
           />
         )}
 
-        {activeTab === 'secoes' && (
-          <GeotechCrossSectionTab onNavigateTab={handleNavigateTab} />
-        )}
 
         {activeTab === 'campo' && (
           <FieldCollectionTab preSelectedInstrument={selectedInstrumentForReading} />
@@ -338,7 +334,7 @@ export function App() {
 
         {![
           'home', 'dashboard', 'analises', 'coletas', 'importacoes', 'ordens_servico',
-          'lotes_relatorios', 'clientes', 'contratos', 'mapa', 'secoes', 'campo',
+          'lotes_relatorios', 'clientes', 'contratos', 'mapa', 'campo',
           'fila_sync', 'anomalias_inspecoes', 'checklist', 'chamados', 'piezometria',
           'vazao', 'documentos', 'comunicacao', 'laudo', 'historico', 'ia',
           'cadastro', 'configuracoes_perfil', 'estruturas_empreendimento', 'mobile_inspecao'

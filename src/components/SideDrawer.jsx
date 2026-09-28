@@ -165,19 +165,10 @@ export const SideDrawer = ({
         },
         {
           id: 'mapa',
-          title: '1. Planta (GIS / Satélite)',
+          title: 'Planta (GIS / Satélite)',
           icon: MapPin,
           type: 'tab',
           tabId: 'mapa'
-        },
-        {
-          id: 'secoes',
-          title: '2. Seções (Cortes 2D com Linha Freática)',
-          icon: Layers,
-          type: 'tab',
-          tabId: 'secoes',
-          badge: 'NOVO',
-          badgeColor: '#38bdf8'
         },
         {
           id: 'piezometria',

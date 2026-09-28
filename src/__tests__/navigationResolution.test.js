@@ -4,7 +4,7 @@ import { TABS } from '../components/Navigation';
 describe('Navigation & Tab Resolution', () => {
   const KNOWN_VALID_TABS = [
     'home', 'dashboard', 'analises', 'coletas', 'importacoes', 'ordens_servico',
-    'lotes_relatorios', 'clientes', 'contratos', 'mapa', 'secoes', 'campo',
+    'lotes_relatorios', 'clientes', 'contratos', 'mapa', 'campo',
     'fila_sync', 'anomalias_inspecoes', 'checklist', 'chamados', 'piezometria',
     'vazao', 'documentos', 'comunicacao', 'laudo', 'historico', 'ia',
     'cadastro', 'configuracoes_perfil'
