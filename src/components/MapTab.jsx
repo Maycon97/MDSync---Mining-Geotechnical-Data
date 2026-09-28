@@ -1,5 +1,16 @@
 import React, { useEffect, useRef, useState, useMemo, useCallback } from 'react';
-import L from 'leaflet';
+import L, { 
+  Map, 
+  TileLayer, 
+  Marker, 
+  Circle, 
+  Polygon, 
+  Polyline, 
+  Popup, 
+  LayerGroup, 
+  DivIcon, 
+  Control 
+} from 'leaflet';
 import { useGeotechData } from '../context/GeotechDataContext';
 import { STRUCTURE_BOUNDARIES, STRUCTURE_CATEGORIES } from '../data/structureBoundaries';
 import { 
@@ -221,7 +232,7 @@ export const MapTab = ({ onNavigateTab, onSelectInstrumentForReading }) => {
 
     let map;
     try {
-      map = L.map(container, {
+      map = new Map(container, {
         center: [initialLat, initialLon],
         zoom: initialZoom,
         zoomControl: false,
@@ -235,46 +246,46 @@ export const MapTab = ({ onNavigateTab, onSelectInstrumentForReading }) => {
     }
 
     // Controles Oficiais Leaflet (Zoom no canto inferior direito e escala métrica no inferior esquerdo)
-    L.control.zoom({ position: 'bottomright' }).addTo(map);
-    L.control.scale({ imperial: false, metric: true, position: 'bottomleft' }).addTo(map);
+    new Control.Zoom({ position: 'bottomright' }).addTo(map);
+    new Control.Scale({ imperial: false, metric: true, position: 'bottomleft' }).addTo(map);
 
     // ========================================================
-    // Definição das Camadas Geoespaciais com Resiliência Total
+    // Definição das Camadas Geoespaciais com Resiliência Total (Leaflet 2.0 ESM)
     // ========================================================
 
     // 1. Google Satélite Híbrido HD (Com estradas, acessos e resolução de até 0.5m)
-    const satelliteGoogleLayer = L.tileLayer('https://mt{s}.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', {
+    const satelliteGoogleLayer = new TileLayer('https://mt{s}.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', {
       subdomains: ['0', '1', '2', '3'],
       maxZoom: 20,
       attribution: 'Google Satellite Hybrid'
     });
 
     // 2. Esri World Imagery (Imagens Satelitais Analíticas)
-    const satelliteEsriLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+    const satelliteEsriLayer = new TileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
       maxZoom: 19,
       attribution: 'Esri World Imagery'
     });
 
     // 3. Topografia & Relevo com Curvas (CartoDB Voyager)
-    const topoLayer = L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+    const topoLayer = new TileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
       maxZoom: 19,
       attribution: '&copy; CARTO & OpenStreetMap'
     });
 
-    // 4. Ruas & Logística Viária (OpenStreetMap)
-    const streetsLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    // 4. Ruas & Logística Viária (OpenStreetMap - Padrão Leaflet 2.0)
+    const streetsLayer = new TileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
       maxZoom: 19,
-      attribution: '&copy; OpenStreetMap'
+      attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
     });
 
     // 5. Dark Mode Geotécnico (Alto contraste para centros de controle)
-    const darkLayer = L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+    const darkLayer = new TileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
       maxZoom: 19,
       attribution: '&copy; CARTO'
     });
 
     // Camadas de Vetores (Polígonos das Estruturas e Marcadores de Instrumentos)
-    const polygonsLayer = L.layerGroup().addTo(map);
+    const polygonsLayer = new LayerGroup().addTo(map);
     
     // Função utilitária para criar agrupador com fallback seguro
     const createLayerGroupOrCluster = (clustered) => {
@@ -299,7 +310,7 @@ export const MapTab = ({ onNavigateTab, onSelectInstrumentForReading }) => {
                 worstClass = 'cluster-atencao';
               }
             }
-            return L.divIcon({
+            return new DivIcon({
               html: `<div class="custom-geo-cluster ${worstClass}" style="width: 38px; height: 38px; font-size: 11px;">${count}</div>`,
               className: 'custom-cluster-icon',
               iconSize: [38, 38]
@@ -307,7 +318,7 @@ export const MapTab = ({ onNavigateTab, onSelectInstrumentForReading }) => {
           }
         });
       }
-      return L.layerGroup();
+      return new LayerGroup();
     };
 
     const markersGroup = createLayerGroupOrCluster(useClustering);
@@ -577,7 +588,7 @@ export const MapTab = ({ onNavigateTab, onSelectInstrumentForReading }) => {
 
       // 1. Polígono de Perímetro
       if (boundary.coordinates && boundary.coordinates.length > 0) {
-        const polygon = L.polygon(boundary.coordinates, {
+        const polygon = new Polygon(boundary.coordinates, {
           color: isSelected ? '#38bdf8' : boundary.cor || catConfig.color,
           weight: isSelected ? 3 : 2,
           fillColor: boundary.fillColor || catConfig.fillColor,
@@ -607,7 +618,7 @@ export const MapTab = ({ onNavigateTab, onSelectInstrumentForReading }) => {
 
       // 2. Linha de Crista (se aplicável para barragens)
       if (boundary.crestLine && boundary.crestLine.length > 0) {
-        const crest = L.polyline(boundary.crestLine, {
+        const crest = new Polyline(boundary.crestLine, {
           color: '#ffffff',
           weight: 3,
           opacity: 0.85,
@@ -621,7 +632,7 @@ export const MapTab = ({ onNavigateTab, onSelectInstrumentForReading }) => {
     // 3. Setores Poligonais Georreferenciados da Mina Engenho Seco (Modelo de Blocos CP Datamine)
     ENGENHO_SECO_SECTORS.forEach(sec => {
       if (sec.perimetroWgs84 && sec.perimetroWgs84.length > 0) {
-        const secPoly = L.polygon(sec.perimetroWgs84, {
+        const secPoly = new Polygon(sec.perimetroWgs84, {
           color: '#10b981',
           weight: 2,
           fillColor: '#059669',
@@ -658,7 +669,7 @@ export const MapTab = ({ onNavigateTab, onSelectInstrumentForReading }) => {
     structures.forEach(struct => {
       if (struct.lat && struct.lon) {
         const isCurrentActive = activeStructureId === struct.id;
-        const structIcon = L.divIcon({
+        const structIcon = new DivIcon({
           className: 'structure-map-badge',
           html: `
             <div style="
@@ -687,7 +698,7 @@ export const MapTab = ({ onNavigateTab, onSelectInstrumentForReading }) => {
           iconSize: [0, 0]
         });
 
-        const structMarker = L.marker([struct.lat, struct.lon], { icon: structIcon });
+        const structMarker = new Marker([struct.lat, struct.lon], { icon: structIcon });
         structMarker.bindTooltip(struct.nome, {
           permanent: true,
           direction: 'top',
@@ -729,7 +740,7 @@ export const MapTab = ({ onNavigateTab, onSelectInstrumentForReading }) => {
 
       const tipoSigla = (inst.tipo === 'INA' ? 'IN' : inst.tipo === 'PZ' ? 'PZ' : inst.tipo === 'MV' ? 'MV' : inst.tipo === 'VT' ? 'VT' : (inst.tipo || 'IN')).slice(0, 2);
 
-      const instIcon = L.divIcon({
+      const instIcon = new DivIcon({
         className: 'custom-geo-marker-wrapper',
         html: `
           <div class="custom-geo-marker ${markerClass}" style="
@@ -755,7 +766,7 @@ export const MapTab = ({ onNavigateTab, onSelectInstrumentForReading }) => {
         iconAnchor: [isSelected ? 18 : 14, isSelected ? 18 : 14]
       });
 
-      const marker = L.marker([inst.lat, inst.lon], { 
+      const marker = new Marker([inst.lat, inst.lon], { 
         icon: instIcon,
         geoStatus: inst.statusCalculado || 'NORMAL'
       });
@@ -782,7 +793,7 @@ export const MapTab = ({ onNavigateTab, onSelectInstrumentForReading }) => {
         const isSelected = selectedTicket && selectedTicket.protocolo === t.protocolo;
         const isCritica = t.criticidade?.includes('A') || t.criticidadeNivel?.includes('Alerta') || t.criticidadeNivel?.includes('Emergência');
         
-        const ticketIcon = L.divIcon({
+        const ticketIcon = new DivIcon({
           className: 'custom-fluig-ticket-marker',
           html: `
             <div style="
@@ -810,7 +821,7 @@ export const MapTab = ({ onNavigateTab, onSelectInstrumentForReading }) => {
           iconSize: [0, 0]
         });
 
-        const ticketMarker = L.marker([t.lat, t.lon], { icon: ticketIcon, zIndexOffset: 700 });
+        const ticketMarker = new Marker([t.lat, t.lon], { icon: ticketIcon, zIndexOffset: 700 });
         ticketMarker.bindTooltip(`
           <div style="font-family: 'Inter', sans-serif; font-size: 11px; padding: 2px 4px; max-width: 260px;">
             <strong style="color: #f59e0b;">Chamado PCMI #${t.protocolo}</strong><br/>
@@ -834,7 +845,7 @@ export const MapTab = ({ onNavigateTab, onSelectInstrumentForReading }) => {
       georeferencedAnomalies.forEach(anom => {
         const isSelected = selectedInspectionRecord && selectedInspectionRecord.id === anom.id;
         const sevColor = anom.severidade === 3 ? '#ef4444' : (anom.severidade === 2 ? '#f59e0b' : '#10b981');
-        const anomIcon = L.divIcon({
+        const anomIcon = new DivIcon({
           className: 'custom-sysdam-inspection-marker',
           html: `
             <div style="
@@ -863,7 +874,7 @@ export const MapTab = ({ onNavigateTab, onSelectInstrumentForReading }) => {
           iconSize: [0, 0]
         });
 
-        const anomMarker = L.marker([anom.lat, anom.lon], { icon: anomIcon, zIndexOffset: 750 });
+        const anomMarker = new Marker([anom.lat, anom.lon], { icon: anomIcon, zIndexOffset: 750 });
         anomMarker.bindTooltip(`
           <div style="font-family: 'Inter', sans-serif; font-size: 11px; padding: 2px 4px; max-width: 250px;">
             <strong style="color: ${sevColor};">${anom.codigo || anom.id} - ${anom.tipo}</strong><br/>
