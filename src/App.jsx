@@ -22,7 +22,6 @@ import { ChamadosTab } from './components/ChamadosTab';
 import { SideDrawer } from './components/SideDrawer';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { InspectHeroCard } from './components/InspectHeroCard';
-import { GithubIcon } from './components/GithubIcon';
 import { ColetasTab } from './components/ColetasTab';
 import { ImportacoesTab } from './components/ImportacoesTab';
 import { OrdensServicoTab } from './components/OrdensServicoTab';
@@ -498,29 +497,11 @@ export function App() {
           justifyContent: 'space-between',
           gap: '1rem'
         }}>
-          {/* Identificação e GitHub */}
+          {/* Identificação Institucional */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
             <span style={{ fontWeight: 800, color: 'var(--text-main)' }}>MDSync Geotecnia</span>
             <span>•</span>
             <span>Centralizador de Dados Geotécnicos de Barragens, Cavas e Pilhas</span>
-            <span>•</span>
-            <a
-              href="https://github.com/Maycon97/MDSync---Mining-Geotechnical-Data"
-              target="_blank"
-              rel="noopener noreferrer"
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '0.35rem',
-                color: 'var(--primary-accent)',
-                textDecoration: 'none',
-                fontWeight: 600
-              }}
-              title="Código fonte oficial no GitHub"
-            >
-              <GithubIcon size={13} />
-              <span>GitHub</span>
-            </a>
           </div>
 
           {/* Links Rápidos do Centro Jurídico & Privacidade */}

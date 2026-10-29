@@ -20,7 +20,6 @@ import {
   Layers,
   Sparkles
 } from 'lucide-react';
-import { GithubIcon } from './GithubIcon';
 
 export const InspectHeroCard = ({ 
   onNavigate, 
@@ -274,28 +273,6 @@ export const InspectHeroCard = ({
                 </span>
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                <a
-                  href="https://github.com/Maycon97/MDSync---Mining-Geotechnical-Data"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  style={{
-                    fontSize: '0.68rem',
-                    fontWeight: 700,
-                    color: 'var(--primary-accent)',
-                    backgroundColor: 'var(--primary-accent-bg)',
-                    padding: '0.2rem 0.5rem',
-                    borderRadius: '8px',
-                    textDecoration: 'none',
-                    border: '1px solid var(--border-highlight)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '0.3rem'
-                  }}
-                  title="Acessar repositório oficial no GitHub"
-                >
-                  <GithubIcon size={12} />
-                  <span>GitHub</span>
-                </a>
                 <a
                   href="https://github.com/Maycon97/MDSync---Mining-Geotechnical-Data/releases/latest/download/mdsync-geotecnia.apk"
                   download="mdsync-geotecnia.apk"

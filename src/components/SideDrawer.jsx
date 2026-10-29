@@ -2,7 +2,6 @@ import React, { useState, useMemo, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useGeotechData } from '../context/GeotechDataContext';
 import { storageService } from '../services/storageService';
-import { GithubIcon } from './GithubIcon';
 import { 
   X, 
   Search,
@@ -360,14 +359,6 @@ export const SideDrawer = ({
           },
           badge: 'LGPD',
           badgeColor: '#10b981'
-        },
-        {
-          id: 'github_repo',
-          title: 'Repositório GitHub (Código)',
-          icon: GithubIcon,
-          type: 'link',
-          href: 'https://github.com/Maycon97/MDSync---Mining-Geotechnical-Data',
-          target: '_blank'
         },
         {
           id: 'baixar_apk',
