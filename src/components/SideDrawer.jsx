@@ -41,6 +41,7 @@ import {
   Check,
   Sparkles,
   ShieldAlert,
+  ShieldCheck,
   FolderArchive,
   Radio
 } from 'lucide-react';
