@@ -235,6 +235,8 @@ export const MapTab = ({ onNavigateTab, onSelectInstrumentForReading }) => {
       map = new Map(container, {
         center: [initialLat, initialLon],
         zoom: initialZoom,
+        maxZoom: 20,
+        minZoom: 3,
         zoomControl: false,
         attributionControl: false,
         fadeAnimation: true,
@@ -250,7 +252,7 @@ export const MapTab = ({ onNavigateTab, onSelectInstrumentForReading }) => {
     new Control.Scale({ imperial: false, metric: true, position: 'bottomleft' }).addTo(map);
 
     // ========================================================
-    // Definição das Camadas Geoespaciais com Resiliência Total (Leaflet 2.0 ESM)
+    // Definição das Camadas Geoespaciais com Resiliência Total (Leaflet 1.9)
     // ========================================================
 
     // 1. Google Satélite Híbrido HD (Com estradas, acessos e resolução de até 0.5m)
@@ -272,7 +274,7 @@ export const MapTab = ({ onNavigateTab, onSelectInstrumentForReading }) => {
       attribution: '&copy; CARTO & OpenStreetMap'
     });
 
-    // 4. Ruas & Logística Viária (OpenStreetMap - Padrão Leaflet 2.0)
+    // 4. Ruas & Logística Viária (OpenStreetMap - Padrão Leaflet)
     const streetsLayer = new TileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
       maxZoom: 19,
       attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
@@ -284,6 +286,19 @@ export const MapTab = ({ onNavigateTab, onSelectInstrumentForReading }) => {
       attribution: '&copy; CARTO'
     });
 
+    // Base Layers Map
+    const baseLayers = {
+      satellite_google: satelliteGoogleLayer,
+      satellite_esri: satelliteEsriLayer,
+      topo: topoLayer,
+      streets: streetsLayer,
+      dark: darkLayer
+    };
+
+    // Adiciona a camada base selecionada PRIMEIRO para garantir maxZoom do mapa
+    const initialLayer = baseLayers[mapType] || satelliteGoogleLayer;
+    initialLayer.addTo(map);
+
     // Camadas de Vetores (Polígonos das Estruturas e Marcadores de Instrumentos)
     const polygonsLayer = new LayerGroup().addTo(map);
     
@@ -293,6 +308,7 @@ export const MapTab = ({ onNavigateTab, onSelectInstrumentForReading }) => {
         try {
           return L.markerClusterGroup({
             maxClusterRadius: 40,
+            maxZoom: 19,
             spiderfyOnMaxZoom: true,
             showCoverageOnHover: false,
             zoomToBoundsOnClick: true,
@@ -331,23 +347,12 @@ export const MapTab = ({ onNavigateTab, onSelectInstrumentForReading }) => {
     // Registro das instâncias
     mapInstanceRef.current = {
       map,
-      layers: {
-        satellite_google: satelliteGoogleLayer,
-        satellite_esri: satelliteEsriLayer,
-        topo: topoLayer,
-        streets: streetsLayer,
-        dark: darkLayer
-      },
-      currentLayer: null,
+      layers: baseLayers,
+      currentLayer: initialLayer,
       createLayerGroupOrCluster
     };
     markersLayerRef.current = markersGroup;
     polygonsLayerRef.current = polygonsLayer;
-
-    // Adiciona a camada inicial selecionada
-    const initialLayer = mapInstanceRef.current.layers[mapType] || satelliteGoogleLayer;
-    initialLayer.addTo(map);
-    mapInstanceRef.current.currentLayer = initialLayer;
 
     // Rastreamento de coordenadas do cursor (WGS-84 e SIRGAS 2000 UTM 23S) e nível de zoom em tempo real
     map.on('mousemove', (e) => {

@@ -1,63 +1,50 @@
+// @vitest-environment jsdom
 import { describe, it, expect } from 'vitest';
-import L, { 
-  Map, 
-  TileLayer, 
-  Marker, 
-  Polygon, 
-  Polyline, 
-  LayerGroup, 
-  FeatureGroup, 
-  DivIcon 
+import L, {
+  Map,
+  TileLayer,
+  Marker,
+  Polygon,
+  Polyline,
+  LayerGroup,
+  FeatureGroup,
+  DivIcon
 } from '../utils/leafletCompat';
+import 'leaflet.markercluster';
 
-describe('Leaflet Compatibility & Polyfill Bridge', () => {
-  it('should export all primary Leaflet classes', () => {
-    expect(Map).toBeDefined();
-    expect(TileLayer).toBeDefined();
-    expect(Marker).toBeDefined();
-    expect(Polygon).toBeDefined();
-    expect(Polyline).toBeDefined();
-    expect(LayerGroup).toBeDefined();
-    expect(FeatureGroup).toBeDefined();
-    expect(DivIcon).toBeDefined();
+describe('Leaflet bootstrap (1.9.x + markercluster)', () => {
+  it('exporta as classes primárias do Leaflet', () => {
+    [Map, TileLayer, Marker, Polygon, Polyline, LayerGroup, FeatureGroup, DivIcon].forEach((c) =>
+      expect(typeof c).toBe('function')
+    );
   });
 
-  it('should define L.featureGroup factory and not throw', () => {
+  it('expõe as fábricas clássicas (L.featureGroup não pode quebrar)', () => {
     expect(typeof L.featureGroup).toBe('function');
-    const fg = L.featureGroup();
-    expect(fg).toBeDefined();
-    expect(fg instanceof FeatureGroup || fg.addLayer).toBeDefined();
+    expect(L.featureGroup() instanceof FeatureGroup).toBe(true);
+    ['layerGroup', 'marker', 'divIcon', 'polygon', 'polyline', 'latLng', 'latLngBounds', 'map', 'tileLayer']
+      .forEach((fn) => expect(typeof L[fn]).toBe('function'));
   });
 
-  it('should define L.layerGroup, L.marker, L.divIcon, L.polygon and L.latLng factories', () => {
-    expect(typeof L.layerGroup).toBe('function');
-    expect(typeof L.marker).toBe('function');
-    expect(typeof L.divIcon).toBe('function');
-    expect(typeof L.polygon).toBe('function');
-    expect(typeof L.polyline).toBe('function');
-    expect(typeof L.latLng).toBe('function');
-    expect(typeof L.latLngBounds).toBe('function');
+  it('publica window.L antes do plugin e o markercluster registra L.markerClusterGroup', () => {
+    expect(window.L).toBe(L);
+    expect(typeof L.markerClusterGroup).toBe('function');
+    const group = L.markerClusterGroup({ maxClusterRadius: 40 });
+    expect(typeof group.addLayer).toBe('function');
   });
 
-  it('should define L.extend, L.setOptions, L.stamp and L.bind for Leaflet 1.x plugins', () => {
-    expect(typeof L.extend).toBe('function');
-    expect(typeof L.setOptions).toBe('function');
-    expect(typeof L.stamp).toBe('function');
-    expect(typeof L.bind).toBe('function');
+  it('cria um mapa real e adiciona marcadores em cluster sem erro', () => {
+    const el = document.createElement('div');
+    el.style.width = '400px';
+    el.style.height = '300px';
+    document.body.appendChild(el);
 
-    const obj = {};
-    L.setOptions(obj, { test: 123 });
-    expect(obj.options.test).toBe(123);
+    const map = new Map(el, { center: [-20.0638, -44.1143], zoom: 15, maxZoom: 19 });
+    const cluster = L.markerClusterGroup().addTo(map);
+    cluster.addLayer(new Marker([-20.0638, -44.1143]));
+    cluster.addLayer(new Marker([-20.0640, -44.1145]));
 
-    const id = L.stamp(obj);
-    expect(id).toBeDefined();
-  });
-
-  it('should verify that window.L is bound', () => {
-    if (typeof window !== 'undefined') {
-      expect(window.L).toBeDefined();
-      expect(typeof window.L.featureGroup).toBe('function');
-    }
+    expect(cluster.getLayers().length).toBe(2);
+    map.remove();
   });
 });
-
