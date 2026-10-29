@@ -10,7 +10,7 @@ import L, {
   LayerGroup, 
   DivIcon, 
   Control 
-} from 'leaflet';
+} from '../utils/leafletCompat';
 import { useGeotechData } from '../context/GeotechDataContext';
 import { STRUCTURE_BOUNDARIES, STRUCTURE_CATEGORIES } from '../data/structureBoundaries';
 import { 
@@ -290,33 +290,37 @@ export const MapTab = ({ onNavigateTab, onSelectInstrumentForReading }) => {
     // Função utilitária para criar agrupador com fallback seguro
     const createLayerGroupOrCluster = (clustered) => {
       if (clustered && typeof L.markerClusterGroup === 'function') {
-        return L.markerClusterGroup({
-          maxClusterRadius: 40,
-          spiderfyOnMaxZoom: true,
-          showCoverageOnHover: false,
-          zoomToBoundsOnClick: true,
-          iconCreateFunction: (cluster) => {
-            const markers = cluster.getAllChildMarkers();
-            const count = markers.length;
-            let worstClass = 'cluster-normal';
-            for (const m of markers) {
-              if (m.options.geoStatus === 'EMERGÊNCIA') {
-                worstClass = 'cluster-emergencia';
-                break;
+        try {
+          return L.markerClusterGroup({
+            maxClusterRadius: 40,
+            spiderfyOnMaxZoom: true,
+            showCoverageOnHover: false,
+            zoomToBoundsOnClick: true,
+            iconCreateFunction: (cluster) => {
+              const markers = cluster.getAllChildMarkers();
+              const count = markers.length;
+              let worstClass = 'cluster-normal';
+              for (const m of markers) {
+                if (m.options.geoStatus === 'EMERGÊNCIA') {
+                  worstClass = 'cluster-emergencia';
+                  break;
+                }
+                if (m.options.geoStatus === 'ALERTA') {
+                  worstClass = 'cluster-alerta';
+                } else if (m.options.geoStatus === 'ATENÇÃO' && worstClass !== 'cluster-alerta') {
+                  worstClass = 'cluster-atencao';
+                }
               }
-              if (m.options.geoStatus === 'ALERTA') {
-                worstClass = 'cluster-alerta';
-              } else if (m.options.geoStatus === 'ATENÇÃO' && worstClass !== 'cluster-alerta') {
-                worstClass = 'cluster-atencao';
-              }
+              return new DivIcon({
+                html: `<div class="custom-geo-cluster ${worstClass}" style="width: 38px; height: 38px; font-size: 11px;">${count}</div>`,
+                className: 'custom-cluster-icon',
+                iconSize: [38, 38]
+              });
             }
-            return new DivIcon({
-              html: `<div class="custom-geo-cluster ${worstClass}" style="width: 38px; height: 38px; font-size: 11px;">${count}</div>`,
-              className: 'custom-cluster-icon',
-              iconSize: [38, 38]
-            });
-          }
-        });
+          });
+        } catch (err) {
+          console.warn('[MapTab] Falha ao instanciar markerClusterGroup, utilizando LayerGroup padrão:', err);
+        }
       }
       return new LayerGroup();
     };

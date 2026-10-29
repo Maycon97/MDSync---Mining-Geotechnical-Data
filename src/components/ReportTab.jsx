@@ -615,7 +615,10 @@ export const ReportTab = ({ onNavigateTab }) => {
               {authHash}
             </code>
             <div style={{ fontSize: '0.68rem', color: '#94a3b8', marginTop: '2px' }}>
-              Assinatura eletrônica em conformidade com ICP-Brasil e Portaria ANM nº 95/2022
+              Assinatura eletrônica em conformidade com ICP-Brasil, Portaria ANM nº 95/2022 e Lei 12.334/2010 (PNSB).
+            </div>
+            <div style={{ fontSize: '0.65rem', color: '#64748b', marginTop: '3px', fontStyle: 'italic' }}>
+              * Válido exclusivamente mediante respectiva Anotação de Responsabilidade Técnica (ART/CREA) e vistorias físicas in loco.
             </div>
           </div>
 

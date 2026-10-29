@@ -686,6 +686,26 @@ Como posso te ajudar hoje?
               <span>Enviar</span>
             </button>
           </form>
+
+          {/* Aviso Legal de IA & Responsabilidade Técnica (Itens 13 e 17 da Auditoria) */}
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.5rem',
+            padding: '0.5rem 0.85rem',
+            borderRadius: '8px',
+            backgroundColor: 'var(--bg-secondary)',
+            border: '1px solid var(--border-subtle)',
+            fontSize: '0.7rem',
+            color: 'var(--text-faint)',
+            lineHeight: 1.4
+          }}>
+            <AlertTriangle size={15} style={{ color: '#f59e0b', flexShrink: 0 }} />
+            <span>
+              <strong>Aviso Legal & Responsabilidade Técnica:</strong> As análises preditivas do Geotinho têm caráter consultivo de apoio à decisão 
+              e <strong>não substituem o julgamento técnico, vistorias presenciais ou a Anotação de Responsabilidade Técnica (ART/CREA)</strong> de Engenheiro habilitado (Lei 12.334/2010 PNSB e Resolução ANM nº 95/2022).
+            </span>
+          </div>
         </div>
       )}
 
@@ -889,17 +909,32 @@ Como posso te ajudar hoje?
               paddingTop: '1.5rem',
               borderTop: '1px dashed var(--border-medium)',
               display: 'flex',
-              justifyContent: 'space-between',
+              flexDirection: 'column',
+              gap: '0.65rem',
               fontSize: '0.75rem',
               color: 'var(--text-faint)'
             }}>
-              <div>
-                <div>Documento gerado automaticamente pelo motor de IA do <strong>MDSync</strong></div>
-                <div>Itaminas Mineração S.A. • Gerência de Geotecnia e Segurança de Barragens</div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.5rem' }}>
+                <div>
+                  <div>Documento gerado pelo motor de inteligência e telemetria do <strong>MDSync Geotecnia</strong></div>
+                  <div>Itaminas Mineração S.A. • Gerência de Geotecnia e Segurança de Barragens</div>
+                </div>
+                <div style={{ textAlign: 'right' }}>
+                  <div>Hash de Integridade: <span className="font-mono">8F3E-91C2-BD07</span></div>
+                  <div>Status: <strong>Válido para Acompanhamento Interno</strong></div>
+                </div>
               </div>
-              <div style={{ textAlign: 'right' }}>
-                <div>Hash de Integridade: <span className="font-mono">8F3E-91C2-BD07</span></div>
-                <div>Status: <strong>Válido para Acompanhamento Interno</strong></div>
+              <div style={{
+                padding: '0.5rem 0.75rem',
+                borderRadius: '6px',
+                backgroundColor: 'var(--bg-secondary)',
+                border: '1px solid var(--border-subtle)',
+                fontSize: '0.68rem',
+                color: 'var(--text-muted)',
+                lineHeight: 1.4
+              }}>
+                <strong>Conformidade Legal & ART (Item 13 e 17):</strong> Este parecer técnico sintetiza dados de sensores e análises estatísticas. 
+                Não substitui a Anotação de Responsabilidade Técnica (ART/RRT) formal emitida perante o CREA/CONFEA nem dispensa as vistorias periódicas in loco previstas na Lei Federal nº 12.334/2010 (PNSB).
               </div>
             </div>
           </div>

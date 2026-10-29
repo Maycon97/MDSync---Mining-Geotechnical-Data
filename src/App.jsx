@@ -30,6 +30,8 @@ import { LotesRelatoriosTab } from './components/LotesRelatoriosTab';
 import { ClientesTab } from './components/ClientesTab';
 import { ContratosTerceirosTab } from './components/ContratosTerceirosTab';
 import { ProfileSettingsTab } from './components/ProfileSettingsTab';
+import { LegalCenterModal } from './components/LegalCenterModal';
+import { CookieConsentBanner } from './components/CookieConsentBanner';
 
 // Módulos Especializados Sentnel Mineração
 import { AnomaliasInspecoesTab } from './components/AnomaliasInspecoesTab';
@@ -61,6 +63,13 @@ export function App() {
   const [syncModalOpen, setSyncModalOpen] = useState(false);
   const [reportModalOpen, setReportModalOpen] = useState(false);
   const [checklistModalOpen, setChecklistModalOpen] = useState(false);
+  const [legalModalOpen, setLegalModalOpen] = useState(false);
+  const [legalModalTab, setLegalModalTab] = useState('privacidade');
+
+  const handleOpenLegalCenter = (tab = 'privacidade') => {
+    setLegalModalTab(tab);
+    setLegalModalOpen(true);
+  };
 
   const handleNavigateTab = (tabId, subTab = null) => {
     if (subTab) {
@@ -163,6 +172,11 @@ export function App() {
 
   return (
     <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', backgroundColor: 'var(--bg-primary)' }}>
+      {/* Link de Acessibilidade: Pular para o Conteúdo Principal (Item 8 e 11 da Auditoria) */}
+      <a href="#main-content" className="skip-to-content">
+        Pular para o conteúdo principal
+      </a>
+
       {/* Barra de Topo com Botão MENU e Identificação da Sessão */}
       <Header 
         activeTab={activeTab}
@@ -205,10 +219,11 @@ export function App() {
           setAuthModalOpen(true);
           setDrawerOpen(false);
         }}
+        onOpenLegalCenter={handleOpenLegalCenter}
       />
 
       {/* Área de Conteúdo da Aba Ativa */}
-      <main style={{ flex: 1, padding: '1.25rem', maxWidth: '1600px', width: '100%', margin: '0 auto' }}>
+      <main id="main-content" tabIndex={-1} style={{ flex: 1, padding: '1.25rem', maxWidth: '1600px', width: '100%', margin: '0 auto' }}>
         <ErrorBoundary key={activeTab} onNavigateHome={() => handleNavigateTab('home')}>
         {activeTab === 'home' && (
           <div>
@@ -431,6 +446,7 @@ export function App() {
         onClose={() => setAuthModalOpen(false)} 
         initialTab={authModalTab}
         onNavigateToProfileTab={() => handleNavigateTab('configuracoes_perfil')}
+        onOpenLegalCenter={handleOpenLegalCenter}
       />
 
       <SyncQueueModal 
@@ -451,44 +467,123 @@ export function App() {
         onOpenSync={() => { setChecklistModalOpen(false); handleNavigateTab('fila_sync'); }}
       />
 
-      {/* Rodapé Institucional */}
-      <footer style={{
-        backgroundColor: 'var(--bg-surface)',
-        borderTop: '1px solid var(--border-subtle)',
-        padding: '1rem 1.5rem',
-        fontSize: '0.75rem',
-        color: 'var(--text-faint)',
-        display: 'flex',
-        flexWrap: 'wrap',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        gap: '0.75rem'
-      }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
-          <span style={{ fontWeight: 700, color: 'var(--text-main)' }}>MDSync</span>
-          <span>•</span>
-          <span>Centralizador de Dados Geotécnicos de Barragens, Cavas e Pilhas</span>
-          <span>•</span>
-          <a
-            href="https://github.com/Maycon97/MDSync---Mining-Geotechnical-Data"
-            target="_blank"
-            rel="noopener noreferrer"
-            style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '0.35rem',
-              color: 'var(--primary-accent)',
-              textDecoration: 'none',
-              fontWeight: 600
-            }}
-            title="Código fonte oficial no GitHub"
-          >
-            <GithubIcon size={13} />
-            <span>GitHub</span>
-          </a>
+      {/* Centro Jurídico, Conformidade & LGPD (Itens 1, 2, 4, 15, 16, 17) */}
+      <LegalCenterModal
+        isOpen={legalModalOpen}
+        onClose={() => setLegalModalOpen(false)}
+        initialTab={legalModalTab}
+      />
+
+      {/* Banner de Consentimento de Cookies (Item 3 & 7) */}
+      <CookieConsentBanner onOpenLegalCenter={handleOpenLegalCenter} />
+
+      {/* Rodapé Institucional com Blindagem Jurídica Completa (Itens 1 a 17) */}
+      <footer 
+        role="contentinfo"
+        style={{
+          backgroundColor: 'var(--bg-surface)',
+          borderTop: '1px solid var(--border-subtle)',
+          padding: '1.25rem 1.5rem',
+          fontSize: '0.75rem',
+          color: 'var(--text-faint)',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '0.85rem'
+        }}
+      >
+        <div style={{
+          display: 'flex',
+          flexWrap: 'wrap',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          gap: '1rem'
+        }}>
+          {/* Identificação e GitHub */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
+            <span style={{ fontWeight: 800, color: 'var(--text-main)' }}>MDSync Geotecnia</span>
+            <span>•</span>
+            <span>Centralizador de Dados Geotécnicos de Barragens, Cavas e Pilhas</span>
+            <span>•</span>
+            <a
+              href="https://github.com/Maycon97/MDSync---Mining-Geotechnical-Data"
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '0.35rem',
+                color: 'var(--primary-accent)',
+                textDecoration: 'none',
+                fontWeight: 600
+              }}
+              title="Código fonte oficial no GitHub"
+            >
+              <GithubIcon size={13} />
+              <span>GitHub</span>
+            </a>
+          </div>
+
+          {/* Links Rápidos do Centro Jurídico & Privacidade */}
+          <nav aria-label="Links Jurídicos e Regulatórios" style={{ display: 'flex', alignItems: 'center', gap: '0.85rem', flexWrap: 'wrap' }}>
+            <button
+              type="button"
+              onClick={() => handleOpenLegalCenter('privacidade')}
+              style={{ background: 'none', border: 'none', padding: 0, color: 'var(--text-muted)', cursor: 'pointer', fontSize: '0.75rem', textDecoration: 'underline' }}
+            >
+              Política de Privacidade (LGPD)
+            </button>
+            <span>•</span>
+            <button
+              type="button"
+              onClick={() => handleOpenLegalCenter('termos')}
+              style={{ background: 'none', border: 'none', padding: 0, color: 'var(--text-muted)', cursor: 'pointer', fontSize: '0.75rem', textDecoration: 'underline' }}
+            >
+              Termos de Uso
+            </button>
+            <span>•</span>
+            <button
+              type="button"
+              onClick={() => handleOpenLegalCenter('cookies')}
+              style={{ background: 'none', border: 'none', padding: 0, color: 'var(--text-muted)', cursor: 'pointer', fontSize: '0.75rem', textDecoration: 'underline' }}
+            >
+              Aviso de Cookies
+            </button>
+            <span>•</span>
+            <button
+              type="button"
+              onClick={() => handleOpenLegalCenter('reembolso')}
+              style={{ background: 'none', border: 'none', padding: 0, color: 'var(--text-muted)', cursor: 'pointer', fontSize: '0.75rem', textDecoration: 'underline' }}
+            >
+              Política de Reembolso & Licenças
+            </button>
+            <span>•</span>
+            <button
+              type="button"
+              onClick={() => handleOpenLegalCenter('lgpd_titular')}
+              style={{ background: 'none', border: 'none', padding: 0, color: 'var(--primary-accent)', fontWeight: 700, cursor: 'pointer', fontSize: '0.75rem', textDecoration: 'underline' }}
+            >
+              Direitos do Titular (Exportar Dados)
+            </button>
+          </nav>
         </div>
-        <div>
-          Conforme diretrizes da Portaria ANM nº 95/2022 e Política Nacional de Segurança de Barragens (PNSB).
+
+        {/* Linha de Compliance Regulatório e Dados Oficiais */}
+        <div style={{
+          display: 'flex',
+          flexWrap: 'wrap',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          gap: '0.5rem',
+          borderTop: '1px solid var(--border-subtle)',
+          paddingTop: '0.65rem',
+          fontSize: '0.7rem'
+        }}>
+          <div>
+            Em estrita conformidade com a <strong>Portaria ANM nº 95/2022</strong>, <strong>Lei Federal nº 12.334/2010 (PNSB)</strong> e <strong>Lei nº 13.709/2018 (LGPD)</strong>.
+          </div>
+          <div>
+            Responsável Técnico: <strong>CREA-MG</strong> • Encarregado de Dados (DPO): <strong style={{ color: 'var(--primary-accent)' }}>dpo@mdsync.com.br</strong>
+          </div>
         </div>
       </footer>
     </div>

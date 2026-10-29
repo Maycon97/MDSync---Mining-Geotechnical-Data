@@ -4,7 +4,7 @@
 // ============================================================
 
 import React, { useState, useEffect, useRef, useMemo } from 'react';
-import L from 'leaflet';
+import L from '../utils/leafletCompat';
 import { useGeotechData } from '../context/GeotechDataContext';
 import { useAuth } from '../context/AuthContext';
 import { useGeoLocation } from '../hooks/useGeoLocation';

@@ -22,7 +22,7 @@ import {
   Key
 } from 'lucide-react';
 
-export const AuthModal = ({ isOpen, onClose, initialTab = 'login', onNavigateToProfileTab }) => {
+export const AuthModal = ({ isOpen, onClose, initialTab = 'login', onNavigateToProfileTab, onOpenLegalCenter }) => {
   const { currentUser, login, register, users, changeRole, updateProfile } = useAuth();
   
   const [tab, setTab] = useState(initialTab); // 'login' | 'register' | 'profile'
@@ -37,6 +37,7 @@ export const AuthModal = ({ isOpen, onClose, initialTab = 'login', onNavigateToP
   const [regRole, setRegRole] = useState('ENGENHEIRO');
   const [regRegistro, setRegRegistro] = useState('');
   const [regEmpresa, setRegEmpresa] = useState('Itaminas Mineração S/A');
+  const [regLgpdConsent, setRegLgpdConsent] = useState(false);
 
   // Campos de Edição de Perfil (InspectApp)
   const [profileNome, setProfileNome] = useState('');
@@ -86,6 +87,15 @@ export const AuthModal = ({ isOpen, onClose, initialTab = 'login', onNavigateToP
   const handleRegisterSubmit = (e) => {
     e.preventDefault();
     setFeedback({ type: '', message: '' });
+
+    if (!regLgpdConsent) {
+      setFeedback({ 
+        type: 'error', 
+        message: 'É obrigatório aceitar a Política de Privacidade (LGPD) e os Termos de Serviço para criar a conta.' 
+      });
+      return;
+    }
+
     try {
       register({
         nome: regNome,
@@ -687,6 +697,25 @@ export const AuthModal = ({ isOpen, onClose, initialTab = 'login', onNavigateToP
                 <Lock size={16} />
                 <span>Entrar no Sistema</span>
               </button>
+
+              <div style={{ textAlign: 'center', fontSize: '0.7rem', color: 'var(--text-faint)', marginTop: '0.35rem' }}>
+                Ao acessar, você declara ciência dos{' '}
+                <button
+                  type="button"
+                  onClick={() => onOpenLegalCenter?.('termos')}
+                  style={{ background: 'none', border: 'none', padding: 0, color: 'var(--primary-accent)', fontWeight: 600, textDecoration: 'underline', cursor: 'pointer', fontSize: 'inherit' }}
+                >
+                  Termos de Uso
+                </button>{' '}
+                e da{' '}
+                <button
+                  type="button"
+                  onClick={() => onOpenLegalCenter?.('privacidade')}
+                  style={{ background: 'none', border: 'none', padding: 0, color: 'var(--primary-accent)', fontWeight: 600, textDecoration: 'underline', cursor: 'pointer', fontSize: 'inherit' }}
+                >
+                  Política de Privacidade (LGPD)
+                </button>.
+              </div>
             </form>
           </div>
         ) : (
@@ -789,6 +818,48 @@ export const AuthModal = ({ isOpen, onClose, initialTab = 'login', onNavigateToP
               />
             </div>
 
+            {/* Consentimento Formal LGPD (Item 5 da Auditoria) */}
+            <div style={{
+              display: 'flex',
+              alignItems: 'flex-start',
+              gap: '0.65rem',
+              padding: '0.75rem',
+              borderRadius: '8px',
+              backgroundColor: 'var(--bg-secondary)',
+              border: '1px solid var(--border-subtle)',
+              marginTop: '0.2rem'
+            }}>
+              <input
+                id="reg-lgpd-checkbox"
+                type="checkbox"
+                required
+                checked={regLgpdConsent}
+                onChange={(e) => setRegLgpdConsent(e.target.checked)}
+                style={{ marginTop: '0.2rem', accentColor: 'var(--primary-accent)', width: '16px', height: '16px', cursor: 'pointer' }}
+              />
+              <label htmlFor="reg-lgpd-checkbox" style={{ fontSize: '0.72rem', color: 'var(--text-muted)', lineHeight: 1.45, cursor: 'pointer' }}>
+                Declaro que li e concordo com a{' '}
+                <button
+                  type="button"
+                  onClick={() => onOpenLegalCenter?.('privacidade')}
+                  style={{ background: 'none', border: 'none', padding: 0, color: 'var(--primary-accent)', fontWeight: 700, textDecoration: 'underline', cursor: 'pointer', fontSize: 'inherit' }}
+                >
+                  Política de Privacidade (LGPD)
+                </button>{' '}
+                e os{' '}
+                <button
+                  type="button"
+                  onClick={() => onOpenLegalCenter?.('termos')}
+                  style={{ background: 'none', border: 'none', padding: 0, color: 'var(--primary-accent)', fontWeight: 700, textDecoration: 'underline', cursor: 'pointer', fontSize: 'inherit' }}
+                >
+                  Termos de Serviço
+                </button>.
+                <span style={{ display: 'block', fontSize: '0.68rem', color: 'var(--text-faint)', marginTop: '3px' }}>
+                  Finalidade: Autenticação de responsabilidade técnica e rastreabilidade conforme a Lei nº 12.334/2010 (PNSB) e Resolução ANM nº 95/2022.
+                </span>
+              </label>
+            </div>
+
             <button
               type="submit"
               className="btn-primary"
@@ -797,7 +868,7 @@ export const AuthModal = ({ isOpen, onClose, initialTab = 'login', onNavigateToP
                 padding: '0.75rem',
                 fontSize: '0.9rem',
                 fontWeight: 700,
-                marginTop: '0.5rem',
+                marginTop: '0.35rem',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',

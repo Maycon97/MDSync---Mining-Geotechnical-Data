@@ -52,7 +52,8 @@ export const SideDrawer = ({
   onSelectTab, 
   onOpenReport,
   onOpenSync,
-  onOpenChecklist
+  onOpenChecklist,
+  onOpenLegalCenter
 }) => {
   const { currentUser, currentRole, currentRoleKey, changeRole, allRoles } = useAuth();
   const { 
@@ -346,6 +347,18 @@ export const SideDrawer = ({
           icon: UserCog,
           type: 'tab',
           tabId: 'configuracoes_perfil'
+        },
+        {
+          id: 'centro_juridico',
+          title: 'Centro Jurídico & LGPD',
+          icon: ShieldCheck,
+          type: 'action',
+          action: () => {
+            onClose();
+            onOpenLegalCenter?.('privacidade');
+          },
+          badge: 'LGPD',
+          badgeColor: '#10b981'
         },
         {
           id: 'github_repo',
