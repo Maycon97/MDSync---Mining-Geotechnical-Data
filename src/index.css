@@ -1059,9 +1059,10 @@ textarea:focus-visible,
     display: flex !important;
   }
 
-  /* Ajuste de espaçamento geral */
+  /* Ajuste de espaçamento geral com margem para a barra inferior no mobile */
   main {
     padding: 0.75rem !important;
+    padding-bottom: calc(5.2rem + var(--safe-bottom)) !important;
   }
 
   /* Barra de cabeçalho mais compacta e adaptada a entalhes */
@@ -1114,6 +1115,95 @@ textarea:focus-visible,
   .grid-responsive-charts {
     grid-template-columns: 1fr !important;
   }
+
+  /* Barra de Navegação Inferior Nativa / Mobile Bottom Dock */
+  .mobile-bottom-bar {
+    display: flex !important;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 1000;
+    background-color: var(--bg-surface);
+    border-top: 1px solid var(--border-medium);
+    box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.15);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    padding-top: 0.45rem;
+    padding-bottom: max(0.45rem, var(--safe-bottom));
+    padding-left: calc(0.5rem + var(--safe-left));
+    padding-right: calc(0.5rem + var(--safe-right));
+    align-items: center;
+    justify-content: space-around;
+  }
+
+  .mobile-bottom-bar-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.2rem;
+    flex: 1;
+    min-width: 0;
+    padding: 0.35rem 0.2rem;
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    font-size: 0.65rem;
+    font-weight: 600;
+    cursor: pointer;
+    border-radius: 8px;
+    transition: all 0.15s ease;
+    text-decoration: none;
+    position: relative;
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .mobile-bottom-bar-btn:active {
+    transform: scale(0.95);
+  }
+
+  .mobile-bottom-bar-btn.active {
+    color: var(--primary-accent);
+    font-weight: 800;
+  }
+
+  .mobile-bottom-bar-btn.active .mobile-bottom-bar-icon-wrap {
+    background-color: var(--primary-accent-bg);
+    color: var(--primary-accent);
+    border-radius: 10px;
+  }
+
+  .mobile-bottom-bar-icon-wrap {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 38px;
+    height: 28px;
+    position: relative;
+    transition: all 0.15s ease;
+  }
+
+  .mobile-bottom-bar-badge {
+    position: absolute;
+    top: -2px;
+    right: 2px;
+    background-color: var(--geo-emergencia);
+    color: #ffffff;
+    font-size: 0.58rem;
+    font-weight: 800;
+    padding: 0.1rem 0.3rem;
+    border-radius: 999px;
+    line-height: 1;
+    min-width: 14px;
+    text-align: center;
+    border: 1.5px solid var(--bg-surface);
+  }
+}
+
+.mobile-bottom-bar {
+  display: none;
 }
 
 /* Telas Ultra Pequenas (< 480px) */

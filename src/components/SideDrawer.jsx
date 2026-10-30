@@ -172,6 +172,15 @@ export const SideDrawer = ({
           tabId: 'mapa'
         },
         {
+          id: 'engenho_seco_modelo',
+          title: 'Modelo 3D de Blocos (Engenho Seco)',
+          icon: Box,
+          type: 'tab',
+          tabId: 'engenho_seco_modelo',
+          badge: '3D',
+          badgeColor: '#8b5cf6'
+        },
+        {
           id: 'piezometria',
           title: 'Piezometria & Nível d\'Água (NA)',
           icon: LineChart,

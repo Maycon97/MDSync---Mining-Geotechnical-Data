@@ -38,6 +38,8 @@ import { GestaoDocumentalTab } from './components/GestaoDocumentalTab';
 import { CentralComunicacaoTab } from './components/CentralComunicacaoTab';
 import { EstruturasEmpreendimentoTab } from './components/EstruturasEmpreendimentoTab';
 import { MobileInspectionView } from './components/MobileInspectionView';
+import { EngenhoSecoBlockModelViewer } from './components/EngenhoSecoBlockModelViewer';
+import { MobileBottomBar } from './components/MobileBottomBar';
 import { 
   Activity, 
   AlertCircle, 
@@ -157,15 +159,6 @@ export function App() {
           </button>
         </div>
       </div>
-    );
-  }
-
-  // Se o usuário alternar para o Modo Aplicativo Móvel (APK / Smartphone)
-  if (activeTab === 'mobile_inspecao') {
-    return (
-      <ErrorBoundary onNavigateHome={() => handleNavigateTab('home')}>
-        <MobileInspectionView onExit={() => handleNavigateTab('home')} />
-      </ErrorBoundary>
     );
   }
 
@@ -346,12 +339,24 @@ export function App() {
           <EstruturasEmpreendimentoTab onNavigateTab={handleNavigateTab} />
         )}
 
+        {activeTab === 'mobile_inspecao' && (
+          <MobileInspectionView onExit={() => handleNavigateTab('home')} />
+        )}
+
+        {activeTab === 'engenho_seco_modelo' && (
+          <EngenhoSecoBlockModelViewer 
+            onClose={() => handleNavigateTab('home')}
+            onNavigateToMap={() => handleNavigateTab('mapa')}
+          />
+        )}
+
         {![
           'home', 'dashboard', 'analises', 'coletas', 'importacoes', 'ordens_servico',
           'lotes_relatorios', 'clientes', 'contratos', 'mapa', 'campo',
           'fila_sync', 'anomalias_inspecoes', 'checklist', 'chamados', 'piezometria',
           'vazao', 'documentos', 'comunicacao', 'laudo', 'historico', 'ia',
-          'cadastro', 'configuracoes_perfil', 'estruturas_empreendimento', 'mobile_inspecao'
+          'cadastro', 'configuracoes_perfil', 'estruturas_empreendimento', 'mobile_inspecao',
+          'engenho_seco_modelo'
         ].includes(activeTab) && (
           <div className="card-panel" style={{ padding: '2.5rem', textAlign: 'center' }}>
             <h3 style={{ fontSize: '1.2rem', fontWeight: 800, color: 'var(--text-main)', marginBottom: '0.5rem' }}>
@@ -567,6 +572,14 @@ export function App() {
           </div>
         </div>
       </footer>
+
+      {/* Barra de Navegação Inferior Nativa (Padrão Mobile & APK) */}
+      <MobileBottomBar 
+        activeTab={activeTab}
+        onNavigateTab={handleNavigateTab}
+        onToggleDrawer={() => setDrawerOpen(!drawerOpen)}
+        offlineCount={offlineCount}
+      />
     </div>
   );
 }

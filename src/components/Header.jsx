@@ -17,6 +17,7 @@ const TAB_TITLES = {
   campo: 'Coleta de Campo (Inspect)',
   mobile_inspecao: 'App de Campo (APK SYSDAM)',
   estruturas_empreendimento: 'Estruturas do Empreendimento',
+  engenho_seco_modelo: 'Modelo 3D (Engenho Seco)',
   coletas: 'Coletas de Campo',
   fila_sync: 'Fila de Sincronização',
   checklist: 'CheckList FIR',
