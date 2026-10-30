@@ -33,6 +33,7 @@ dist-ssr
 *.apk
 *.aab
 *.ipa
+*.exe
 android/.gradle/
 android/build/
 android/app/build/
