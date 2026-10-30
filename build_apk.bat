@@ -20,16 +20,19 @@ if %ERRORLEVEL% NEQ 0 (
 
 echo [3/4] Compiling Android APK with Gradle...
 cd /d "%~dp0android"
-call gradlew.bat assembleDebug
+call gradlew.bat assembleRelease assembleDebug
 
 if %ERRORLEVEL% NEQ 0 (
-    echo [ERROR] Gradle assembleDebug failed!
+    echo [ERROR] Gradle build failed!
     exit /b %ERRORLEVEL%
 )
 
-echo [4/4] Copying APK to output location...
+echo [4/4] Copying APK to output locations...
 cd /d "%~dp0"
-copy /Y "android\app\build\outputs\apk\debug\app-debug.apk" "mdsync-geotecnia.apk"
+copy /Y "android\app\build\outputs\apk\release\app-release.apk" "mdsync-geotecnia.apk"
+copy /Y "android\app\build\outputs\apk\release\app-release.apk" "app-release.apk"
+copy /Y "android\app\build\outputs\apk\release\app-release.apk" "C:\Users\maycon.nascimento\Downloads\app-release.apk"
 
 echo Done! APK successfully built and updated.
 dir "mdsync-geotecnia.apk"
+dir "C:\Users\maycon.nascimento\Downloads\app-release.apk"
