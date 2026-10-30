@@ -96,5 +96,12 @@ if (typeof window !== 'undefined') {
     patchFactories(window.L.default);
   }
 }
+if (typeof globalThis !== 'undefined') {
+  globalThis.L = L;
+  patchFactories(globalThis.L);
+  if (globalThis.L && globalThis.L.default) {
+    patchFactories(globalThis.L.default);
+  }
+}
 
 export default L;

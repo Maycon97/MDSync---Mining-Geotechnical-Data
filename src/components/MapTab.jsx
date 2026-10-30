@@ -304,6 +304,13 @@ export const MapTab = ({ onNavigateTab, onSelectInstrumentForReading }) => {
     
     // Função utilitária para criar agrupador com fallback seguro
     const createLayerGroupOrCluster = (clustered) => {
+      // Blindagem estrita de L.featureGroup em runtime para markercluster
+      if (typeof L !== 'undefined' && typeof L.featureGroup !== 'function') {
+        L.featureGroup = (layers, options) => new (L.FeatureGroup || LayerGroup)(layers, options);
+      }
+      if (typeof window !== 'undefined' && window.L && typeof window.L.featureGroup !== 'function') {
+        window.L.featureGroup = (layers, options) => new (window.L.FeatureGroup || LayerGroup)(layers, options);
+      }
       if (clustered && typeof L.markerClusterGroup === 'function') {
         try {
           return L.markerClusterGroup({
@@ -682,9 +689,10 @@ export const MapTab = ({ onNavigateTab, onSelectInstrumentForReading }) => {
   // Função para renderizar marcadores de instrumentos
   const renderMarkers = useCallback(() => {
     if (!mapInstanceRef.current || !markersLayerRef.current) return;
-    const layer = markersLayerRef.current;
-    layer.clearLayers();
-    structureTooltipsRef.current = [];
+    try {
+      const layer = markersLayerRef.current;
+      layer.clearLayers();
+      structureTooltipsRef.current = [];
 
     // 1. Badges das Estruturas da Mina
     structures.forEach(struct => {
@@ -912,6 +920,9 @@ export const MapTab = ({ onNavigateTab, onSelectInstrumentForReading }) => {
         layer.addLayer(anomMarker);
       });
     }
+  } catch (err) {
+    console.warn('[MapTab] Falha ao renderizar marcadores no mapa:', err);
+  }
   }, [
     structures, 
     filteredInstruments, 
