@@ -70,8 +70,12 @@
 	<string>O MDSync necessita de acesso à câmera para registrar evidências fotográficas das inspeções geotécnicas e anomalias de campo.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>O MDSync necessita de acesso à galeria para anexar evidências fotográficas às coletas de campo.</string>
+	<key>NSPhotoLibraryAddUsageDescription</key>
+	<string>O MDSync necessita de permissão para salvar fotos e relatórios de inspeção no rolo da câmera.</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>O MDSync necessita de acesso ao GPS para georreferenciar pontos de coleta e localização dos instrumentos geotécnicos.</string>
+	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+	<string>O MDSync utiliza localização para apoiar vistorias e rondas contínuas no complexo minerário.</string>
 	<key>NSAppTransportSecurity</key>
 	<dict>
 		<key>NSAllowsArbitraryLoadsInWebContent</key>

@@ -5,5 +5,17 @@
   "server": {
     "androidScheme": "https",
     "iosScheme": "https"
+  },
+  "android": {
+    "allowMixedContent": true,
+    "captureInput": true,
+    "webContentsDebuggingEnabled": false,
+    "backgroundColor": "#0d1b2a"
+  },
+  "ios": {
+    "preferredContentMode": "mobile",
+    "limitsNavigationsToAppBoundDomains": false,
+    "contentInset": "always",
+    "backgroundColor": "#0d1b2a"
   }
 }

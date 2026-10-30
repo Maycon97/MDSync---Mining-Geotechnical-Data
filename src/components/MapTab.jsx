@@ -341,8 +341,14 @@ export const MapTab = ({ onNavigateTab, onSelectInstrumentForReading }) => {
       return new LayerGroup();
     };
 
-    const markersGroup = createLayerGroupOrCluster(useClustering);
-    markersGroup.addTo(map);
+    let markersGroup;
+    try {
+      markersGroup = createLayerGroupOrCluster(useClustering);
+      markersGroup.addTo(map);
+    } catch (err) {
+      console.warn('[MapTab] Falha ao adicionar cluster no mapa, utilizando LayerGroup padrão:', err);
+      markersGroup = new LayerGroup().addTo(map);
+    }
 
     // Registro das instâncias
     mapInstanceRef.current = {
@@ -454,8 +460,14 @@ export const MapTab = ({ onNavigateTab, onSelectInstrumentForReading }) => {
       map.removeLayer(markersLayerRef.current);
     }
 
-    const newGroup = createLayerGroupOrCluster(useClustering);
-    newGroup.addTo(map);
+    let newGroup;
+    try {
+      newGroup = createLayerGroupOrCluster(useClustering);
+      newGroup.addTo(map);
+    } catch (err) {
+      console.warn('[MapTab] Falha ao alternar cluster no mapa, utilizando LayerGroup padrão:', err);
+      newGroup = new LayerGroup().addTo(map);
+    }
     markersLayerRef.current = newGroup;
 
     // Re-renderizar marcadores no novo grupo

@@ -1,45 +1,69 @@
-import React, { useState } from 'react';
+import React, { useState, Suspense, lazy } from 'react';
 import { useGeotechData } from './context/GeotechDataContext';
 import { Header } from './components/Header';
 import { HomeTab } from './components/HomeTab';
 import { DashboardTab } from './components/DashboardTab';
-import { MapTab } from './components/MapTab';
-import { FieldCollectionTab } from './components/FieldCollectionTab';
-import { PiezometryTab } from './components/PiezometryTab';
-import { FlowRateTab } from './components/FlowRateTab';
-import { ReportTab } from './components/ReportTab';
-import { ReadingsHistoryTab } from './components/ReadingsHistoryTab';
-import { AiAnalysisTab } from './components/AiAnalysisTab';
-import { InstrumentsRegistryTab } from './components/InstrumentsRegistryTab';
-import { AuthModal } from './components/AuthModal';
-import { SyncQueueModal } from './components/SyncQueueModal';
-import { SyncQueueTab } from './components/SyncQueueTab';
-import { ReportModal } from './components/ReportModal';
-import { ChecklistModal } from './components/ChecklistModal';
-import { ChecklistTab } from './components/ChecklistTab';
-import { ChamadosTab } from './components/ChamadosTab';
-
+import { InspectHeroCard } from './components/InspectHeroCard';
 import { SideDrawer } from './components/SideDrawer';
 import { ErrorBoundary } from './components/ErrorBoundary';
-import { InspectHeroCard } from './components/InspectHeroCard';
-import { ColetasTab } from './components/ColetasTab';
-import { ImportacoesTab } from './components/ImportacoesTab';
-import { OrdensServicoTab } from './components/OrdensServicoTab';
-import { LotesRelatoriosTab } from './components/LotesRelatoriosTab';
-import { ClientesTab } from './components/ClientesTab';
-import { ContratosTerceirosTab } from './components/ContratosTerceirosTab';
-import { ProfileSettingsTab } from './components/ProfileSettingsTab';
-import { LegalCenterModal } from './components/LegalCenterModal';
+import { MobileBottomBar } from './components/MobileBottomBar';
+import { AuthModal } from './components/AuthModal';
 import { CookieConsentBanner } from './components/CookieConsentBanner';
 
-// Módulos Especializados Sentnel Mineração
-import { AnomaliasInspecoesTab } from './components/AnomaliasInspecoesTab';
-import { GestaoDocumentalTab } from './components/GestaoDocumentalTab';
-import { CentralComunicacaoTab } from './components/CentralComunicacaoTab';
-import { EstruturasEmpreendimentoTab } from './components/EstruturasEmpreendimentoTab';
-import { MobileInspectionView } from './components/MobileInspectionView';
-import { EngenhoSecoBlockModelViewer } from './components/EngenhoSecoBlockModelViewer';
-import { MobileBottomBar } from './components/MobileBottomBar';
+// Lazy loading sob demanda para aceleração de arranque e economia de memória (Mobile & Desktop)
+const MapTab = lazy(() => import('./components/MapTab').then(m => ({ default: m.MapTab })));
+const FieldCollectionTab = lazy(() => import('./components/FieldCollectionTab').then(m => ({ default: m.FieldCollectionTab })));
+const PiezometryTab = lazy(() => import('./components/PiezometryTab').then(m => ({ default: m.PiezometryTab })));
+const FlowRateTab = lazy(() => import('./components/FlowRateTab').then(m => ({ default: m.FlowRateTab })));
+const ReportTab = lazy(() => import('./components/ReportTab').then(m => ({ default: m.ReportTab })));
+const ReadingsHistoryTab = lazy(() => import('./components/ReadingsHistoryTab').then(m => ({ default: m.ReadingsHistoryTab })));
+const AiAnalysisTab = lazy(() => import('./components/AiAnalysisTab').then(m => ({ default: m.AiAnalysisTab })));
+const InstrumentsRegistryTab = lazy(() => import('./components/InstrumentsRegistryTab').then(m => ({ default: m.InstrumentsRegistryTab })));
+const SyncQueueModal = lazy(() => import('./components/SyncQueueModal').then(m => ({ default: m.SyncQueueModal })));
+const SyncQueueTab = lazy(() => import('./components/SyncQueueTab').then(m => ({ default: m.SyncQueueTab })));
+const ReportModal = lazy(() => import('./components/ReportModal').then(m => ({ default: m.ReportModal })));
+const ChecklistModal = lazy(() => import('./components/ChecklistModal').then(m => ({ default: m.ChecklistModal })));
+const ChecklistTab = lazy(() => import('./components/ChecklistTab').then(m => ({ default: m.ChecklistTab })));
+const ChamadosTab = lazy(() => import('./components/ChamadosTab').then(m => ({ default: m.ChamadosTab })));
+const ColetasTab = lazy(() => import('./components/ColetasTab').then(m => ({ default: m.ColetasTab })));
+const ImportacoesTab = lazy(() => import('./components/ImportacoesTab').then(m => ({ default: m.ImportacoesTab })));
+const OrdensServicoTab = lazy(() => import('./components/OrdensServicoTab').then(m => ({ default: m.OrdensServicoTab })));
+const LotesRelatoriosTab = lazy(() => import('./components/LotesRelatoriosTab').then(m => ({ default: m.LotesRelatoriosTab })));
+const ClientesTab = lazy(() => import('./components/ClientesTab').then(m => ({ default: m.ClientesTab })));
+const ContratosTerceirosTab = lazy(() => import('./components/ContratosTerceirosTab').then(m => ({ default: m.ContratosTerceirosTab })));
+const ProfileSettingsTab = lazy(() => import('./components/ProfileSettingsTab').then(m => ({ default: m.ProfileSettingsTab })));
+const LegalCenterModal = lazy(() => import('./components/LegalCenterModal').then(m => ({ default: m.LegalCenterModal })));
+const AnomaliasInspecoesTab = lazy(() => import('./components/AnomaliasInspecoesTab').then(m => ({ default: m.AnomaliasInspecoesTab })));
+const GestaoDocumentalTab = lazy(() => import('./components/GestaoDocumentalTab').then(m => ({ default: m.GestaoDocumentalTab })));
+const CentralComunicacaoTab = lazy(() => import('./components/CentralComunicacaoTab').then(m => ({ default: m.CentralComunicacaoTab })));
+const EstruturasEmpreendimentoTab = lazy(() => import('./components/EstruturasEmpreendimentoTab').then(m => ({ default: m.EstruturasEmpreendimentoTab })));
+const MobileInspectionView = lazy(() => import('./components/MobileInspectionView').then(m => ({ default: m.MobileInspectionView })));
+const EngenhoSecoBlockModelViewer = lazy(() => import('./components/EngenhoSecoBlockModelViewer').then(m => ({ default: m.EngenhoSecoBlockModelViewer })));
+
+// Indicador visual ultra-leve para transição rápida de módulos
+const ModuleLoadingFallback = () => (
+  <div style={{
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    justifyContent: 'center',
+    minHeight: '340px',
+    gap: '12px',
+    color: 'var(--text-muted, #94a3b8)'
+  }}>
+    <div style={{
+      width: '32px',
+      height: '32px',
+      border: '3px solid rgba(14, 165, 233, 0.2)',
+      borderTopColor: 'var(--primary-accent, #0ea5e9)',
+      borderRadius: '50%',
+      animation: 'spin 0.7s linear infinite'
+    }} />
+    <span style={{ fontSize: '0.8rem', fontWeight: 600, letterSpacing: '0.02em' }}>
+      Carregando módulo geotécnico...
+    </span>
+  </div>
+);
 import { 
   Activity, 
   AlertCircle, 
@@ -217,7 +241,8 @@ export function App() {
       {/* Área de Conteúdo da Aba Ativa */}
       <main id="main-content" tabIndex={-1} style={{ flex: 1, padding: '1.25rem', maxWidth: '1600px', width: '100%', margin: '0 auto' }}>
         <ErrorBoundary key={activeTab} onNavigateHome={() => handleNavigateTab('home')}>
-        {activeTab === 'home' && (
+          <Suspense fallback={<ModuleLoadingFallback />}>
+          {activeTab === 'home' && (
           <div>
             <InspectHeroCard 
               onNavigate={handleNavigateTab} 
@@ -373,6 +398,7 @@ export function App() {
             </button>
           </div>
         )}
+          </Suspense>
         </ErrorBoundary>
       </main>
 
@@ -444,7 +470,7 @@ export function App() {
         </div>
       )}
 
-      {/* Modais do Sistema */}
+      {/* Modais do Sistema com carregamento sob demanda */}
       <AuthModal 
         isOpen={authModalOpen} 
         onClose={() => setAuthModalOpen(false)} 
@@ -453,30 +479,39 @@ export function App() {
         onOpenLegalCenter={handleOpenLegalCenter}
       />
 
-      <SyncQueueModal 
-        isOpen={syncModalOpen} 
-        onClose={() => setSyncModalOpen(false)} 
-      />
+      <Suspense fallback={null}>
+        {syncModalOpen && (
+          <SyncQueueModal 
+            isOpen={syncModalOpen} 
+            onClose={() => setSyncModalOpen(false)} 
+          />
+        )}
 
-      <ReportModal 
-        isOpen={reportModalOpen} 
-        onClose={() => setReportModalOpen(false)} 
-      />
+        {reportModalOpen && (
+          <ReportModal 
+            isOpen={reportModalOpen} 
+            onClose={() => setReportModalOpen(false)} 
+          />
+        )}
 
-      <ChecklistModal 
-        isOpen={checklistModalOpen} 
-        onClose={() => setChecklistModalOpen(false)}
-        onOpenReport={() => { setChecklistModalOpen(false); setReportModalOpen(true); }}
-        onOpenAuth={() => { setChecklistModalOpen(false); setAuthModalOpen(true); }}
-        onOpenSync={() => { setChecklistModalOpen(false); handleNavigateTab('fila_sync'); }}
-      />
+        {checklistModalOpen && (
+          <ChecklistModal 
+            isOpen={checklistModalOpen} 
+            onClose={() => setChecklistModalOpen(false)}
+            onOpenReport={() => { setChecklistModalOpen(false); setReportModalOpen(true); }}
+            onOpenAuth={() => { setChecklistModalOpen(false); setAuthModalOpen(true); }}
+            onOpenSync={() => { setChecklistModalOpen(false); handleNavigateTab('fila_sync'); }}
+          />
+        )}
 
-      {/* Centro Jurídico, Conformidade & LGPD (Itens 1, 2, 4, 15, 16, 17) */}
-      <LegalCenterModal
-        isOpen={legalModalOpen}
-        onClose={() => setLegalModalOpen(false)}
-        initialTab={legalModalTab}
-      />
+        {legalModalOpen && (
+          <LegalCenterModal
+            isOpen={legalModalOpen}
+            onClose={() => setLegalModalOpen(false)}
+            initialTab={legalModalTab}
+          />
+        )}
+      </Suspense>
 
       {/* Banner de Consentimento de Cookies (Item 3 & 7) */}
       <CookieConsentBanner onOpenLegalCenter={handleOpenLegalCenter} />

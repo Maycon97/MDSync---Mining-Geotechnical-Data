@@ -13,3 +13,4 @@ if exist "%~dp0dist\index.html" (
 )
 
 start "" "https://maycon97.github.io/MDSync---Mining-Geotechnical-Data/"
+
