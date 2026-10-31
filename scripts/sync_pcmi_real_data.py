@@ -537,6 +537,38 @@ def run_sync():
         except Exception as e:
             print(f"[6/7] Erro ao carregar Sumps: {e}")
 
+    # Enriquecimento georreferenciado com o Painel Executivo Oficial de SUMPs
+    sumps_panel_path = r"c:\Users\maycon.nascimento\Documents\Work\CÓPIAS\Copy Works\AtualizadorPaineis\atualizador\dados\SUMPs\Painel_Executivo_SUMPs_Itaminas.html"
+    sumps_exec_data = []
+    if os.path.exists(sumps_panel_path):
+        try:
+            with open(sumps_panel_path, 'r', encoding='utf-8') as sf:
+                c_html = sf.read()
+                d_start = c_html.find('const DATA = [')
+                if d_start != -1:
+                    d_end = c_html.find('];', d_start) + 1
+                    sumps_exec_data = json.loads(c_html[d_start + 13:d_end])
+        except Exception as e:
+            print(f"[6/7] Aviso ao ler Painel Executivo de Sumps: {e}")
+
+    if sumps_exec_data:
+        sump_map = {s.get("tag"): s for s in sumps_list if s.get("tag")}
+        for item in sumps_exec_data:
+            tag = item.get("tag")
+            if tag in sump_map:
+                sump_map[tag]["crit"] = item.get("crit")
+                sump_map[tag]["anom"] = item.get("anom")
+                sump_map[tag]["cap"] = item.get("cap")
+                sump_map[tag]["util"] = item.get("util")
+                sump_map[tag]["lat"] = item.get("lat")
+                sump_map[tag]["lon"] = item.get("lon")
+                sump_map[tag]["aprox"] = item.get("aprox", False)
+                if not sump_map[tag].get("mina"):
+                    sump_map[tag]["mina"] = item.get("mina")
+            else:
+                sumps_list.append(dict(item))
+        print(f"[6/7] Painel Executivo SUMPs: {len(sumps_exec_data)} sumps 100% georreferenciados e enriquecidos.")
+
     # ============================================================
     # LEITURA DE CHAMADOS & ORDENS (Controle de Chamados.xlsx)
     # ============================================================

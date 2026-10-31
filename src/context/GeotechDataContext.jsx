@@ -25,6 +25,7 @@ export const GeotechDataProvider = ({ children }) => {
   const [coletas, setColetas] = useState([]);
   const [lotesRelatorios, setLotesRelatorios] = useState([]);
   const [importacoesPcmi, setImportacoesPcmi] = useState([]);
+  const [sumps, setSumps] = useState([]);
   const [limites, setLimites] = useState({});
   const [anomaliasGeotecnicas, setAnomaliasGeotecnicas] = useState(() => storageService.getAnomaliasGeotecnicas());
   const [inspecoesGeotecnicas, setInspecoesGeotecnicas] = useState(() => storageService.getInspecoesGeotecnicas());
@@ -235,6 +236,7 @@ export const GeotechDataProvider = ({ children }) => {
         setLotesRelatorios([...localLotes, ...(data.lotesRelatorios || [])]);
 
         setImportacoesPcmi(data.importacoesPcmi || []);
+        setSumps(data.sumps || []);
       } catch (err) {
         console.error('Erro carregando dados mestres:', err);
         setError(err.message);
@@ -658,6 +660,7 @@ export const GeotechDataProvider = ({ children }) => {
       coletas,
       lotesRelatorios,
       importacoesPcmi,
+      sumps,
       limites,
       stats,
       anomaliasGeotecnicas,

@@ -49,6 +49,8 @@ import { SysdamEmpreendimentosPanel } from './SysdamEmpreendimentosPanel';
 import { storageService } from '../services/storageService';
 import { ENGENHO_SECO_SECTORS } from '../data/engenhoSecoBlockModelData';
 import { EngenhoSecoBlockModelViewer } from './EngenhoSecoBlockModelViewer';
+import { SumpsExecutivePanel } from './SumpsExecutivePanel';
+import { SUMPS_DATA } from '../data/sumpsData';
 
 // Conversor Geodésico de Alta Precisão WGS-84 / SIRGAS 2000 -> UTM Fuso 23S
 function latLonToUtm23S(lat, lon) {
@@ -90,12 +92,23 @@ export const MapTab = ({ onNavigateTab, onSelectInstrumentForReading }) => {
     activeStructureId, 
     selectStructure,
     anomaliasGeotecnicas = [],
+    sumps = [],
     setSystemToast 
   } = useGeotechData();
   const mapContainerRef = useRef(null);
   const mapInstanceRef = useRef(null);
   const markersLayerRef = useRef(null);
   const polygonsLayerRef = useRef(null);
+  const sumpsLayerRef = useRef(null);
+
+  // Estados dos SUMPs (Painel Executivo e Camada GIS)
+  const [showSumps, setShowSumps] = useState(true);
+  const [showSumpsPanel, setShowSumpsPanel] = useState(true);
+  const [isSumpsPanelPinned, setIsSumpsPanelPinned] = useState(true);
+  const [selectedSumpTag, setSelectedSumpTag] = useState(null);
+  const [filterSumpMina, setFilterSumpMina] = useState('Todas');
+  const [filterSumpCrits, setFilterSumpCrits] = useState([]);
+  const [filterSumpAnom, setFilterSumpAnom] = useState('Todas');
 
   // Estados de Configuração da Planta GIS
   const [mapType, setMapType] = useState('satellite_google'); // 'satellite_google' | 'satellite_esri' | 'topo' | 'streets' | 'dark'
@@ -357,6 +370,8 @@ export const MapTab = ({ onNavigateTab, onSelectInstrumentForReading }) => {
       markersGroup = new LayerGroup().addTo(map);
     }
 
+    const sumpsLayer = new LayerGroup().addTo(map);
+
     // Registro das instâncias
     mapInstanceRef.current = {
       map,
@@ -366,6 +381,7 @@ export const MapTab = ({ onNavigateTab, onSelectInstrumentForReading }) => {
     };
     markersLayerRef.current = markersGroup;
     polygonsLayerRef.current = polygonsLayer;
+    sumpsLayerRef.current = sumpsLayer;
 
     // Rastreamento de coordenadas do cursor (WGS-84 e SIRGAS 2000 UTM 23S) e nível de zoom em tempo real
     map.on('mousemove', (e) => {
@@ -440,6 +456,7 @@ export const MapTab = ({ onNavigateTab, onSelectInstrumentForReading }) => {
       mapInstanceRef.current = null;
       markersLayerRef.current = null;
       polygonsLayerRef.current = null;
+      sumpsLayerRef.current = null;
     };
   }, []);
 
@@ -943,6 +960,95 @@ export const MapTab = ({ onNavigateTab, onSelectInstrumentForReading }) => {
     renderMarkers();
   }, [renderMarkers]);
 
+  // Função para renderizar marcadores de SUMPs no mapa
+  const renderSumps = useCallback(() => {
+    if (!mapInstanceRef.current || !sumpsLayerRef.current) return;
+    try {
+      const layer = sumpsLayerRef.current;
+      layer.clearLayers();
+      if (!showSumps) return;
+
+      const rawList = (sumps && sumps.length > 0) ? sumps : SUMPS_DATA;
+      const activeSumps = rawList.filter(d => {
+        if (!d.lat || !d.lon) return false;
+        if (filterSumpMina !== 'Todas' && d.mina !== filterSumpMina) return false;
+        if (filterSumpCrits.length > 0 && !filterSumpCrits.includes(d.crit)) return false;
+        if (filterSumpAnom !== 'Todas' && d.anom !== filterSumpAnom) return false;
+        return true;
+      });
+
+      const COL_SUMP = {
+        'Crítico': '#ff4b4b',
+        'Leve': '#33d17a',
+        'Moderado': '#ffc21a',
+        'Muito Crítico': '#7c8aa3'
+      };
+
+      activeSumps.forEach(s => {
+        const isSelected = selectedSumpTag === s.tag;
+        const color = COL_SUMP[s.crit] || '#71d1f8';
+
+        // Marcador vetorial circular com raio em metros
+        const marker = new Circle([s.lat, s.lon], {
+          radius: isSelected ? 28 : 18,
+          fillColor: color,
+          color: isSelected ? '#38bdf8' : '#ffffff',
+          weight: isSelected ? 3 : 1.5,
+          opacity: 1,
+          fillOpacity: s.aprox ? 0.45 : 0.95,
+          dashArray: s.aprox ? '4 4' : undefined
+        });
+
+        marker.bindTooltip(`
+          <div style="font-family: 'Inter', sans-serif; font-size: 11px; padding: 2px 4px; min-width: 140px;">
+            <div style="display: flex; align-items: center; justify-content: space-between; gap: 6px;">
+              <strong style="color: #38bdf8;">${s.tag}</strong>
+              <span style="font-size: 9px; font-weight: 800; padding: 1px 4px; border-radius: 3px; background: ${color}22; color: ${color};">${s.crit || '—'}</span>
+            </div>
+            <div style="color: #94a3b8; font-size: 10px; margin-top: 1px;">${s.mina || ''}</div>
+            <div style="color: #f1f5f9; font-size: 9px; margin-top: 2px;">Anomalia: <strong>${s.anom || 'Sem anomalia'}</strong></div>
+          </div>
+        `, { sticky: true, opacity: 0.96 });
+
+        marker.bindPopup(`
+          <div style="font-family: 'Inter', sans-serif; font-size: 12px; padding: 4px; min-width: 190px; color: #0f172a;">
+            <div style="display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px; margin-bottom: 6px;">
+              <strong style="color: #0284c7; font-size: 13px;">${s.tag}</strong>
+              <span style="font-size: 10px; font-weight: 800; padding: 2px 6px; border-radius: 4px; background: ${color}; color: #ffffff;">${s.crit || '—'}</span>
+            </div>
+            <div style="font-size: 11px; color: #475569; margin-bottom: 3px;"><strong>Mina:</strong> ${s.mina || '—'}</div>
+            <div style="font-size: 11px; color: #475569; margin-bottom: 3px;"><strong>Anomalia:</strong> ${s.anom || 'Sem anomalia'}</div>
+            <div style="font-size: 11px; color: #0284c7; margin-bottom: 2px;"><strong>Capacidade:</strong> ${s.cap ? Math.round(s.cap).toLocaleString('pt-BR') : '-'} m³</div>
+            <div style="font-size: 11px; color: #64748b; margin-bottom: 4px;"><strong>Volume Utilizado:</strong> ${s.util ? Math.round(s.util).toLocaleString('pt-BR') : '-'} m³</div>
+            ${s.aprox ? '<div style="font-size: 10px; color: #f59e0b; font-style: italic;">Posição aproximada (sem coordenada exata na origem)</div>' : ''}
+          </div>
+        `);
+
+        marker.on('click', () => {
+          setSelectedSumpTag(s.tag);
+          setShowSumpsPanel(true);
+        });
+
+        layer.addLayer(marker);
+      });
+    } catch (err) {
+      console.warn('[MapTab] Falha ao renderizar marcadores de SUMPs:', err);
+    }
+  }, [showSumps, sumps, filterSumpMina, filterSumpCrits, filterSumpAnom, selectedSumpTag]);
+
+  // Atualizar marcadores de SUMPs quando filtros mudarem
+  useEffect(() => {
+    renderSumps();
+  }, [renderSumps]);
+
+  const handleFocusSump = useCallback((sump) => {
+    if (!mapInstanceRef.current?.map || !sump.lat || !sump.lon) return;
+    const { map } = mapInstanceRef.current;
+    map.flyTo([sump.lat, sump.lon], 17, { duration: 1.2 });
+    setSelectedSumpTag(sump.tag);
+    setShowSumps(true);
+  }, []);
+
   // Tipos únicos de instrumentos para filtro
   const availableTypes = ['TODOS', 'INA', 'PZ', 'MV', 'VT', 'TILT', 'REF', 'ETR'];
 
@@ -1024,6 +1130,39 @@ export const MapTab = ({ onNavigateTab, onSelectInstrumentForReading }) => {
             fontWeight: 700
           }}>
             {estruturas.length}
+          </span>
+        </button>
+
+        {/* 0.1 Botão / Aba de Fixação do Painel Executivo SUMPs */}
+        <button
+          onClick={() => setShowSumpsPanel(prev => !prev)}
+          className="btn-subtle"
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '6px',
+            padding: '0.25rem 0.65rem',
+            borderRadius: '8px',
+            backgroundColor: showSumpsPanel ? 'rgba(2, 132, 199, 0.22)' : 'var(--bg-secondary)',
+            color: showSumpsPanel ? '#38bdf8' : 'var(--text-muted)',
+            border: showSumpsPanel ? '1px solid rgba(56, 189, 248, 0.45)' : '1px solid var(--border-subtle)',
+            fontSize: '0.74rem',
+            fontWeight: 700,
+            cursor: 'pointer'
+          }}
+          title="Alternar visibilidade do Painel Executivo Oficial de SUMPs (Fixado)"
+        >
+          <Droplet size={14} style={{ color: '#38bdf8' }} />
+          <span>SUMPs</span>
+          <span style={{
+            backgroundColor: 'rgba(56, 189, 248, 0.25)',
+            color: '#38bdf8',
+            padding: '1px 5px',
+            borderRadius: '999px',
+            fontSize: '0.65rem',
+            fontWeight: 800
+          }}>
+            {(sumps && sumps.length > 0) ? sumps.length : SUMPS_DATA.length}
           </span>
         </button>
 
@@ -1325,6 +1464,51 @@ export const MapTab = ({ onNavigateTab, onSelectInstrumentForReading }) => {
             title="Exibir/Ocultar ocorrências de inspeção georreferenciadas (SYSDAM)"
           >
             {showAnomalies ? `🎯 Ocorrências (${georeferencedAnomalies.length})` : '🎯 Ocorrências Off'}
+          </button>
+
+          {/* Toggle Camada de SUMPs no Mapa */}
+          <button
+            onClick={() => setShowSumps(!showSumps)}
+            className={`btn-subtle ${showSumps ? 'active' : ''}`}
+            style={{
+              padding: '0.25rem 0.55rem',
+              fontSize: '0.72rem',
+              borderRadius: '6px',
+              backgroundColor: showSumps ? 'rgba(2, 132, 199, 0.22)' : 'var(--bg-secondary)',
+              color: showSumps ? '#38bdf8' : 'var(--text-muted)',
+              border: showSumps ? '1px solid rgba(56, 189, 248, 0.45)' : '1px solid var(--border-subtle)',
+              fontWeight: 700,
+              display: 'flex',
+              alignItems: 'center',
+              gap: '4px'
+            }}
+            title="Exibir/Ocultar camada de SUMPs georreferenciados no mapa"
+          >
+            <Droplet size={13} style={{ color: showSumps ? '#38bdf8' : 'inherit' }} />
+            <span>{showSumps ? `💧 SUMPs (${(sumps && sumps.length > 0) ? sumps.length : SUMPS_DATA.length})` : '💧 SUMPs Off'}</span>
+          </button>
+
+          {/* Botão Fixar/Exibir Painel Executivo Oficial de SUMPs */}
+          <button
+            onClick={() => setShowSumpsPanel(!showSumpsPanel)}
+            className={`btn-subtle ${showSumpsPanel ? 'active' : ''}`}
+            style={{
+              padding: '0.25rem 0.65rem',
+              fontSize: '0.72rem',
+              borderRadius: '6px',
+              backgroundColor: showSumpsPanel ? 'rgba(2, 132, 199, 0.3)' : 'var(--bg-secondary)',
+              color: showSumpsPanel ? '#ffffff' : '#71d1f8',
+              border: showSumpsPanel ? '1px solid #38bdf8' : '1px solid var(--border-subtle)',
+              fontWeight: 800,
+              boxShadow: showSumpsPanel ? '0 0 10px rgba(56, 189, 248, 0.4)' : 'none',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '4px'
+            }}
+            title="Fixar ou recolher o Painel Executivo Oficial de SUMPs na tela"
+          >
+            <TrendingUp size={13} />
+            <span>📊 Painel SUMPs {showSumpsPanel ? '●' : '○'}</span>
           </button>
 
           <button
@@ -1988,6 +2172,22 @@ export const MapTab = ({ onNavigateTab, onSelectInstrumentForReading }) => {
           </div>
         </div>
       )}
+      {/* Painel Executivo Oficial de SUMPs (Fixado / Docked / Modal) */}
+      <SumpsExecutivePanel
+        sumpsList={(sumps && sumps.length > 0) ? sumps : SUMPS_DATA}
+        isOpen={showSumpsPanel}
+        onClose={() => setShowSumpsPanel(false)}
+        isPinned={isSumpsPanelPinned}
+        onTogglePin={() => setIsSumpsPanelPinned(!isSumpsPanelPinned)}
+        onFocusSump={handleFocusSump}
+        selectedSumpTag={selectedSumpTag}
+        activeFilterMina={filterSumpMina}
+        onChangeFilterMina={setFilterSumpMina}
+        activeFilterCrits={filterSumpCrits}
+        onChangeFilterCrits={setFilterSumpCrits}
+        activeFilterAnom={filterSumpAnom}
+        onChangeFilterAnom={setFilterSumpAnom}
+      />
     </div>
   );
 };

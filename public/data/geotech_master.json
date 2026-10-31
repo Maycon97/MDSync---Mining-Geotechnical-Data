@@ -1,15 +1,15 @@
 {
   "metadata": {
-    "geradoEm": "2026-10-30 15:42:08",
+    "geradoEm": "2026-10-30 16:03:20",
     "fontePrimaria": "C:\\Users\\maycon.nascimento\\ITAMINAS\\SPLO - General\\03) Geotecnia\\01) PCMI\\02) Monitoramentos\\00) Leituras\\Banco_De_Dados.xlsx",
     "diretorioFonte": "C:\\Users\\maycon.nascimento\\ITAMINAS\\SPLO - General\\03) Geotecnia",
-    "hashFonteSha256": "186ff33bfd67c2b447a3c2b11918c74ed3e1d20921276c2e358a62fa0e5d4c8a",
+    "hashFonteSha256": "3121244d30476d1ce0da1935f94b55b5a2a4d13ce9c3220be0012167e5da7261",
     "versao": "2.1.0-PROD-PCMI",
     "totalInstrumentos": 218,
     "totalEstruturas": 8,
     "totalLeiturasProcessadas": 32881,
     "totalChamados": 246,
-    "totalSumps": 91,
+    "totalSumps": 92,
     "totalEventosRadar": 327,
     "totalRegistrosChuva": 14355,
     "statusFonte": "100% ÍNTEGRO (READ-ONLY)"
@@ -172372,7 +172372,7 @@
     "atencao": 2,
     "emergencia": 6,
     "chuva7Dias": 229.5,
-    "atualizadoEm": "30/10/2026 15:42"
+    "atualizadoEm": "30/10/2026 16:03"
   },
   "chamadosFluig": [
     {
@@ -176321,7 +176321,14 @@
       "mina": "ENGENHO SECO",
       "tipo": "SUMP",
       "situacao": "Ativo",
-      "areaM2": 2519.89
+      "areaM2": 2519.89,
+      "crit": "Crítico",
+      "anom": "ASSOREAMENTO",
+      "cap": 2029.82,
+      "util": 859.15,
+      "lat": -20.07,
+      "lon": -44.11,
+      "aprox": false
     },
     {
       "tag": "ITA-ES-SMP-002",
@@ -176331,7 +176338,14 @@
       "mina": "ENGENHO SECO",
       "tipo": "SUMP",
       "situacao": "Ativo",
-      "areaM2": 806.54
+      "areaM2": 806.54,
+      "crit": "Crítico",
+      "anom": "ASSOREAMENTO",
+      "cap": 402.99,
+      "util": 859.15,
+      "lat": -20.07,
+      "lon": -44.11,
+      "aprox": false
     },
     {
       "tag": "ITA-ES-SMP-003",
@@ -176341,7 +176355,14 @@
       "mina": "ENGENHO SECO",
       "tipo": "SUMP",
       "situacao": "Ativo",
-      "areaM2": 2661.07
+      "areaM2": 2661.07,
+      "crit": "Crítico",
+      "anom": "ASSOREAMENTO",
+      "cap": 615.17,
+      "util": 859.15,
+      "lat": -20.07,
+      "lon": -44.11,
+      "aprox": false
     },
     {
       "tag": "ITA-ES-SMP-004",
@@ -176351,7 +176372,14 @@
       "mina": "ENGENHO SECO",
       "tipo": "SUMP",
       "situacao": "Ativo",
-      "areaM2": 723.2
+      "areaM2": 723.2,
+      "crit": "Crítico",
+      "anom": "ASSOREAMENTO",
+      "cap": 180.03,
+      "util": 859.15,
+      "lat": -20.07,
+      "lon": -44.11,
+      "aprox": false
     },
     {
       "tag": "ITA-ES-SMP-005",
@@ -176361,7 +176389,14 @@
       "mina": "ENGENHO SECO",
       "tipo": "SUMP",
       "situacao": "Ativo",
-      "areaM2": 719.65
+      "areaM2": 719.65,
+      "crit": "Crítico",
+      "anom": "VEGETAÇÃO ALTA",
+      "cap": 377.69,
+      "util": 859.15,
+      "lat": -20.07,
+      "lon": -44.11,
+      "aprox": false
     },
     {
       "tag": "ITA-ES-SMP-006",
@@ -176371,7 +176406,14 @@
       "mina": "ENGENHO SECO",
       "tipo": "SUMP",
       "situacao": "Ativo",
-      "areaM2": 828.0
+      "areaM2": 828.0,
+      "crit": "Crítico",
+      "anom": "VEGETAÇÃO ALTA",
+      "cap": 209.01,
+      "util": 859.15,
+      "lat": -20.07,
+      "lon": -44.11,
+      "aprox": false
     },
     {
       "tag": "ITA-ES-SMP-007",
@@ -176381,7 +176423,14 @@
       "mina": "ENGENHO SECO",
       "tipo": "SUMP",
       "situacao": "Ativo",
-      "areaM2": 564.53
+      "areaM2": 564.53,
+      "crit": "Crítico",
+      "anom": "VEGETAÇÃO ALTA",
+      "cap": 1279.97,
+      "util": 859.15,
+      "lat": -20.07,
+      "lon": -44.11,
+      "aprox": false
     },
     {
       "tag": "ITA-ES-SMP-008",
@@ -176391,7 +176440,14 @@
       "mina": "ENGENHO SECO",
       "tipo": "SUMP",
       "situacao": "Ativo",
-      "areaM2": 686.19
+      "areaM2": 686.19,
+      "crit": "Crítico",
+      "anom": "ASSOREAMENTO",
+      "cap": 1079.76,
+      "util": 859.15,
+      "lat": -20.07,
+      "lon": -44.11,
+      "aprox": false
     },
     {
       "tag": "ITA-ES-SMP-009",
@@ -176401,7 +176457,14 @@
       "mina": "ENGENHO SECO",
       "tipo": "SUMP",
       "situacao": "Ativo",
-      "areaM2": 1146.68
+      "areaM2": 1146.68,
+      "crit": "Crítico",
+      "anom": "ASSOREAMENTO",
+      "cap": 518.78,
+      "util": 859.15,
+      "lat": -20.07,
+      "lon": -44.11,
+      "aprox": false
     },
     {
       "tag": "ITA-ES-SMP-010",
@@ -176411,7 +176474,14 @@
       "mina": "ENGENHO SECO",
       "tipo": "SUMP",
       "situacao": "Ativo",
-      "areaM2": 697.91
+      "areaM2": 697.91,
+      "crit": "Crítico",
+      "anom": "ASSOREAMENTO",
+      "cap": 518.78,
+      "util": 859.15,
+      "lat": -20.07,
+      "lon": -44.11,
+      "aprox": false
     },
     {
       "tag": "ITA-ES-SMP-011",
@@ -176421,7 +176491,14 @@
       "mina": "ENGENHO SECO",
       "tipo": "SUMP",
       "situacao": "Ativo",
-      "areaM2": 2090.76
+      "areaM2": 2090.76,
+      "crit": "Crítico",
+      "anom": "ASSOREAMENTO",
+      "cap": 518.78,
+      "util": 859.15,
+      "lat": -20.07,
+      "lon": -44.11,
+      "aprox": false
     },
     {
       "tag": "ITA-ES-SMP-012",
@@ -176431,7 +176508,14 @@
       "mina": "ENGENHO SECO",
       "tipo": "SUMP",
       "situacao": "Ativo",
-      "areaM2": 615.31
+      "areaM2": 615.31,
+      "crit": "Crítico",
+      "anom": "ASSOREAMENTO",
+      "cap": 518.78,
+      "util": 859.15,
+      "lat": -20.07,
+      "lon": -44.11,
+      "aprox": false
     },
     {
       "tag": "ITA-ES-SMP-013",
@@ -176441,7 +176525,14 @@
       "mina": "ENGENHO SECO",
       "tipo": "SUMP",
       "situacao": "Ativo",
-      "areaM2": 616.29
+      "areaM2": 616.29,
+      "crit": "Crítico",
+      "anom": "ASSOREAMENTO",
+      "cap": 518.78,
+      "util": 859.15,
+      "lat": -20.07,
+      "lon": -44.11,
+      "aprox": false
     },
     {
       "tag": "ITA-ES-SMP-014",
@@ -176451,7 +176542,14 @@
       "mina": "ENGENHO SECO",
       "tipo": "SUMP",
       "situacao": "Ativo",
-      "areaM2": 922.82
+      "areaM2": 922.82,
+      "crit": "Crítico",
+      "anom": "ASSOREAMENTO",
+      "cap": 518.78,
+      "util": 859.15,
+      "lat": -20.07,
+      "lon": -44.11,
+      "aprox": false
     },
     {
       "tag": "ITA-ES-SMP-015",
@@ -176461,7 +176559,14 @@
       "mina": "ENGENHO SECO",
       "tipo": "SUMP",
       "situacao": "Ativo",
-      "areaM2": 846.93
+      "areaM2": 846.93,
+      "crit": "Crítico",
+      "anom": "DEFORMAÇÃO ESTRUTURAL",
+      "cap": 518.78,
+      "util": 859.15,
+      "lat": -20.07,
+      "lon": -44.11,
+      "aprox": false
     },
     {
       "tag": "ITA-ES-SMP-016",
@@ -176471,7 +176576,14 @@
       "mina": "ENGENHO SECO",
       "tipo": "SUMP",
       "situacao": "Ativo",
-      "areaM2": 573.33
+      "areaM2": 573.33,
+      "crit": "Crítico",
+      "anom": "ASSOREAMENTO",
+      "cap": 518.78,
+      "util": 859.15,
+      "lat": -20.07,
+      "lon": -44.11,
+      "aprox": false
     },
     {
       "tag": "ITA-ES-SMP-017",
@@ -176481,7 +176593,14 @@
       "mina": "ENGENHO SECO",
       "tipo": "SUMP",
       "situacao": "",
-      "areaM2": 1387.95
+      "areaM2": 1387.95,
+      "crit": "Leve",
+      "anom": "ASSOREAMENTO",
+      "cap": 518.78,
+      "util": 859.15,
+      "lat": -20.07,
+      "lon": -44.11,
+      "aprox": false
     },
     {
       "tag": "ITA-ES-SMP-018",
@@ -176491,7 +176610,14 @@
       "mina": "ENGENHO SECO",
       "tipo": "SUMP",
       "situacao": "",
-      "areaM2": 1750.8
+      "areaM2": 1750.8,
+      "crit": "Crítico",
+      "anom": "ASSOREAMENTO",
+      "cap": 518.78,
+      "util": 859.15,
+      "lat": -20.08,
+      "lon": -44.11,
+      "aprox": false
     },
     {
       "tag": "ITA-ES-SMP-019",
@@ -176501,7 +176627,14 @@
       "mina": "ENGENHO SECO",
       "tipo": "SUMP",
       "situacao": "",
-      "areaM2": 1250.54
+      "areaM2": 1250.54,
+      "crit": "Leve",
+      "anom": "SEM ANOMALIA",
+      "cap": 518.78,
+      "util": 859.15,
+      "lat": -20.08,
+      "lon": -44.11,
+      "aprox": false
     },
     {
       "tag": "ITA-ES-SMP-020",
@@ -176511,7 +176644,14 @@
       "mina": "ENGENHO SECO",
       "tipo": "SUMP",
       "situacao": "",
-      "areaM2": 1803.76
+      "areaM2": 1803.76,
+      "crit": "Leve",
+      "anom": "SEM ANOMALIA",
+      "cap": 518.78,
+      "util": 859.15,
+      "lat": -20.08,
+      "lon": -44.12,
+      "aprox": false
     },
     {
       "tag": "ITA-ES-SMP-021",
@@ -176521,7 +176661,14 @@
       "mina": "ENGENHO SECO",
       "tipo": "SUMP",
       "situacao": "",
-      "areaM2": 820.8
+      "areaM2": 820.8,
+      "crit": "Leve",
+      "anom": "SEM ANOMALIA",
+      "cap": 518.78,
+      "util": 859.15,
+      "lat": -20.08,
+      "lon": -44.12,
+      "aprox": false
     },
     {
       "tag": "ITA-ES-SMP-022",
@@ -176531,7 +176678,14 @@
       "mina": "ENGENHO SECO",
       "tipo": "SUMP",
       "situacao": "",
-      "areaM2": 452.89
+      "areaM2": 452.89,
+      "crit": "Leve",
+      "anom": "SEM ANOMALIA",
+      "cap": 518.78,
+      "util": 859.15,
+      "lat": -20.08,
+      "lon": -44.12,
+      "aprox": false
     },
     {
       "tag": "ITA-ES-SMP-023",
@@ -176541,7 +176695,14 @@
       "mina": "ENGENHO SECO",
       "tipo": "SUMP",
       "situacao": "",
-      "areaM2": 11938.31
+      "areaM2": 11938.31,
+      "crit": "Moderado",
+      "anom": "SEM ANOMALIA",
+      "cap": 518.78,
+      "util": 859.15,
+      "lat": -20.09,
+      "lon": -44.1,
+      "aprox": false
     },
     {
       "tag": "ITA-ES-SMP-024",
@@ -176551,7 +176712,14 @@
       "mina": "ENGENHO SECO",
       "tipo": "SUMP",
       "situacao": "",
-      "areaM2": 12936.4
+      "areaM2": 12936.4,
+      "crit": "Moderado",
+      "anom": "SEM ANOMALIA",
+      "cap": 518.78,
+      "util": 859.15,
+      "lat": -20.09,
+      "lon": -44.1,
+      "aprox": false
     },
     {
       "tag": "ITA-ES-SMP-025",
@@ -176561,7 +176729,14 @@
       "mina": "ENGENHO SECO",
       "tipo": "SUMP",
       "situacao": "",
-      "areaM2": 345.23
+      "areaM2": 345.23,
+      "crit": "Crítico",
+      "anom": "SEM ANOMALIA",
+      "cap": 518.78,
+      "util": 859.15,
+      "lat": -20.09,
+      "lon": -44.1,
+      "aprox": false
     },
     {
       "tag": "ITA-ES-SMP-026",
@@ -176571,7 +176746,14 @@
       "mina": "ENGENHO SECO",
       "tipo": "SUMP",
       "situacao": "",
-      "areaM2": 169.06
+      "areaM2": 169.06,
+      "crit": "Moderado",
+      "anom": "SEM ANOMALIA",
+      "cap": 518.78,
+      "util": 859.15,
+      "lat": -20.07,
+      "lon": -44.11,
+      "aprox": false
     },
     {
       "tag": "ITA-ES-SMP-027",
@@ -176581,7 +176763,14 @@
       "mina": "ENGENHO SECO",
       "tipo": "SUMP",
       "situacao": "",
-      "areaM2": 8056.88
+      "areaM2": 8056.88,
+      "crit": "Crítico",
+      "anom": "SEM ANOMALIA",
+      "cap": 518.78,
+      "util": 859.15,
+      "lat": -20.09,
+      "lon": -44.11,
+      "aprox": false
     },
     {
       "tag": "ITA-ES-SMP-028",
@@ -176591,7 +176780,14 @@
       "mina": "ENGENHO SECO",
       "tipo": "SUMP",
       "situacao": "",
-      "areaM2": 9992.93
+      "areaM2": 9992.93,
+      "crit": "Moderado",
+      "anom": "SEM ANOMALIA",
+      "cap": 518.78,
+      "util": 859.15,
+      "lat": -20.1,
+      "lon": -44.12,
+      "aprox": false
     },
     {
       "tag": "ITA-ES-SMP-029",
@@ -176601,7 +176797,14 @@
       "mina": "ENGENHO SECO",
       "tipo": "SUMP",
       "situacao": "",
-      "areaM2": 7424.16
+      "areaM2": 7424.16,
+      "crit": "Leve",
+      "anom": "SEM ANOMALIA",
+      "cap": 518.78,
+      "util": 859.15,
+      "lat": -20.09,
+      "lon": -44.11,
+      "aprox": false
     },
     {
       "tag": "ITA-ES-SMP-030",
@@ -176611,7 +176814,14 @@
       "mina": "ENGENHO SECO",
       "tipo": "SUMP",
       "situacao": "",
-      "areaM2": 6169.58
+      "areaM2": 6169.58,
+      "crit": "Leve",
+      "anom": "SEM ANOMALIA",
+      "cap": 518.78,
+      "util": 859.15,
+      "lat": -20.1,
+      "lon": -44.11,
+      "aprox": false
     },
     {
       "tag": "ITA-ES-SMP-031",
@@ -176621,7 +176831,14 @@
       "mina": "ENGENHO SECO",
       "tipo": "SUMP",
       "situacao": "",
-      "areaM2": 3810.8
+      "areaM2": 3810.8,
+      "crit": "Leve",
+      "anom": "SEM ANOMALIA",
+      "cap": 518.78,
+      "util": 859.15,
+      "lat": -20.1,
+      "lon": -44.11,
+      "aprox": false
     },
     {
       "tag": "ITA-ES-SMP-032",
@@ -176631,7 +176848,14 @@
       "mina": "ENGENHO SECO",
       "tipo": "SUMP",
       "situacao": "",
-      "areaM2": null
+      "areaM2": null,
+      "crit": "Leve",
+      "anom": "SEM ANOMALIA",
+      "cap": 518.78,
+      "util": 859.15,
+      "lat": -20.08,
+      "lon": -44.11,
+      "aprox": false
     },
     {
       "tag": "ITA-ES-SMP-033",
@@ -176641,7 +176865,14 @@
       "mina": "ENGENHO SECO",
       "tipo": "SUMP",
       "situacao": "",
-      "areaM2": 612.08
+      "areaM2": 612.08,
+      "crit": "Leve",
+      "anom": "SEM ANOMALIA",
+      "cap": 518.78,
+      "util": 859.15,
+      "lat": -20.09,
+      "lon": -44.12,
+      "aprox": false
     },
     {
       "tag": "ITA-ES-SMP-034",
@@ -176651,7 +176882,14 @@
       "mina": "ENGENHO SECO",
       "tipo": "SUMP",
       "situacao": "",
-      "areaM2": 148.94
+      "areaM2": 148.94,
+      "crit": "Leve",
+      "anom": "SEM ANOMALIA",
+      "cap": 58.88,
+      "util": 859.15,
+      "lat": -20.07,
+      "lon": -44.11,
+      "aprox": false
     },
     {
       "tag": "ITA-ES-SMP-035",
@@ -176661,7 +176899,14 @@
       "mina": "ENGENHO SECO",
       "tipo": "SUMP",
       "situacao": "",
-      "areaM2": 695.45
+      "areaM2": 695.45,
+      "crit": "Leve",
+      "anom": "SEM ANOMALIA",
+      "cap": 518.78,
+      "util": 859.15,
+      "lat": -20.08,
+      "lon": -44.11,
+      "aprox": false
     },
     {
       "tag": "ITA-ES-SMP-036",
@@ -176671,7 +176916,14 @@
       "mina": "ENGENHO SECO",
       "tipo": "SUMP",
       "situacao": "",
-      "areaM2": 261.54
+      "areaM2": 261.54,
+      "crit": "Leve",
+      "anom": "SEM ANOMALIA",
+      "cap": 518.78,
+      "util": 859.15,
+      "lat": -20.08,
+      "lon": -44.11,
+      "aprox": false
     },
     {
       "tag": "ITA-ES-SMP-037",
@@ -176681,7 +176933,14 @@
       "mina": "ENGENHO SECO",
       "tipo": "SUMP",
       "situacao": "",
-      "areaM2": 887.39
+      "areaM2": 887.39,
+      "crit": "Leve",
+      "anom": "SEM ANOMALIA",
+      "cap": 518.78,
+      "util": 859.15,
+      "lat": -20.08,
+      "lon": -44.11,
+      "aprox": false
     },
     {
       "tag": "ITA-ES-SMP-038",
@@ -176691,7 +176950,14 @@
       "mina": "ENGENHO SECO",
       "tipo": "SUMP",
       "situacao": "",
-      "areaM2": 1240.92
+      "areaM2": 1240.92,
+      "crit": "Leve",
+      "anom": "SEM ANOMALIA",
+      "cap": 518.78,
+      "util": 859.15,
+      "lat": -20.08,
+      "lon": -44.1,
+      "aprox": false
     },
     {
       "tag": "ITA-ES-SMP-039",
@@ -176701,7 +176967,14 @@
       "mina": "ENGENHO SECO",
       "tipo": "SUMP",
       "situacao": "",
-      "areaM2": 309.71
+      "areaM2": 309.71,
+      "crit": "Leve",
+      "anom": "SEM ANOMALIA",
+      "cap": 518.78,
+      "util": 859.15,
+      "lat": -20.08,
+      "lon": -44.11,
+      "aprox": false
     },
     {
       "tag": "ITA-ES-SMP-040",
@@ -176711,7 +176984,14 @@
       "mina": "ENGENHO SECO",
       "tipo": "SUMP",
       "situacao": "",
-      "areaM2": 870.51
+      "areaM2": 870.51,
+      "crit": "Leve",
+      "anom": "SEM ANOMALIA",
+      "cap": 518.78,
+      "util": 859.15,
+      "lat": -20.08,
+      "lon": -44.1,
+      "aprox": false
     },
     {
       "tag": "ITA-ES-SMP-041",
@@ -176721,7 +177001,14 @@
       "mina": "ENGENHO SECO",
       "tipo": "SUMP",
       "situacao": "",
-      "areaM2": 1048.5
+      "areaM2": 1048.5,
+      "crit": "Leve",
+      "anom": "SEM ANOMALIA",
+      "cap": 518.78,
+      "util": 859.15,
+      "lat": -20.08,
+      "lon": -44.1,
+      "aprox": false
     },
     {
       "tag": "ITA-ES-SMP-042",
@@ -176731,7 +177018,14 @@
       "mina": "ENGENHO SECO",
       "tipo": "SUMP",
       "situacao": "",
-      "areaM2": 212.81
+      "areaM2": 212.81,
+      "crit": "Leve",
+      "anom": "SEM ANOMALIA",
+      "cap": 518.78,
+      "util": 859.15,
+      "lat": -20.09,
+      "lon": -44.1,
+      "aprox": false
     },
     {
       "tag": "ITA-ES-SMP-043",
@@ -176741,7 +177035,14 @@
       "mina": "ENGENHO SECO",
       "tipo": "SUMP",
       "situacao": "",
-      "areaM2": 309.81
+      "areaM2": 309.81,
+      "crit": "Leve",
+      "anom": "SEM ANOMALIA",
+      "cap": 518.78,
+      "util": 859.15,
+      "lat": -20.09,
+      "lon": -44.1,
+      "aprox": false
     },
     {
       "tag": "ITA-ES-SMP-044",
@@ -176751,7 +177052,14 @@
       "mina": "ENGENHO SECO",
       "tipo": "SUMP",
       "situacao": "",
-      "areaM2": 232.24
+      "areaM2": 232.24,
+      "crit": "Leve",
+      "anom": "SEM ANOMALIA",
+      "cap": 518.78,
+      "util": 859.15,
+      "lat": -20.09,
+      "lon": -44.1,
+      "aprox": false
     },
     {
       "tag": "ITA-ES-SMP-045",
@@ -176761,7 +177069,14 @@
       "mina": "ENGENHO SECO",
       "tipo": "SUMP",
       "situacao": "Inativo",
-      "areaM2": 52.14
+      "areaM2": 52.14,
+      "crit": "Leve",
+      "anom": null,
+      "cap": 518.78,
+      "util": 859.15,
+      "lat": -20.07,
+      "lon": -44.11,
+      "aprox": false
     },
     {
       "tag": "ITA-ES-SMP-046",
@@ -176771,7 +177086,14 @@
       "mina": "ENGENHO SECO",
       "tipo": "SUMP",
       "situacao": "",
-      "areaM2": 1930.16
+      "areaM2": 1930.16,
+      "crit": "Leve",
+      "anom": "ASSOREAMENTO",
+      "cap": 518.78,
+      "util": 859.15,
+      "lat": -20.09,
+      "lon": -44.11,
+      "aprox": false
     },
     {
       "tag": "ITA-ES-SMP-047",
@@ -176781,7 +177103,14 @@
       "mina": "ENGENHO SECO",
       "tipo": "SUMP",
       "situacao": "",
-      "areaM2": 2740.66
+      "areaM2": 2740.66,
+      "crit": "Crítico",
+      "anom": "SEM ANOMALIA",
+      "cap": 7.75,
+      "util": 859.15,
+      "lat": -20.09,
+      "lon": -44.11,
+      "aprox": false
     },
     {
       "tag": "ITA-ES-SMP-048",
@@ -176791,7 +177120,14 @@
       "mina": "ENGENHO SECO",
       "tipo": "SUMP",
       "situacao": "",
-      "areaM2": 603.78
+      "areaM2": 603.78,
+      "crit": "Leve",
+      "anom": "SEM ANOMALIA",
+      "cap": 518.78,
+      "util": 859.15,
+      "lat": -20.09,
+      "lon": -44.12,
+      "aprox": false
     },
     {
       "tag": "ITA-ES-SMP-049",
@@ -176801,7 +177137,14 @@
       "mina": "ENGENHO SECO",
       "tipo": "SUMP",
       "situacao": "",
-      "areaM2": 1465.03
+      "areaM2": 1465.03,
+      "crit": "Leve",
+      "anom": "VEGETAÇÃO ALTA",
+      "cap": 518.78,
+      "util": 859.15,
+      "lat": -20.09,
+      "lon": -44.12,
+      "aprox": false
     },
     {
       "tag": "ITA-ES-SMP-050",
@@ -176811,7 +177154,14 @@
       "mina": "ENGENHO SECO",
       "tipo": "SUMP",
       "situacao": "",
-      "areaM2": 4989.17
+      "areaM2": 4989.17,
+      "crit": "Leve",
+      "anom": "DEFORMAÇÃO ESTRUTURAL",
+      "cap": 518.78,
+      "util": 859.15,
+      "lat": -20.09,
+      "lon": -44.13,
+      "aprox": false
     },
     {
       "tag": "ITA-ES-SMP-051",
@@ -176821,7 +177171,14 @@
       "mina": "ENGENHO SECO",
       "tipo": "SUMP",
       "situacao": "Inativo",
-      "areaM2": 384.6
+      "areaM2": 384.6,
+      "crit": "Leve",
+      "anom": "SEM ANOMALIA",
+      "cap": 518.78,
+      "util": 859.15,
+      "lat": -20.1,
+      "lon": -44.11,
+      "aprox": false
     },
     {
       "tag": "ITA-ES-SMP-052",
@@ -176831,7 +177188,14 @@
       "mina": "ENGENHO SECO",
       "tipo": "SUMP",
       "situacao": "",
-      "areaM2": 1310.42
+      "areaM2": 1310.42,
+      "crit": "Leve",
+      "anom": "SEM ANOMALIA",
+      "cap": 518.78,
+      "util": 859.15,
+      "lat": -20.1,
+      "lon": -44.11,
+      "aprox": false
     },
     {
       "tag": "ITA-ES-SMP-053",
@@ -176841,7 +177205,14 @@
       "mina": "ENGENHO SECO",
       "tipo": "SUMP",
       "situacao": "",
-      "areaM2": 1559.75
+      "areaM2": 1559.75,
+      "crit": "Leve",
+      "anom": "SEM ANOMALIA",
+      "cap": 518.78,
+      "util": 859.15,
+      "lat": -20.09,
+      "lon": -44.09,
+      "aprox": false
     },
     {
       "tag": "ITA-ES-SMP-054",
@@ -176851,7 +177222,14 @@
       "mina": "ENGENHO SECO",
       "tipo": "SUMP",
       "situacao": "",
-      "areaM2": 804.62
+      "areaM2": 804.62,
+      "crit": "Leve",
+      "anom": "SEM ANOMALIA",
+      "cap": 518.78,
+      "util": 859.15,
+      "lat": -20.09,
+      "lon": -44.09,
+      "aprox": false
     },
     {
       "tag": "ITA-ES-SMP-055",
@@ -176861,7 +177239,14 @@
       "mina": "ENGENHO SECO",
       "tipo": "SUMP",
       "situacao": "",
-      "areaM2": 1478.03
+      "areaM2": 1478.03,
+      "crit": "Leve",
+      "anom": "SEM ANOMALIA",
+      "cap": 518.78,
+      "util": 859.15,
+      "lat": -20.09,
+      "lon": -44.09,
+      "aprox": false
     },
     {
       "tag": "ITA-ES-SMP-056",
@@ -176871,7 +177256,14 @@
       "mina": "ENGENHO SECO",
       "tipo": "SUMP",
       "situacao": "",
-      "areaM2": 2243.91
+      "areaM2": 2243.91,
+      "crit": "Leve",
+      "anom": "SEM ANOMALIA",
+      "cap": 518.78,
+      "util": 859.15,
+      "lat": -20.08,
+      "lon": -44.11,
+      "aprox": false
     },
     {
       "tag": "ITA-ES-SMP-057",
@@ -176881,7 +177273,14 @@
       "mina": "ENGENHO SECO",
       "tipo": "SUMP",
       "situacao": "",
-      "areaM2": 207.76
+      "areaM2": 207.76,
+      "crit": "Crítico",
+      "anom": "SEM ANOMALIA",
+      "cap": 518.78,
+      "util": 859.15,
+      "lat": -20.07,
+      "lon": -44.11,
+      "aprox": false
     },
     {
       "tag": "ITA-ES-SMP-058",
@@ -176891,7 +177290,14 @@
       "mina": "ENGENHO SECO",
       "tipo": "SUMP",
       "situacao": "",
-      "areaM2": 1035.39
+      "areaM2": 1035.39,
+      "crit": "Leve",
+      "anom": "SEM ANOMALIA",
+      "cap": 518.78,
+      "util": 859.15,
+      "lat": -20.08,
+      "lon": -44.1,
+      "aprox": false
     },
     {
       "tag": "ITA-ES-SMP-059",
@@ -176901,7 +177307,14 @@
       "mina": "ENGENHO SECO",
       "tipo": "SUMP",
       "situacao": "",
-      "areaM2": 675.0
+      "areaM2": 675.0,
+      "crit": "Leve",
+      "anom": "ASSOREAMENTO",
+      "cap": 518.78,
+      "util": 859.15,
+      "lat": -20.09,
+      "lon": -44.1,
+      "aprox": false
     },
     {
       "tag": "ITA-ES-SMP-060",
@@ -176911,7 +177324,14 @@
       "mina": "ENGENHO SECO",
       "tipo": "SUMP",
       "situacao": "",
-      "areaM2": 229.42
+      "areaM2": 229.42,
+      "crit": "Leve",
+      "anom": "ASSOREAMENTO",
+      "cap": 518.78,
+      "util": 859.15,
+      "lat": -20.09,
+      "lon": -44.12,
+      "aprox": false
     },
     {
       "tag": "ITA-ES-SMP-061",
@@ -176921,7 +177341,14 @@
       "mina": "ENGENHO SECO",
       "tipo": "SUMP",
       "situacao": "",
-      "areaM2": 1382.41
+      "areaM2": 1382.41,
+      "crit": "Moderado",
+      "anom": "ASSOREAMENTO",
+      "cap": 518.78,
+      "util": 859.15,
+      "lat": -20.08,
+      "lon": -44.11,
+      "aprox": false
     },
     {
       "tag": "ITA-ES-SMP-062",
@@ -176931,7 +177358,14 @@
       "mina": "ENGENHO SECO",
       "tipo": "SUMP",
       "situacao": "",
-      "areaM2": 833.38
+      "areaM2": 833.38,
+      "crit": "Moderado",
+      "anom": "SEM ANOMALIA",
+      "cap": 518.78,
+      "util": 859.15,
+      "lat": -20.08,
+      "lon": -44.11,
+      "aprox": false
     },
     {
       "tag": "ITA-ES-SMP-063",
@@ -176941,7 +177375,14 @@
       "mina": "ENGENHO SECO",
       "tipo": "SUMP",
       "situacao": "",
-      "areaM2": 62.51
+      "areaM2": 62.51,
+      "crit": "Moderado",
+      "anom": "SEM ANOMALIA",
+      "cap": 518.78,
+      "util": 859.15,
+      "lat": -20.06,
+      "lon": -44.12,
+      "aprox": false
     },
     {
       "tag": "ITA-ES-SMP-064",
@@ -176951,7 +177392,14 @@
       "mina": "ENGENHO SECO",
       "tipo": "SUMP",
       "situacao": "",
-      "areaM2": 16.99
+      "areaM2": 16.99,
+      "crit": "Leve",
+      "anom": "SEM ANOMALIA",
+      "cap": 518.78,
+      "util": 859.15,
+      "lat": -20.05,
+      "lon": -44.12,
+      "aprox": false
     },
     {
       "tag": "ITA-ES-SMP-065",
@@ -176961,7 +177409,14 @@
       "mina": "ENGENHO SECO",
       "tipo": "SUMP",
       "situacao": "Inativo",
-      "areaM2": 204.25
+      "areaM2": 204.25,
+      "crit": "Leve",
+      "anom": "ASSOREAMENTO",
+      "cap": 518.78,
+      "util": 859.15,
+      "lat": -20.09,
+      "lon": -44.09,
+      "aprox": false
     },
     {
       "tag": "ITA-ES-SMP-066",
@@ -176971,7 +177426,14 @@
       "mina": "ENGENHO SECO",
       "tipo": "SUMP",
       "situacao": "Inativo",
-      "areaM2": 251.08
+      "areaM2": 251.08,
+      "crit": "Leve",
+      "anom": "ASSOREAMENTO",
+      "cap": 518.78,
+      "util": 859.15,
+      "lat": -20.09,
+      "lon": -44.09,
+      "aprox": false
     },
     {
       "tag": "ITA-ES-SMP-067",
@@ -176981,7 +177443,14 @@
       "mina": "ENGENHO SECO",
       "tipo": "SUMP",
       "situacao": "Inativo",
-      "areaM2": 168.98
+      "areaM2": 168.98,
+      "crit": "Leve",
+      "anom": "ASSOREAMENTO",
+      "cap": 518.78,
+      "util": 859.15,
+      "lat": -20.09,
+      "lon": -44.09,
+      "aprox": false
     },
     {
       "tag": "ITA-ES-SMP-068",
@@ -176991,7 +177460,14 @@
       "mina": "ENGENHO SECO",
       "tipo": "SUMP",
       "situacao": "Ativo",
-      "areaM2": 289.71
+      "areaM2": 289.71,
+      "crit": "Leve",
+      "anom": "SEM ANOMALIA",
+      "cap": 518.78,
+      "util": 859.15,
+      "lat": -20.04,
+      "lon": -44.14,
+      "aprox": false
     },
     {
       "tag": "ITA-ES-SMP-069",
@@ -177001,7 +177477,14 @@
       "mina": "ENGENHO SECO",
       "tipo": "SUMP",
       "situacao": "",
-      "areaM2": 176.55
+      "areaM2": 176.55,
+      "crit": "Leve",
+      "anom": "SEM ANOMALIA",
+      "cap": 518.78,
+      "util": 859.15,
+      "lat": -20.1,
+      "lon": -44.12,
+      "aprox": false
     },
     {
       "tag": "ITA-ES-SMP-070",
@@ -177011,7 +177494,14 @@
       "mina": "ENGENHO SECO",
       "tipo": "SUMP",
       "situacao": "",
-      "areaM2": 99.91
+      "areaM2": 99.91,
+      "crit": "Leve",
+      "anom": "ASSOREAMENTO",
+      "cap": 518.78,
+      "util": 859.15,
+      "lat": -20.07,
+      "lon": -44.11,
+      "aprox": false
     },
     {
       "tag": "ITA-ES-SMP-071",
@@ -177021,7 +177511,14 @@
       "mina": "ENGENHO SECO",
       "tipo": "SUMP",
       "situacao": "",
-      "areaM2": 142.43
+      "areaM2": 142.43,
+      "crit": "Crítico",
+      "anom": "SEM ANOMALIA",
+      "cap": 2631.97,
+      "util": 859.15,
+      "lat": -20.09,
+      "lon": -44.1,
+      "aprox": false
     },
     {
       "tag": "ITA-JGD-SMP-001",
@@ -177031,7 +177528,14 @@
       "mina": "JANGADA",
       "tipo": "SUMP",
       "situacao": "",
-      "areaM2": 766.23
+      "areaM2": 766.23,
+      "crit": "Crítico",
+      "anom": "CANAL/CANALETA OBSTRUIDO",
+      "cap": 2826.66,
+      "util": 738.45,
+      "lat": -20.1,
+      "lon": -44.1,
+      "aprox": false
     },
     {
       "tag": "ITA-JGD-SMP-002",
@@ -177041,7 +177545,14 @@
       "mina": "JANGADA",
       "tipo": "SUMP",
       "situacao": "",
-      "areaM2": 806.76
+      "areaM2": 806.76,
+      "crit": "Moderado",
+      "anom": "SEM ANOMALIA",
+      "cap": 1230.93,
+      "util": null,
+      "lat": -20.1,
+      "lon": -44.1,
+      "aprox": false
     },
     {
       "tag": "ITA-JGD-SMP-003",
@@ -177051,7 +177562,14 @@
       "mina": "JANGADA",
       "tipo": "SUMP",
       "situacao": "",
-      "areaM2": 761.17
+      "areaM2": 761.17,
+      "crit": "Moderado",
+      "anom": "SEM ANOMALIA",
+      "cap": 2333.78,
+      "util": null,
+      "lat": -20.1,
+      "lon": -44.1,
+      "aprox": false
     },
     {
       "tag": "ITA-JGD-SMP-004",
@@ -177061,7 +177579,14 @@
       "mina": "JANGADA",
       "tipo": "SUMP",
       "situacao": "",
-      "areaM2": 459.42
+      "areaM2": 459.42,
+      "crit": "Moderado",
+      "anom": "CANAL/CANALETA OBSTRUIDO",
+      "cap": 655.12,
+      "util": null,
+      "lat": -20.1,
+      "lon": -44.09,
+      "aprox": false
     },
     {
       "tag": "ITA-JGD-SMP-005",
@@ -177071,7 +177596,14 @@
       "mina": "JANGADA",
       "tipo": "SUMP",
       "situacao": "",
-      "areaM2": 591.68
+      "areaM2": 591.68,
+      "crit": "Leve",
+      "anom": "ASSOREAMENTO",
+      "cap": 986.74,
+      "util": null,
+      "lat": -20.1,
+      "lon": -44.1,
+      "aprox": false
     },
     {
       "tag": "ITA-JGD-SMP-006",
@@ -177081,7 +177613,14 @@
       "mina": "JANGADA",
       "tipo": "SUMP",
       "situacao": "",
-      "areaM2": 5346.89
+      "areaM2": 5346.89,
+      "crit": "Leve",
+      "anom": "ASSOREAMENTO",
+      "cap": 1631.07,
+      "util": null,
+      "lat": -20.1,
+      "lon": -44.1,
+      "aprox": false
     },
     {
       "tag": "ITA-JGD-SMP-007",
@@ -177091,7 +177630,14 @@
       "mina": "JANGADA",
       "tipo": "SUMP",
       "situacao": "",
-      "areaM2": 170.74
+      "areaM2": 170.74,
+      "crit": "Leve",
+      "anom": "ASSOREAMENTO",
+      "cap": 127.0,
+      "util": null,
+      "lat": -20.1,
+      "lon": -44.1,
+      "aprox": false
     },
     {
       "tag": "ITA-JGD-SMP-008",
@@ -177101,7 +177647,14 @@
       "mina": "JANGADA",
       "tipo": "SUMP",
       "situacao": "",
-      "areaM2": 136.43
+      "areaM2": 136.43,
+      "crit": "Moderado",
+      "anom": "SEM ANOMALIA",
+      "cap": 127.0,
+      "util": 127.0,
+      "lat": -20.1,
+      "lon": -44.09,
+      "aprox": false
     },
     {
       "tag": "ITA-JGD-SMP-009",
@@ -177111,7 +177664,14 @@
       "mina": "JANGADA",
       "tipo": "SUMP",
       "situacao": "",
-      "areaM2": 125.91
+      "areaM2": 125.91,
+      "crit": "Moderado",
+      "anom": "SEM ANOMALIA",
+      "cap": 187.17,
+      "util": 35.33,
+      "lat": -20.1,
+      "lon": -44.09,
+      "aprox": false
     },
     {
       "tag": "ITA-JGD-SMP-010",
@@ -177121,7 +177681,14 @@
       "mina": "JANGADA",
       "tipo": "SUMP",
       "situacao": "",
-      "areaM2": 368.6
+      "areaM2": 368.6,
+      "crit": "Crítico",
+      "anom": "ASSOREAMENTO",
+      "cap": 72.01,
+      "util": null,
+      "lat": -20.1,
+      "lon": -44.09,
+      "aprox": false
     },
     {
       "tag": "ITA-JGD-SMP-011",
@@ -177131,7 +177698,14 @@
       "mina": "JANGADA",
       "tipo": "SUMP",
       "situacao": "",
-      "areaM2": 6953.9
+      "areaM2": 6953.9,
+      "crit": "Crítico",
+      "anom": "ASSOREAMENTO",
+      "cap": 497.3,
+      "util": null,
+      "lat": -20.1,
+      "lon": -44.09,
+      "aprox": false
     },
     {
       "tag": "ITA-JGD-SMP-012",
@@ -177141,7 +177715,14 @@
       "mina": "JANGADA",
       "tipo": "SUMP",
       "situacao": "",
-      "areaM2": 19806.36
+      "areaM2": 19806.36,
+      "crit": "Leve",
+      "anom": "SEM ANOMALIA",
+      "cap": 0.0,
+      "util": null,
+      "lat": -20.1,
+      "lon": -44.09,
+      "aprox": false
     },
     {
       "tag": "ITA-JGD-SMP-013",
@@ -177151,7 +177732,14 @@
       "mina": "JANGADA",
       "tipo": "SUMP",
       "situacao": "Inativo",
-      "areaM2": 28993.34
+      "areaM2": 28993.34,
+      "crit": "Leve",
+      "anom": "SEM ANOMALIA",
+      "cap": 0.0,
+      "util": null,
+      "lat": -20.1,
+      "lon": -44.09,
+      "aprox": false
     },
     {
       "tag": "ITA-JGD-SMP-014",
@@ -177161,7 +177749,14 @@
       "mina": "JANGADA",
       "tipo": "SUMP",
       "situacao": "Inativo",
-      "areaM2": 316.88
+      "areaM2": 316.88,
+      "crit": "Leve",
+      "anom": "SEM ANOMALIA",
+      "cap": 353.61,
+      "util": null,
+      "lat": -20.09,
+      "lon": -44.09,
+      "aprox": false
     },
     {
       "tag": "ITA-JGD-SMP-015",
@@ -177171,7 +177766,14 @@
       "mina": "JANGADA",
       "tipo": "SUMP",
       "situacao": "",
-      "areaM2": 855.37
+      "areaM2": 855.37,
+      "crit": "Leve",
+      "anom": "ASSOREAMENTO",
+      "cap": 428.85,
+      "util": 0.0,
+      "lat": -20.1,
+      "lon": -44.09,
+      "aprox": false
     },
     {
       "tag": "ITA-JGD-SMP-016",
@@ -177181,7 +177783,14 @@
       "mina": "JANGADA",
       "tipo": "SUMP",
       "situacao": "",
-      "areaM2": 85.16
+      "areaM2": 85.16,
+      "crit": "Leve",
+      "anom": "ASSOREAMENTO",
+      "cap": 1177.58,
+      "util": 0.0,
+      "lat": -20.1,
+      "lon": -44.09,
+      "aprox": false
     },
     {
       "tag": "ITA-JGD-SMP-017",
@@ -177191,7 +177800,14 @@
       "mina": "JANGADA",
       "tipo": "SUMP",
       "situacao": "",
-      "areaM2": 197.471
+      "areaM2": 197.471,
+      "crit": "Leve",
+      "anom": "ASSOREAMENTO",
+      "cap": 26.84,
+      "util": 0.0,
+      "lat": -20.1,
+      "lon": -44.08,
+      "aprox": false
     },
     {
       "tag": "ITA-JGD-SMP-018",
@@ -177201,7 +177817,14 @@
       "mina": "JANGADA",
       "tipo": "SUMP",
       "situacao": "",
-      "areaM2": 178.11
+      "areaM2": 178.11,
+      "crit": "Crítico",
+      "anom": "ASSOREAMENTO",
+      "cap": 182.9,
+      "util": null,
+      "lat": -20.1,
+      "lon": -44.08,
+      "aprox": false
     },
     {
       "tag": "ITA-JGD-SMP-019",
@@ -177211,7 +177834,14 @@
       "mina": "JANGADA",
       "tipo": "SUMP",
       "situacao": "",
-      "areaM2": 289.191
+      "areaM2": 289.191,
+      "crit": "Leve",
+      "anom": "SEM ANOMALIA",
+      "cap": 147.14,
+      "util": null,
+      "lat": -20.1,
+      "lon": -44.1,
+      "aprox": false
     },
     {
       "tag": "ITA-JGD-SMP-020",
@@ -177221,7 +177851,25 @@
       "mina": "JANGADA",
       "tipo": "SUMP",
       "situacao": "",
-      "areaM2": 231.0
+      "areaM2": 231.0,
+      "crit": "Moderado",
+      "anom": "SEM ANOMALIA",
+      "cap": null,
+      "util": null,
+      "lat": -20.1,
+      "lon": -44.1,
+      "aprox": false
+    },
+    {
+      "tag": "ITA-JGD-SMP-021",
+      "mina": "JANGADA",
+      "crit": "Leve",
+      "anom": null,
+      "cap": 6169.79,
+      "util": null,
+      "lat": -20.0995,
+      "lon": -44.093,
+      "aprox": true
     }
   ],
   "radar": [
@@ -178115,6 +178763,15 @@
   ],
   "importacoesPcmi": [
     {
+      "data": "30/10/2026 16:03:20",
+      "origem": "C:\\Users\\maycon.nascimento\\ITAMINAS\\SPLO - General\\03) Geotecnia\\01) PCMI\\02) Monitoramentos\\00) Leituras\\Banco_De_Dados.xlsx",
+      "diretorioOrigem": "C:\\Users\\maycon.nascimento\\ITAMINAS\\SPLO - General\\03) Geotecnia",
+      "totalInstrumentos": 218,
+      "totalLeituras": 32881,
+      "hashIntegridade": "3121244d30476d1c...",
+      "status": "SINCRONIZADO COM SUCESSO"
+    },
+    {
       "data": "30/10/2026 15:42:08",
       "origem": "C:\\Users\\maycon.nascimento\\ITAMINAS\\SPLO - General\\03) Geotecnia\\01) PCMI\\02) Monitoramentos\\00) Leituras\\Banco_De_Dados.xlsx",
       "diretorioOrigem": "C:\\Users\\maycon.nascimento\\ITAMINAS\\SPLO - General\\03) Geotecnia",
@@ -178157,17 +178814,6 @@
       "totalInstrumentos": 218,
       "totalLeituras": 32881,
       "hashIntegridade": "186ff33bfd67c2b4...",
-      "status": "SINCRONIZADO COM SUCESSO"
-    },
-    {
-      "id": "IMP-000",
-      "tipo": "Base Consolidada PCMI",
-      "data": "18/09/2026 16:00:34",
-      "origem": "C:\\Users\\maycon.nascimento\\ITAMINAS\\SPLO - General\\03) Geotecnia\\01) PCMI\\02) Monitoramentos\\00) Leituras\\Banco_De_Dados.xlsx",
-      "totalInstrumentos": 218,
-      "totalLeituras": 32296,
-      "registrosImportados": 32296,
-      "hashIntegridade": "9ef4afc758cf6fbb...",
       "status": "SINCRONIZADO COM SUCESSO"
     }
   ]
