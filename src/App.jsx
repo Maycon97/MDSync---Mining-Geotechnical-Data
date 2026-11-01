@@ -17,6 +17,7 @@ const MapTab = lazy(() => import('./components/MapTab').then(m => ({ default: m.
 const FieldCollectionTab = lazy(() => import('./components/FieldCollectionTab').then(m => ({ default: m.FieldCollectionTab })));
 const PiezometryTab = lazy(() => import('./components/PiezometryTab').then(m => ({ default: m.PiezometryTab })));
 const FlowRateTab = lazy(() => import('./components/FlowRateTab').then(m => ({ default: m.FlowRateTab })));
+const PluviometriaTab = lazy(() => import('./components/PluviometriaTab').then(m => ({ default: m.PluviometriaTab })));
 const ReportTab = lazy(() => import('./components/ReportTab').then(m => ({ default: m.ReportTab })));
 const ReadingsHistoryTab = lazy(() => import('./components/ReadingsHistoryTab').then(m => ({ default: m.ReadingsHistoryTab })));
 const AiAnalysisTab = lazy(() => import('./components/AiAnalysisTab').then(m => ({ default: m.AiAnalysisTab })));
@@ -357,7 +358,11 @@ export function App() {
         )}
 
         {activeTab === 'vazao' && (
-          <FlowRateTab />
+          <FlowRateTab onNavigateTab={handleNavigateTab} />
+        )}
+
+        {activeTab === 'pluviometria' && (
+          <PluviometriaTab onNavigateTab={handleNavigateTab} />
         )}
 
         {activeTab === 'documentos' && (
@@ -407,7 +412,7 @@ export function App() {
           'home', 'dashboard', 'analises', 'coletas', 'importacoes', 'ordens_servico',
           'lotes_relatorios', 'clientes', 'contratos', 'mapa', 'campo',
           'fila_sync', 'anomalias_inspecoes', 'checklist', 'chamados', 'piezometria',
-          'vazao', 'documentos', 'comunicacao', 'laudo', 'historico', 'ia',
+          'vazao', 'pluviometria', 'documentos', 'comunicacao', 'laudo', 'historico', 'ia',
           'cadastro', 'configuracoes_perfil', 'estruturas_empreendimento', 'mobile_inspecao',
           'engenho_seco_modelo'
         ].includes(activeTab) && (

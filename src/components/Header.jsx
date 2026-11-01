@@ -24,6 +24,7 @@ const TAB_TITLES = {
   chamados: 'Chamados Fluig',
   piezometria: 'Piezometria & NA',
   vazao: 'Vazão & Vertedouros',
+  pluviometria: 'Pluviometria & Clima',
   documentos: 'Gestão Documental',
   comunicacao: 'Central de Comunicação',
   laudo: 'Laudo ANM nº 95/2022',

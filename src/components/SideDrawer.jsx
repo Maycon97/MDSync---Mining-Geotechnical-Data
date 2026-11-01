@@ -20,6 +20,7 @@ import {
   ClipboardCheck, 
   LifeBuoy, 
   Droplets, 
+  CloudRain, 
   FileText, 
   Cpu, 
   Database,
@@ -193,6 +194,15 @@ export const SideDrawer = ({
           icon: Droplets,
           type: 'tab',
           tabId: 'vazao'
+        },
+        {
+          id: 'pluviometria',
+          title: 'Pluviometria & Clima (Painel Executivo)',
+          icon: CloudRain,
+          type: 'tab',
+          tabId: 'pluviometria',
+          badge: '2018–2026',
+          badgeColor: '#0284c7'
         }
       ]
     },

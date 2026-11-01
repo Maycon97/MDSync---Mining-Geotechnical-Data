@@ -33,7 +33,7 @@ ChartJS.register(
   Legend
 );
 
-export const FlowRateTab = () => {
+export const FlowRateTab = ({ onNavigateTab }) => {
   const { structures, instruments, readingsVazao, readingsVertedouro, pluviometria, activeStructureId } = useGeotechData();
 
   // Filtrar instrumentos de vazão e vertedouros
@@ -173,20 +173,46 @@ export const FlowRateTab = () => {
             </p>
           </div>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-            <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Instrumento:</span>
-            <select
-              value={currentInst?.uid || ''}
-              onChange={(e) => setSelectedInstUid(e.target.value)}
-              className="form-select font-mono"
-              style={{ padding: '0.35rem 0.75rem', fontSize: '0.825rem', fontWeight: 600 }}
-            >
-              {flowInstruments.map(i => (
-                <option key={i.uid} value={i.uid}>
-                  {i.tipo} {i.id} ({i.estrutura})
-                </option>
-              ))}
-            </select>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
+            {onNavigateTab && (
+              <button
+                type="button"
+                onClick={() => onNavigateTab('pluviometria')}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.4rem',
+                  padding: '0.45rem 0.85rem',
+                  borderRadius: '6px',
+                  backgroundColor: 'rgba(56, 189, 248, 0.15)',
+                  border: '1px solid rgba(56, 189, 248, 0.4)',
+                  color: 'var(--geo-info)',
+                  fontSize: '0.8rem',
+                  fontWeight: 700,
+                  cursor: 'pointer'
+                }}
+                title="Abrir o Painel Executivo de Pluviometria Itaminas"
+              >
+                <CloudRain size={15} />
+                <span>Painel de Pluviometria</span>
+              </button>
+            )}
+
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+              <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Instrumento:</span>
+              <select
+                value={currentInst?.uid || ''}
+                onChange={(e) => setSelectedInstUid(e.target.value)}
+                className="form-select font-mono"
+                style={{ padding: '0.35rem 0.75rem', fontSize: '0.825rem', fontWeight: 600 }}
+              >
+                {flowInstruments.map(i => (
+                  <option key={i.uid} value={i.uid}>
+                    {i.tipo} {i.id} ({i.estrutura})
+                  </option>
+                ))}
+              </select>
+            </div>
           </div>
         </div>
       </div>

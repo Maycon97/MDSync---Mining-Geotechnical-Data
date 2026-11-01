@@ -23,6 +23,7 @@ import {
   ShieldCheck, 
   TrendingUp, 
   CloudRain, 
+  ChevronRight,
   Calendar, 
   Search, 
   X, 
@@ -912,18 +913,37 @@ export const DashboardTab = ({ onNavigateTab }) => {
         </div>
 
         {/* Chuva Acumulada no Período */}
-        <div className="card-panel" style={{ padding: '0.75rem 1rem', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-          <div style={{ width: '36px', height: '36px', borderRadius: '8px', backgroundColor: 'var(--geo-info-bg)', color: 'var(--geo-info)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <CloudRain size={18} />
-          </div>
-          <div>
-            <div style={{ fontSize: '0.68rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase' }}>
-              Chuva no Período ({timeRange.toUpperCase()})
+        <div 
+          className="card-panel" 
+          style={{ 
+            padding: '0.75rem 1rem', 
+            display: 'flex', 
+            alignItems: 'center', 
+            justifyContent: 'space-between',
+            cursor: onNavigateTab ? 'pointer' : 'default',
+            transition: 'all 0.2s ease'
+          }}
+          onClick={() => onNavigateTab && onNavigateTab('pluviometria')}
+          title="Clique para abrir o Painel Executivo Completo de Pluviometria (2018–2026)"
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+            <div style={{ width: '36px', height: '36px', borderRadius: '8px', backgroundColor: 'var(--geo-info-bg)', color: 'var(--geo-info)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <CloudRain size={18} />
             </div>
-            <div style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--geo-info)', lineHeight: 1.1 }}>
-              {filterStats.somaChuva} mm
+            <div>
+              <div style={{ fontSize: '0.68rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase' }}>
+                Chuva no Período ({timeRange.toUpperCase()})
+              </div>
+              <div style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--geo-info)', lineHeight: 1.1 }}>
+                {filterStats.somaChuva} mm
+              </div>
             </div>
           </div>
+          {onNavigateTab && (
+            <span style={{ fontSize: '0.7rem', color: 'var(--geo-info)', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '0.2rem' }}>
+              Painel Pluvio <ChevronRight size={14} />
+            </span>
+          )}
         </div>
       </div>
 
@@ -1001,9 +1021,34 @@ export const DashboardTab = ({ onNavigateTab }) => {
                 </p>
               </div>
             </div>
-            <span style={{ fontSize: '0.7rem', padding: '0.2rem 0.5rem', borderRadius: '6px', backgroundColor: 'var(--bg-secondary)', color: 'var(--geo-info)', fontWeight: 700 }}>
-              {filterStats.somaChuva} mm acum.
-            </span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <span style={{ fontSize: '0.7rem', padding: '0.2rem 0.5rem', borderRadius: '6px', backgroundColor: 'var(--bg-secondary)', color: 'var(--geo-info)', fontWeight: 700 }}>
+                {filterStats.somaChuva} mm acum.
+              </span>
+              {onNavigateTab && (
+                <button
+                  type="button"
+                  onClick={() => onNavigateTab('pluviometria')}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.35rem',
+                    padding: '0.25rem 0.6rem',
+                    borderRadius: '6px',
+                    backgroundColor: 'rgba(56, 189, 248, 0.15)',
+                    border: '1px solid rgba(56, 189, 248, 0.4)',
+                    color: '#0284c7',
+                    fontSize: '0.72rem',
+                    fontWeight: 700,
+                    cursor: 'pointer'
+                  }}
+                  title="Abrir o Painel Executivo de Pluviometria com mapa das 5 estações e séries 2018–2026"
+                >
+                  <CloudRain size={12} />
+                  <span>Painel Executivo</span>
+                </button>
+              )}
+            </div>
           </div>
 
           <div style={{ height: '270px', width: '100%', position: 'relative' }}>

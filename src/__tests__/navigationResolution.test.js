@@ -6,7 +6,7 @@ describe('Navigation & Tab Resolution', () => {
     'home', 'dashboard', 'analises', 'coletas', 'importacoes', 'ordens_servico',
     'lotes_relatorios', 'clientes', 'contratos', 'mapa', 'campo',
     'fila_sync', 'anomalias_inspecoes', 'checklist', 'chamados', 'piezometria',
-    'vazao', 'documentos', 'comunicacao', 'laudo', 'historico', 'ia',
+    'vazao', 'pluviometria', 'documentos', 'comunicacao', 'laudo', 'historico', 'ia',
     'cadastro', 'configuracoes_perfil'
   ];
 
@@ -18,6 +18,7 @@ describe('Navigation & Tab Resolution', () => {
     expect(tabIds).toContain('mapa');
     expect(tabIds).toContain('piezometria');
     expect(tabIds).toContain('vazao');
+    expect(tabIds).toContain('pluviometria');
     expect(tabIds).toContain('laudo');
     expect(tabIds).toContain('cadastro');
 
