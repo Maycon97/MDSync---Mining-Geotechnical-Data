@@ -1622,3 +1622,4 @@ export const ChamadosPainelExecutivo = ({ onNavigateTab, onOpenNewTicket, onOpen
     </div>
   );
 };
+

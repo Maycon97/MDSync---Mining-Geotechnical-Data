@@ -1,6 +1,7 @@
 import React from 'react';
 import { useGeotechData } from '../context/GeotechDataContext';
 import { useAuth } from '../context/AuthContext';
+import { CronogramaSection } from './CronogramaSection';
 import { 
   Home, 
   LayoutDashboard, 
@@ -30,7 +31,8 @@ import {
   FolderSync,
   Sparkles,
   Building2,
-  HardHat
+  HardHat,
+  Calendar
 } from 'lucide-react';
 
 export const HomeTab = ({ onNavigateTab }) => {
@@ -53,6 +55,17 @@ export const HomeTab = ({ onNavigateTab }) => {
   const marcosCount = instruments.filter(i => i.tipo === 'MCD' || i.tipo === 'REF' || i.tipo === 'ETR').length;
   const outrosCount = instruments.length - piezometrosCount - vazaoCount - marcosCount;
 
+  const handleModuleClick = (modId) => {
+    if (modId === 'cronograma') {
+      const el = document.getElementById('cronograma-section');
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        return;
+      }
+    }
+    onNavigateTab(modId);
+  };
+
   // Lista dos módulos/campos do sistema para cards navegáveis
   const modules = [
     {
@@ -65,6 +78,17 @@ export const HomeTab = ({ onNavigateTab }) => {
       desc: 'Gráficos interativos com filtros por estrutura, tipologia de sensor e janelas temporais dinâmicas.',
       stat: '4 Gráficos em Tempo Real',
       action: 'Acessar Dashboard'
+    },
+    {
+      id: 'cronograma',
+      title: 'Cronograma Geotécnico & PCM',
+      category: 'Planejamento Operacional',
+      icon: Calendar,
+      color: '#3b82f6',
+      bgColor: 'rgba(59, 130, 246, 0.12)',
+      desc: 'Espelho de 1.693 tarefas e datas planejadas: inspeções de campo, monitoramento de instrumentos e relatórios FIR.',
+      stat: '1.693 Tarefas Mapeadas',
+      action: 'Ver Cronograma'
     },
     {
       id: 'mapa',
@@ -237,6 +261,28 @@ export const HomeTab = ({ onNavigateTab }) => {
               <ArrowRight size={14} />
             </button>
             <button
+              onClick={() => {
+                const el = document.getElementById('cronograma-section');
+                if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+              }}
+              className="btn-secondary"
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '0.5rem',
+                padding: '0.6rem 1.25rem',
+                fontSize: '0.85rem',
+                fontWeight: 700,
+                color: '#3b82f6',
+                borderColor: 'rgba(59, 130, 246, 0.4)',
+                backgroundColor: 'rgba(59, 130, 246, 0.08)'
+              }}
+            >
+              <Calendar size={16} />
+              <span>Cronograma (1.693 Tarefas)</span>
+            </button>
+            <button
               onClick={() => onNavigateTab('campo')}
               className="btn-secondary"
               style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', padding: '0.6rem 1.25rem', fontSize: '0.85rem', fontWeight: 600 }}
@@ -387,7 +433,10 @@ export const HomeTab = ({ onNavigateTab }) => {
         </div>
       </div>
 
-      {/* 3. MATRIZ DE ESTRUTURAS DO COMPLEXO (INFORMAÇÕES GERAIS DE TODAS AS ÁREAS) */}
+      {/* 3. CAMPO CRONOGRAMA — ESPELHO FIEL DAS DATAS E TAREFAS DO ARQUIVO XLSX */}
+      <CronogramaSection onNavigateTab={onNavigateTab} />
+
+      {/* 4. MATRIZ DE ESTRUTURAS DO COMPLEXO (INFORMAÇÕES GERAIS DE TODAS AS ÁREAS) */}
       <div className="card-panel">
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem', flexWrap: 'wrap', gap: '0.5rem' }}>
           <div>
@@ -530,7 +579,7 @@ export const HomeTab = ({ onNavigateTab }) => {
             return (
               <div
                 key={mod.id}
-                onClick={() => onNavigateTab(mod.id)}
+                onClick={() => handleModuleClick(mod.id)}
                 className="card-panel card-panel-interactive"
                 style={{
                   padding: '1.15rem',
