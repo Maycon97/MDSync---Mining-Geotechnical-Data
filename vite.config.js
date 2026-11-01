@@ -6,8 +6,20 @@ export default defineConfig({
   base: './',
   plugins: [react()],
   server: {
+    headers: {
+      'X-Content-Type-Options': 'nosniff',
+      'X-Frame-Options': 'DENY',
+      'Referrer-Policy': 'strict-origin-when-cross-origin'
+    },
     watch: {
       ignored: ['**/android/**', '**/ios/**', '**/*.apk', '**/dist/**']
+    }
+  },
+  preview: {
+    headers: {
+      'X-Content-Type-Options': 'nosniff',
+      'X-Frame-Options': 'DENY',
+      'Referrer-Policy': 'strict-origin-when-cross-origin'
     }
   },
   build: {

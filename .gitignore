@@ -13,10 +13,23 @@ dist
 dist-ssr
 *.local
 
-# Environment variables
+# Environment variables & Secrets (Ordem 1 e 2: Esconder API Keys e Limpar secrets do git)
 .env
 .env.local
 .env.*.local
+*.pem
+*.key
+*.cert
+*.crt
+*.jks
+*.keystore
+*.p12
+*.pfx
+credentials.json
+client_secret*.json
+service-account*.json
+id_rsa*
+id_ed25519*
 
 # Editor directories and files
 .vscode/*
