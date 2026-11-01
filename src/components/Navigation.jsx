@@ -39,7 +39,7 @@ export const TABS = [
   { id: 'campo', label: 'Coleta de Campo', icon: ClipboardEdit, desc: 'Módulo Inspect: fotos, GPS e leituras' },
   { id: 'fila_sync', label: 'Fila de Sincronização Offline', icon: CloudLightning, desc: 'Gestão de coletas offline e envio à nuvem central' },
   { id: 'checklist', label: 'CheckList', icon: ClipboardCheck, desc: 'Ficha de Inspeção Regular - FIR (Survey123 Itaminas)' },
-  { id: 'chamados', label: 'Chamados', icon: LifeBuoy, desc: 'Abertura e gestão de chamados com integração direta ao TOTVS Fluig' },
+  { id: 'chamados', label: 'Chamados & PCM', icon: LifeBuoy, desc: 'Painel Executivo, Efetividade PCM, controle de ordens e integração TOTVS Fluig' },
   { id: 'piezometria', label: 'Piezometria & NA', icon: LineChart, desc: 'Curvas de INA/PZ com limites de alerta' },
   { id: 'vazao', label: 'Vazão & Vertedouros', icon: Droplets, desc: 'Drenos de pé, vertedouros e pluviometria' },
   { id: 'pluviometria', label: 'Pluviometria & Clima', icon: CloudRain, desc: 'Painel Executivo de Pluviometria Itaminas (2018–2026), estações e acumulados' },

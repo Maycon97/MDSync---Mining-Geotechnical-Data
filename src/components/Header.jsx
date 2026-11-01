@@ -21,7 +21,7 @@ const TAB_TITLES = {
   coletas: 'Coletas de Campo',
   fila_sync: 'Fila de Sincronização',
   checklist: 'CheckList FIR',
-  chamados: 'Chamados Fluig',
+  chamados: 'Controle de Chamados & PCM',
   piezometria: 'Piezometria & NA',
   vazao: 'Vazão & Vertedouros',
   pluviometria: 'Pluviometria & Clima',

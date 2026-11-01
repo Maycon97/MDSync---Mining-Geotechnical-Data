@@ -79,3 +79,4 @@ describe('Pluviometria & Clima - Painel Executivo', () => {
     expect(pluvioTab.desc).toContain('Pluviometria');
   });
 });
+

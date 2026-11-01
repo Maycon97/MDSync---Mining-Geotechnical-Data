@@ -1503,3 +1503,4 @@ export const PluviometriaTab = ({ onNavigateTab }) => {
 };
 
 export default PluviometriaTab;
+

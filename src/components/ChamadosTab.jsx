@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { useGeotechData } from '../context/GeotechDataContext';
 import { useAuth } from '../context/AuthContext';
+import { ChamadosPainelExecutivo } from './ChamadosPainelExecutivo';
 import { 
   LifeBuoy, 
   Plus, 
@@ -36,7 +37,9 @@ import {
   Image as ImageIcon,
   CheckCircle,
   HelpCircle,
-  Briefcase
+  Briefcase,
+  Activity,
+  BarChart3
 } from 'lucide-react';
 
 export const ChamadosTab = ({ onNavigateTab }) => {
@@ -52,6 +55,8 @@ export const ChamadosTab = ({ onNavigateTab }) => {
   } = useGeotechData();
   const { currentUser } = useAuth();
 
+  // Modo de visualização: Painel Executivo (PowerBI / PCM) vs Gestão Operacional Fluig
+  const [chamadosViewMode, setChamadosViewMode] = useState('executivo'); // 'executivo' | 'operacional'
 
   // Filtros
   const [selectedSetor, setSelectedSetor] = useState('TODOS');
@@ -455,21 +460,57 @@ export const ChamadosTab = ({ onNavigateTab }) => {
           {/* Ações do Topo: Alternador de Visualização, Configuração e Abrir Chamado */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', flexWrap: 'wrap' }}>
             
-            {/* Indicador Painel Fluig */}
+            {/* Alternador de Modo de Visualização */}
             <div style={{
               display: 'flex',
-              alignItems: 'center',
-              gap: '0.4rem',
               backgroundColor: 'var(--bg-secondary)',
-              padding: '0.4rem 0.75rem',
-              borderRadius: '8px',
+              borderRadius: '10px',
+              padding: '3px',
               border: '1px solid var(--border-subtle)',
-              fontSize: '0.8rem',
-              fontWeight: 600,
-              color: 'var(--primary-accent)'
+              gap: '3px'
             }}>
-              <LifeBuoy size={15} />
-              <span>Painel Fluig ({totalCount})</span>
+              <button
+                onClick={() => setChamadosViewMode('executivo')}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  padding: '6px 14px',
+                  borderRadius: '8px',
+                  fontSize: '0.8rem',
+                  fontWeight: 700,
+                  border: 'none',
+                  cursor: 'pointer',
+                  backgroundColor: chamadosViewMode === 'executivo' ? 'var(--primary-accent)' : 'transparent',
+                  color: chamadosViewMode === 'executivo' ? '#fff' : 'var(--text-muted)',
+                  boxShadow: chamadosViewMode === 'executivo' ? '0 2px 8px rgba(2, 132, 199, 0.4)' : 'none',
+                  transition: 'all 0.2s'
+                }}
+              >
+                <Activity size={14} />
+                <span>Painel Executivo (PowerBI)</span>
+              </button>
+              <button
+                onClick={() => setChamadosViewMode('operacional')}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  padding: '6px 14px',
+                  borderRadius: '8px',
+                  fontSize: '0.8rem',
+                  fontWeight: 700,
+                  border: 'none',
+                  cursor: 'pointer',
+                  backgroundColor: chamadosViewMode === 'operacional' ? 'var(--primary-accent)' : 'transparent',
+                  color: chamadosViewMode === 'operacional' ? '#fff' : 'var(--text-muted)',
+                  boxShadow: chamadosViewMode === 'operacional' ? '0 2px 8px rgba(2, 132, 199, 0.4)' : 'none',
+                  transition: 'all 0.2s'
+                }}
+              >
+                <LifeBuoy size={14} />
+                <span>Gestão Operacional Fluig ({totalCount})</span>
+              </button>
             </div>
 
             {/* Configurar Conexão Fluig */}
@@ -506,8 +547,15 @@ export const ChamadosTab = ({ onNavigateTab }) => {
         </div>
       </div>
 
-      {/* PAINEL PRINCIPAL FLUIG */}
-      <>
+      {/* CONTEÚDO: PAINEL EXECUTIVO VS GESTÃO OPERACIONAL FLUIG */}
+      {chamadosViewMode === 'executivo' ? (
+        <ChamadosPainelExecutivo
+          onNavigateTab={onNavigateTab}
+          onOpenNewTicket={() => setIsNewTicketOpen(true)}
+          onOpenFluigList={() => setChamadosViewMode('operacional')}
+        />
+      ) : (
+        <>
           {/* 2. FAIXA DE MÉTRICAS (KPIS DOS CHAMADOS) */}
           <div style={{
             display: 'grid',
@@ -1020,6 +1068,7 @@ export const ChamadosTab = ({ onNavigateTab }) => {
           )}
 
         </>
+      )}
 
       {/* ============================================================
           5. MODAL DE ABERTURA DE NOVO CHAMADO FLUIG
