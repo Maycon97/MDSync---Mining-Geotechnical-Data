@@ -398,12 +398,13 @@ export const ENGENHO_SECO_BLOCK_MODELS = [
     mes: 'Novembro',
     ano: 2026,
     codigoMes: '1126',
-    arquivo: 'oc_blockmodel_es_1125_1.dm',
-    caminhoRelativo: 'Modelo_CP_EngenhoSeco/oc_block model_es_1125_1.zip',
-    tamanhoBytes: 4221800420,
-    tamanhoFormatado: '4.22 GB',
+    arquivo: 'bm_1126_2.dm',
+    caminhoRelativo: 'Modelo_CP_EngenhoSeco/bm_1126_2.zip',
+    tamanhoBytes: 9682051072,
+    tamanhoFormatado: '9.68 GB',
     status: 'Planejado / CP',
-    dataModelo: '27/07/2026',
+    dataModelo: '29/10/2026',
+    dadosReais: true, // convertido com scripts/convert_dm_block_model.py -> public/data/block-model/BM_1126
     areasAtivas: ['Cava Índia', 'Cava Oeste Inferior', 'Samambaia'],
     romEspecial: {
       massa: 367243.77,

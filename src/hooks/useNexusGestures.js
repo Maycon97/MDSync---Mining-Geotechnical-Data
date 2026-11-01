@@ -95,3 +95,4 @@ export const useNexusGestures = ({
     };
   }, [onSwipeLeft, onSwipeRight, onSwipeDown, onLongPress, elementRef]);
 };
+

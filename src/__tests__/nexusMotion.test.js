@@ -45,3 +45,4 @@ describe('NEXUS_FUTURE_UI Animation & Motion Specification', () => {
     expect(typeof prefersReducedMotion()).toBe('boolean');
   });
 });
+

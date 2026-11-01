@@ -1,4 +1,7 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, Suspense, lazy } from 'react';
+
+// Carregado sob demanda: three.js só entra no navegador quando o modal do modelo de blocos é aberto
+const BlockModelRealPanel = lazy(() => import('./BlockModelRealPanel'));
 import { 
   ENGENHO_SECO_BLOCK_MODELS, 
   ENGENHO_SECO_SECTORS, 
@@ -26,7 +29,7 @@ import {
 } from 'lucide-react';
 
 export const EngenhoSecoBlockModelViewer = ({ onClose, onNavigateToMap }) => {
-  const [selectedModelId, setSelectedModelId] = useState('BM_0926'); // Mês vigente: Setembro/2026
+  const [selectedModelId, setSelectedModelId] = useState('BM_1126'); // Modelo com dados reais carregados (bm_1126_2.dm)
   const [selectedSectorId, setSelectedSectorId] = useState('ENS_INDIA');
   const [selectedCota, setSelectedCota] = useState(820);
   const [colorMode, setColorMode] = useState('lito'); // 'lito' | 'fe' | 'sio2' | 'dest' | 'fs'
@@ -210,7 +213,7 @@ export const EngenhoSecoBlockModelViewer = ({ onClose, onNavigateToMap }) => {
         </div>
       </div>
 
-      {/* 2. Barra de Controle e Seleção: Mês, Setor, Cota e Rampa */}
+      {/* 2. Seletor do modelo mensal */}
       <div style={{
         display: 'flex',
         flexWrap: 'wrap',
@@ -249,6 +252,35 @@ export const EngenhoSecoBlockModelViewer = ({ onClose, onNavigateToMap }) => {
           </select>
         </div>
 
+          {activeModel.dadosReais ? (
+            <span style={{ fontSize: '0.7rem', fontWeight: 700, padding: '2px 8px', borderRadius: '6px', backgroundColor: 'rgba(16, 185, 129, 0.18)', color: '#10b981', border: '1px solid rgba(16, 185, 129, 0.4)' }}>
+              Dados reais do arquivo .dm
+            </span>
+          ) : (
+            <span style={{ fontSize: '0.7rem', fontWeight: 700, padding: '2px 8px', borderRadius: '6px', backgroundColor: 'rgba(245, 158, 11, 0.18)', color: '#f59e0b', border: '1px solid rgba(245, 158, 11, 0.4)' }}>
+              Dados ilustrativos — arquivo ainda não convertido
+            </span>
+          )}
+        </div>
+
+      {activeModel.dadosReais ? (
+        <Suspense fallback={<div className="glass-panel" style={{ padding: '1rem', color: 'var(--text-muted)', fontSize: '0.8rem' }}>Carregando visualizador 3D...</div>}>
+          <BlockModelRealPanel modelId={activeModel.id} />
+        </Suspense>
+      ) : (
+        <>
+      {/* 2b. Barra de Controle (modelos ilustrativos): Setor, Cota e Rampa */}
+      <div style={{
+        display: 'flex',
+        flexWrap: 'wrap',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        gap: '0.75rem',
+        padding: '0.75rem 1rem',
+        borderRadius: '10px',
+        backgroundColor: 'var(--bg-secondary)',
+        border: '1px solid var(--border-medium)'
+      }}>
         {/* Seletor de Setor de Lavra */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem' }}>
           <Layers size={15} style={{ color: '#f59e0b' }} />
@@ -718,6 +750,8 @@ export const EngenhoSecoBlockModelViewer = ({ onClose, onNavigateToMap }) => {
           ))}
         </div>
       </div>
+        </>
+      )}
     </div>
   );
 };
