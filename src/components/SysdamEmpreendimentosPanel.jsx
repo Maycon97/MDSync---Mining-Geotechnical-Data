@@ -194,16 +194,35 @@ export const SysdamEmpreendimentosPanel = ({
                     Empreendimentos & Estruturas
                   </span>
                 </div>
-                <span style={{
-                  fontSize: '0.65rem',
-                  fontWeight: 700,
-                  padding: '2px 6px',
-                  borderRadius: '12px',
-                  backgroundColor: 'rgba(56, 189, 248, 0.15)',
-                  color: '#38bdf8'
-                }}>
-                  {filteredEstruturas.length} ativas
-                </span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <span style={{
+                    fontSize: '0.65rem',
+                    fontWeight: 700,
+                    padding: '2px 6px',
+                    borderRadius: '12px',
+                    backgroundColor: 'rgba(56, 189, 248, 0.15)',
+                    color: '#38bdf8'
+                  }}>
+                    {filteredEstruturas.length} ativas
+                  </span>
+                  {onToggleCollapse && (
+                    <button
+                      onClick={onToggleCollapse}
+                      style={{
+                        background: 'transparent',
+                        border: 'none',
+                        color: '#94a3b8',
+                        cursor: 'pointer',
+                        padding: '2px',
+                        display: 'flex',
+                        alignItems: 'center'
+                      }}
+                      title="Ocultar painel de empreendimentos"
+                    >
+                      <X size={15} />
+                    </button>
+                  )}
+                </div>
               </div>
 
               {/* Barra de Pesquisa */}

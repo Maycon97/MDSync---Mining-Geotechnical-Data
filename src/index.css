@@ -2080,7 +2080,86 @@ textarea:focus-visible,
   box-shadow: none;
 }
 
-/* Barra Superior Flutuante Responsiva com Sincronismo do Sider */
+/* HUD Estratégico Georeferenciamento Espacial */
+.map-hud-top-left,
+.map-hud-top-center,
+.map-hud-top-right,
+.map-hud-bottom-left,
+.map-hud-bottom-right {
+  position: absolute;
+  z-index: 1000;
+  pointer-events: auto;
+}
+
+.map-hud-top-left {
+  top: 12px;
+  left: 14px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.map-hud-top-center {
+  top: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+}
+
+.map-hud-top-right {
+  top: 12px;
+  right: 14px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.map-hud-bottom-left {
+  bottom: 14px;
+  left: 14px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.map-hud-bottom-right {
+  bottom: 14px;
+  right: 14px;
+}
+
+.active-glow {
+  box-shadow: 0 0 16px rgba(56, 189, 248, 0.5) !important;
+  border-color: #38bdf8 !important;
+}
+
+@media (max-width: 1024px) {
+  .map-hud-top-center {
+    display: none;
+  }
+}
+
+@media (max-width: 768px) {
+  .map-hud-top-left {
+    top: 8px;
+    left: 8px;
+    max-width: calc(100vw - 16px);
+    overflow-x: auto;
+    padding-bottom: 4px;
+  }
+  .map-hud-top-right {
+    top: 50px;
+    right: 8px;
+  }
+  .map-hud-bottom-left {
+    bottom: 8px;
+    left: 8px;
+    max-width: calc(100vw - 16px);
+    flex-wrap: wrap;
+  }
+}
+
+/* Barra Superior Flutuante Responsiva com Sincronismo do Sider (Legado) */
 .sysdam-map-topbar {
   position: absolute;
   top: 12px;
@@ -2105,13 +2184,6 @@ textarea:focus-visible,
 
 .sysdam-map-topbar.sider-collapsed {
   left: 56px;
-}
-
-@media (max-width: 768px) {
-  .sysdam-map-topbar.sider-open,
-  .sysdam-map-topbar.sider-collapsed {
-    left: 12px;
-  }
 }
 
 /* ============================================================

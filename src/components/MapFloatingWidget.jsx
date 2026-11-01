@@ -18,7 +18,8 @@ export const MapFloatingWidget = ({
   onFilterStatus,
   onFilterGut
 }) => {
-  const [activeItem, setActiveItem] = useState('legenda'); // 'status' | 'planos' | 'gut' | 'evolucao' | 'legenda' | null
+  const [isMinimized, setIsMinimized] = useState(true);
+  const [activeItem, setActiveItem] = useState(null); // 'status' | 'planos' | 'gut' | 'evolucao' | null
 
   const toggleItem = (itemId) => {
     setActiveItem(prev => (prev === itemId ? null : itemId));
@@ -62,20 +63,96 @@ export const MapFloatingWidget = ({
     }).length
   };
 
+  if (isMinimized) {
+    return (
+      <div style={{
+        position: 'absolute',
+        bottom: '14px',
+        right: '14px',
+        zIndex: 1000
+      }}>
+        <button
+          onClick={() => setIsMinimized(false)}
+          style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '6px',
+            padding: '0.35rem 0.75rem',
+            borderRadius: '10px',
+            backgroundColor: 'rgba(15, 23, 42, 0.85)',
+            border: '1px solid rgba(255, 255, 255, 0.12)',
+            color: '#e2e8f0',
+            fontSize: '0.74rem',
+            fontWeight: 700,
+            cursor: 'pointer',
+            boxShadow: '0 4px 14px rgba(0, 0, 0, 0.4)',
+            backdropFilter: 'blur(16px)',
+            transition: 'all 0.2s ease'
+          }}
+          title="Abrir Painel de Indicadores e Classificação GUT"
+        >
+          <TrendingUp size={14} style={{ color: '#38bdf8' }} />
+          <span>Status & GUT</span>
+          <span style={{
+            backgroundColor: 'rgba(56, 189, 248, 0.25)',
+            color: '#38bdf8',
+            padding: '1px 6px',
+            borderRadius: '999px',
+            fontSize: '0.65rem',
+            fontWeight: 800
+          }}>
+            {statusCounts.total}
+          </span>
+        </button>
+      </div>
+    );
+  }
+
   return (
-    <div style={{
+    <div className="glass-panel animate-page-enter" style={{
       position: 'absolute',
-      bottom: '16px',
-      right: '16px',
+      bottom: '14px',
+      right: '14px',
       zIndex: 1000,
       width: '280px',
-      backgroundColor: 'var(--bg-surface)',
+      backgroundColor: 'rgba(15, 23, 42, 0.95)',
       borderRadius: '12px',
       border: '1px solid var(--border-medium)',
-      boxShadow: 'var(--shadow-xl)',
+      boxShadow: '0 12px 36px rgba(0, 0, 0, 0.6)',
       overflow: 'hidden',
       backdropFilter: 'blur(16px)'
     }}>
+      {/* Header do Widget com Botão de Minimizar */}
+      <div style={{
+        padding: '0.45rem 0.75rem',
+        backgroundColor: 'rgba(30, 41, 59, 0.6)',
+        borderBottom: '1px solid var(--border-subtle)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between'
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+          <TrendingUp size={13} style={{ color: '#38bdf8' }} />
+          <span style={{ fontSize: '0.72rem', fontWeight: 800, color: '#f8fafc' }}>
+            Indicadores SYSDAM & GUT
+          </span>
+        </div>
+        <button
+          onClick={() => setIsMinimized(true)}
+          style={{
+            background: 'none',
+            border: 'none',
+            color: '#94a3b8',
+            cursor: 'pointer',
+            fontSize: '0.8rem',
+            padding: '2px 4px'
+          }}
+          title="Minimizar painel"
+        >
+          ✕
+        </button>
+      </div>
+
       {/* 1. Status dos Registros (SYSDAM) */}
       <div style={{ borderBottom: '1px solid var(--border-subtle)' }}>
         <div

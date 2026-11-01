@@ -261,7 +261,13 @@ export function App() {
       />
 
       {/* Área de Conteúdo da Aba Ativa */}
-      <main id="main-content" tabIndex={-1} style={{ flex: 1, padding: '1.25rem', maxWidth: '1600px', width: '100%', margin: '0 auto' }}>
+      <main id="main-content" tabIndex={-1} style={{ 
+        flex: 1, 
+        padding: activeTab === 'mapa' ? '0.35rem 0.6rem 0.6rem' : '1.25rem', 
+        maxWidth: activeTab === 'mapa' ? '100%' : '1600px', 
+        width: '100%', 
+        margin: '0 auto' 
+      }}>
         <ErrorBoundary key={activeTab} onNavigateHome={() => handleNavigateTab('home')}>
           <Suspense fallback={<ModuleLoadingFallback />}>
           {activeTab === 'home' && (

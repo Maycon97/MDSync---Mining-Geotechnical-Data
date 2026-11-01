@@ -104,8 +104,8 @@ export const MapTab = ({ onNavigateTab, onSelectInstrumentForReading }) => {
 
   // Estados dos SUMPs (Painel Executivo e Camada GIS)
   const [showSumps, setShowSumps] = useState(true);
-  const [showSumpsPanel, setShowSumpsPanel] = useState(true);
-  const [isSumpsPanelPinned, setIsSumpsPanelPinned] = useState(true);
+  const [showSumpsPanel, setShowSumpsPanel] = useState(false);
+  const [isSumpsPanelPinned, setIsSumpsPanelPinned] = useState(false);
   const [selectedSumpTag, setSelectedSumpTag] = useState(null);
   const [filterSumpMina, setFilterSumpMina] = useState('Todas');
   const [filterSumpCrits, setFilterSumpCrits] = useState([]);
@@ -131,16 +131,45 @@ export const MapTab = ({ onNavigateTab, onSelectInstrumentForReading }) => {
   const [cursorCoords, setCursorCoords] = useState(null);
   const [mapZoom, setMapZoom] = useState(15);
 
+  // Estados de Menus e Popovers Estratégicos
+  const [showLayersMenu, setShowLayersMenu] = useState(false);
+  const [showToolsMenu, setShowToolsMenu] = useState(false);
+  const [showLegendPopover, setShowLegendPopover] = useState(false);
+
   // Estruturas e Empreendimentos Georreferenciados (Padrão SysDam Portal)
   const estruturas = useMemo(() => storageService.getEstruturasEmpreendimento(), []);
   const [selectedEstrutura, setSelectedEstrutura] = useState(() => {
     return estruturas.find(e => e.id === activeStructureId || e.sigla === activeStructureId) || estruturas[0] || null;
   });
-  const [isSiderCollapsed, setIsSiderCollapsed] = useState(false);
+  const [isSiderCollapsed, setIsSiderCollapsed] = useState(true);
   const [isSiderFlipped, setIsSiderFlipped] = useState(false);
   const [isMapPresetModified, setIsMapPresetModified] = useState(false);
   const [copiedCoords, setCopiedCoords] = useState(false);
   const structureTooltipsRef = useRef([]);
+
+  // Fechar popovers estratégicos com Escape ou clique externo
+  useEffect(() => {
+    const handleGlobalClick = (e) => {
+      if (!e.target.closest('.map-hud-popover') && !e.target.closest('.map-hud-trigger')) {
+        setShowLayersMenu(false);
+        setShowToolsMenu(false);
+        setShowLegendPopover(false);
+      }
+    };
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') {
+        setShowLayersMenu(false);
+        setShowToolsMenu(false);
+        setShowLegendPopover(false);
+      }
+    };
+    window.addEventListener('click', handleGlobalClick);
+    window.addEventListener('keydown', handleKeyDown);
+    return () => {
+      window.removeEventListener('click', handleGlobalClick);
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, []);
 
   // Sincronizar selectedEstrutura quando activeStructureId mudar
   useEffect(() => {
@@ -1057,9 +1086,9 @@ export const MapTab = ({ onNavigateTab, onSelectInstrumentForReading }) => {
     <div className="animate-page-enter" style={{ 
       position: 'relative', 
       width: '100%', 
-      height: 'calc(100vh - 130px)', 
-      minHeight: '600px', 
-      borderRadius: '14px', 
+      height: 'calc(100vh - 84px)', 
+      minHeight: '680px', 
+      borderRadius: '16px', 
       overflow: 'hidden', 
       border: '1px solid var(--border-medium)',
       boxShadow: 'var(--shadow-xl)'
@@ -1098,67 +1127,73 @@ export const MapTab = ({ onNavigateTab, onSelectInstrumentForReading }) => {
       />
 
       {/* ========================================================
-          Barra Flutuante Superior: Filtros, Camadas e Busca
+          1. TOP-LEFT HUD: Botões Estratégicos de Abertura de Conteúdos
          ======================================================== */}
-      <div className={`glass-panel sysdam-map-topbar ${isSiderCollapsed ? 'sider-collapsed' : 'sider-open'}`}>
-        {/* 0. Botão Alternador do Sider de Empreendimentos */}
+      <div className="map-hud-top-left">
+        {/* Botão 1: Empreendimentos & Estruturas (Abre painel lateral 3D) */}
         <button
           onClick={() => setIsSiderCollapsed(prev => !prev)}
-          className="btn-subtle"
+          className={`btn-subtle map-hud-trigger ${!isSiderCollapsed ? 'active-glow' : ''}`}
           style={{
-            display: 'flex',
+            display: 'inline-flex',
             alignItems: 'center',
             gap: '6px',
-            padding: '0.25rem 0.65rem',
-            borderRadius: '8px',
-            backgroundColor: !isSiderCollapsed ? 'rgba(0, 148, 234, 0.18)' : 'var(--bg-secondary)',
-            color: !isSiderCollapsed ? '#38bdf8' : 'var(--text-muted)',
-            border: !isSiderCollapsed ? '1px solid rgba(0, 148, 234, 0.45)' : '1px solid var(--border-subtle)',
+            padding: '0.35rem 0.75rem',
+            borderRadius: '10px',
+            backgroundColor: !isSiderCollapsed ? 'rgba(56, 189, 248, 0.24)' : 'rgba(15, 23, 42, 0.85)',
+            color: !isSiderCollapsed ? '#38bdf8' : '#e2e8f0',
+            border: !isSiderCollapsed ? '1px solid #38bdf8' : '1px solid rgba(255, 255, 255, 0.12)',
             fontSize: '0.74rem',
-            fontWeight: 600,
-            cursor: 'pointer'
+            fontWeight: 700,
+            cursor: 'pointer',
+            boxShadow: '0 4px 14px rgba(0, 0, 0, 0.4)',
+            backdropFilter: 'blur(16px)',
+            transition: 'all 0.2s ease'
           }}
-          title="Alternar visibilidade do Painel de Empreendimentos (Padrão SysDam)"
+          title="Abrir Painel de Empreendimentos e Estruturas (SysDam)"
         >
-          <Building2 size={14} style={{ color: '#38bdf8' }} />
+          <Building2 size={15} style={{ color: '#38bdf8' }} />
           <span>Empreendimentos</span>
           <span style={{
             backgroundColor: 'rgba(56, 189, 248, 0.25)',
             color: '#38bdf8',
-            padding: '1px 5px',
+            padding: '1px 6px',
             borderRadius: '999px',
             fontSize: '0.65rem',
-            fontWeight: 700
+            fontWeight: 800
           }}>
             {estruturas.length}
           </span>
         </button>
 
-        {/* 0.1 Botão / Aba de Fixação do Painel Executivo SUMPs */}
+        {/* Botão 2: Painel Executivo Oficial de SUMPs */}
         <button
           onClick={() => setShowSumpsPanel(prev => !prev)}
-          className="btn-subtle"
+          className={`btn-subtle map-hud-trigger ${showSumpsPanel ? 'active-glow' : ''}`}
           style={{
-            display: 'flex',
+            display: 'inline-flex',
             alignItems: 'center',
             gap: '6px',
-            padding: '0.25rem 0.65rem',
-            borderRadius: '8px',
-            backgroundColor: showSumpsPanel ? 'rgba(2, 132, 199, 0.22)' : 'var(--bg-secondary)',
-            color: showSumpsPanel ? '#38bdf8' : 'var(--text-muted)',
-            border: showSumpsPanel ? '1px solid rgba(56, 189, 248, 0.45)' : '1px solid var(--border-subtle)',
+            padding: '0.35rem 0.75rem',
+            borderRadius: '10px',
+            backgroundColor: showSumpsPanel ? 'rgba(2, 132, 199, 0.35)' : 'rgba(15, 23, 42, 0.85)',
+            color: showSumpsPanel ? '#ffffff' : '#71d1f8',
+            border: showSumpsPanel ? '1px solid #38bdf8' : '1px solid rgba(255, 255, 255, 0.12)',
             fontSize: '0.74rem',
             fontWeight: 700,
-            cursor: 'pointer'
+            cursor: 'pointer',
+            boxShadow: '0 4px 14px rgba(0, 0, 0, 0.4)',
+            backdropFilter: 'blur(16px)',
+            transition: 'all 0.2s ease'
           }}
-          title="Alternar visibilidade do Painel Executivo Oficial de SUMPs (Fixado)"
+          title="Abrir Painel Executivo Oficial de SUMPs de Drenagem"
         >
-          <Droplet size={14} style={{ color: '#38bdf8' }} />
-          <span>SUMPs</span>
+          <Droplet size={15} style={{ color: '#38bdf8' }} />
+          <span>Painel SUMPs</span>
           <span style={{
             backgroundColor: 'rgba(56, 189, 248, 0.25)',
             color: '#38bdf8',
-            padding: '1px 5px',
+            padding: '1px 6px',
             borderRadius: '999px',
             fontSize: '0.65rem',
             fontWeight: 800
@@ -1167,568 +1202,760 @@ export const MapTab = ({ onNavigateTab, onSelectInstrumentForReading }) => {
           </span>
         </button>
 
-        {/* 1. Alternador de Camada de Fundo */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem' }}>
-          <Layers size={16} style={{ color: 'var(--primary-accent)' }} />
-          <div style={{ display: 'flex', backgroundColor: 'var(--bg-secondary)', borderRadius: '8px', padding: '2px', gap: '2px' }}>
-            <button
-              onClick={() => setMapType('satellite_google')}
-              className={`btn-subtle ${mapType === 'satellite_google' ? 'active' : ''}`}
-              style={{
-                padding: '0.25rem 0.6rem',
-                fontSize: '0.74rem',
-                fontWeight: 600,
-                borderRadius: '6px',
-                backgroundColor: mapType === 'satellite_google' ? 'var(--primary-accent)' : 'transparent',
-                color: mapType === 'satellite_google' ? '#ffffff' : 'var(--text-muted)'
-              }}
-              title="Satélite Google Hybrid com resolução de alta precisão"
-            >
-              Satélite HD
-            </button>
-            <button
-              onClick={() => setMapType('satellite_esri')}
-              style={{
-                padding: '0.25rem 0.6rem',
-                fontSize: '0.74rem',
-                fontWeight: 600,
-                borderRadius: '6px',
-                backgroundColor: mapType === 'satellite_esri' ? 'var(--primary-accent)' : 'transparent',
-                color: mapType === 'satellite_esri' ? '#ffffff' : 'var(--text-muted)'
-              }}
-              title="Esri World Imagery"
-            >
-              Satélite Esri
-            </button>
-            <button
-              onClick={() => setMapType('topo')}
-              style={{
-                padding: '0.25rem 0.6rem',
-                fontSize: '0.74rem',
-                fontWeight: 600,
-                borderRadius: '6px',
-                backgroundColor: mapType === 'topo' ? 'var(--primary-accent)' : 'transparent',
-                color: mapType === 'topo' ? '#ffffff' : 'var(--text-muted)'
-              }}
-              title="Curvas de Relevo e Topografia"
-            >
-              Relevo / Topo
-            </button>
-            <button
-              onClick={() => setMapType('streets')}
-              style={{
-                padding: '0.25rem 0.6rem',
-                fontSize: '0.74rem',
-                fontWeight: 600,
-                borderRadius: '6px',
-                backgroundColor: mapType === 'streets' ? 'var(--primary-accent)' : 'transparent',
-                color: mapType === 'streets' ? '#ffffff' : 'var(--text-muted)'
-              }}
-              title="Ruas & Logística"
-            >
-              Ruas
-            </button>
-            <button
-              onClick={() => setMapType('dark')}
-              style={{
-                padding: '0.25rem 0.6rem',
-                fontSize: '0.74rem',
-                fontWeight: 600,
-                borderRadius: '6px',
-                backgroundColor: mapType === 'dark' ? 'var(--primary-accent)' : 'transparent',
-                color: mapType === 'dark' ? '#ffffff' : 'var(--text-muted)'
-              }}
-              title="Modo Escuro Geotécnico"
-            >
-              Dark
-            </button>
-          </div>
-        </div>
-
-        {/* 2. Seleção de Estrutura */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-          <Building2 size={16} style={{ color: activeStructureId !== 'TODAS' ? 'var(--primary-accent)' : 'var(--text-muted)' }} />
-          <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 600 }}>Estrutura:</span>
-          <select
-            value={activeStructureId}
-            onChange={(e) => handleSelectStructure(e.target.value)}
-            className="form-select"
-            style={{ 
-              padding: '0.25rem 0.55rem', 
-              fontSize: '0.75rem', 
-              backgroundColor: 'var(--bg-secondary)',
-              borderRadius: '6px',
-              border: activeStructureId !== 'TODAS' ? '1px solid var(--primary-accent)' : '1px solid var(--border-subtle)',
-              fontWeight: activeStructureId !== 'TODAS' ? 700 : 500,
-              maxWidth: '180px'
-            }}
-          >
-            <option value="TODAS">Todas as Estruturas ({structures.length})</option>
-            {structures.map(s => {
-              const count = instruments.filter(i => 
-                (i.estrutura?.replace(/\s+/g, '_') === s.id || i.estrutura === s.id || i.estrutura === s.nome)
-              ).length;
-              return (
-                <option key={s.id} value={s.id}>
-                  {s.nome} ({count})
-                </option>
-              );
-            })}
-          </select>
-        </div>
-
-        {/* 3. Campo de Busca Instantânea com Autocomplete */}
-        <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
-          <div style={{
-            display: 'flex',
+        {/* Botão 3: Modelo de Blocos Curto Prazo 3D (Datamine) */}
+        <button
+          onClick={() => setBlockModelModalOpen(true)}
+          className="btn-subtle"
+          style={{
+            display: 'inline-flex',
             alignItems: 'center',
-            backgroundColor: 'var(--bg-secondary)',
-            borderRadius: '6px',
-            padding: '0.2rem 0.5rem',
-            border: '1px solid var(--border-subtle)',
             gap: '6px',
-            width: '180px'
+            padding: '0.35rem 0.75rem',
+            borderRadius: '10px',
+            backgroundColor: 'rgba(16, 185, 129, 0.18)',
+            color: '#10b981',
+            border: '1px solid rgba(16, 185, 129, 0.45)',
+            fontSize: '0.74rem',
+            fontWeight: 700,
+            cursor: 'pointer',
+            boxShadow: '0 4px 14px rgba(0, 0, 0, 0.4)',
+            backdropFilter: 'blur(16px)',
+            transition: 'all 0.2s ease'
+          }}
+          title="Abrir Modelo de Blocos Curto Prazo (CP) Engenho Seco 3D (Datamine)"
+        >
+          <Layers size={15} style={{ color: '#10b981' }} />
+          <span>Modelo 3D CP</span>
+          <span style={{
+            backgroundColor: 'rgba(16, 185, 129, 0.25)',
+            color: '#10b981',
+            padding: '1px 5px',
+            borderRadius: '4px',
+            fontSize: '0.62rem',
+            fontWeight: 800
           }}>
-            <Search size={14} style={{ color: 'var(--text-muted)' }} />
-            <input 
-              type="text"
-              placeholder="Buscar (ex: PZ-01)..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              style={{
-                background: 'transparent',
-                border: 'none',
-                outline: 'none',
-                color: 'var(--text-main)',
-                fontSize: '0.75rem',
-                width: '100%'
-              }}
-            />
-            {searchQuery && (
-              <button 
-                onClick={() => setSearchQuery('')}
-                style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', padding: 0 }}
-              >
-                ✕
-              </button>
-            )}
-          </div>
+            3D
+          </span>
+        </button>
 
-          {/* Menu Dropdown de Resultados da Busca */}
-          {searchResults.length > 0 && (
-            <div style={{
-              position: 'absolute',
-              top: 'calc(100% + 4px)',
-              left: 0,
-              right: 0,
-              backgroundColor: 'var(--bg-surface)',
-              borderRadius: '8px',
-              border: '1px solid var(--border-medium)',
-              boxShadow: 'var(--shadow-xl)',
-              zIndex: 2000,
-              maxHeight: '220px',
-              overflowY: 'auto'
-            }}>
-              {searchResults.map(inst => (
-                <div
-                  key={inst.id}
-                  onClick={() => handleSelectInstrument(inst)}
-                  style={{
-                    padding: '0.45rem 0.65rem',
-                    borderBottom: '1px solid var(--border-subtle)',
-                    cursor: 'pointer',
-                    fontSize: '0.75rem',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    transition: 'background-color 0.15s ease'
-                  }}
-                  onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'var(--bg-secondary)'}
-                  onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+        {/* Botão 4: Gaveta Lateral de Registros e Ocorrências */}
+        <button
+          onClick={() => setIsRecordDrawerOpen(prev => !prev)}
+          className={`btn-subtle map-hud-trigger ${isRecordDrawerOpen ? 'active-glow' : ''}`}
+          style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '6px',
+            padding: '0.35rem 0.75rem',
+            borderRadius: '10px',
+            backgroundColor: isRecordDrawerOpen ? '#7c3aed' : 'rgba(15, 23, 42, 0.85)',
+            color: isRecordDrawerOpen ? '#ffffff' : '#c084fc',
+            border: isRecordDrawerOpen ? '1px solid #7c3aed' : '1px solid rgba(255, 255, 255, 0.12)',
+            fontSize: '0.74rem',
+            fontWeight: 700,
+            cursor: 'pointer',
+            boxShadow: '0 4px 14px rgba(0, 0, 0, 0.4)',
+            backdropFilter: 'blur(16px)',
+            transition: 'all 0.2s ease'
+          }}
+          title="Abrir Gaveta Lateral de Registros e Ocorrências Geotécnicas (SYSDAM)"
+        >
+          <ClipboardList size={15} />
+          <span>Ocorrências</span>
+          <span style={{
+            backgroundColor: isRecordDrawerOpen ? 'rgba(255, 255, 255, 0.25)' : 'rgba(168, 85, 247, 0.25)',
+            color: isRecordDrawerOpen ? '#ffffff' : '#c084fc',
+            padding: '1px 6px',
+            borderRadius: '999px',
+            fontSize: '0.65rem',
+            fontWeight: 800
+          }}>
+            {georeferencedAnomalies.length}
+          </span>
+        </button>
+
+        {/* Botão 5: Menu de Ferramentas & Regras */}
+        <div style={{ position: 'relative' }}>
+          <button
+            onClick={() => setShowToolsMenu(prev => !prev)}
+            className={`btn-subtle map-hud-trigger ${showToolsMenu ? 'active-glow' : ''}`}
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '4px',
+              padding: '0.35rem 0.65rem',
+              borderRadius: '10px',
+              backgroundColor: showToolsMenu ? 'rgba(255, 255, 255, 0.18)' : 'rgba(15, 23, 42, 0.85)',
+              color: '#e2e8f0',
+              border: '1px solid rgba(255, 255, 255, 0.12)',
+              fontSize: '0.74rem',
+              fontWeight: 600,
+              cursor: 'pointer',
+              boxShadow: '0 4px 14px rgba(0, 0, 0, 0.4)',
+              backdropFilter: 'blur(16px)'
+            }}
+            title="Mais Ferramentas, Configurações de Template e Regras"
+          >
+            <Sliders size={14} />
+            <span>Ferramentas</span>
+          </button>
+
+          {showToolsMenu && (
+            <div 
+              className="glass-panel map-hud-popover animate-page-enter"
+              style={{
+                position: 'absolute',
+                top: 'calc(100% + 8px)',
+                left: 0,
+                minWidth: '220px',
+                borderRadius: '12px',
+                padding: '6px',
+                boxShadow: '0 12px 36px rgba(0, 0, 0, 0.65)',
+                border: '1px solid var(--border-medium)',
+                backgroundColor: 'rgba(15, 23, 42, 0.96)',
+                zIndex: 2000,
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '4px'
+              }}
+            >
+              <button
+                onClick={() => { setTemplateModalOpen(true); setShowToolsMenu(false); }}
+                className="btn-subtle"
+                style={{ width: '100%', justifyContent: 'flex-start', padding: '0.45rem 0.75rem', fontSize: '0.74rem', gap: '8px', color: '#c084fc', border: 'none', background: 'transparent', textAlign: 'left', cursor: 'pointer', display: 'flex', alignItems: 'center' }}
+              >
+                <Sparkles size={14} />
+                <span>Configurar Template ID</span>
+              </button>
+              <button
+                onClick={() => { setInspectionSettingsModalOpen(true); setShowToolsMenu(false); }}
+                className="btn-subtle"
+                style={{ width: '100%', justifyContent: 'flex-start', padding: '0.45rem 0.75rem', fontSize: '0.74rem', gap: '8px', color: '#e2e8f0', border: 'none', background: 'transparent', textAlign: 'left', cursor: 'pointer', display: 'flex', alignItems: 'center' }}
+              >
+                <Wrench size={14} />
+                <span>Regras de Inspeção</span>
+              </button>
+              <div style={{ height: '1px', backgroundColor: 'rgba(255,255,255,0.08)', margin: '4px 0' }} />
+              {isMapPresetModified && (
+                <button
+                  onClick={() => { handleSaveMapPreset(); setShowToolsMenu(false); }}
+                  className="btn-subtle"
+                  style={{ width: '100%', justifyContent: 'flex-start', padding: '0.45rem 0.75rem', fontSize: '0.74rem', gap: '8px', color: '#38bdf8', border: 'none', background: 'transparent', textAlign: 'left', cursor: 'pointer', display: 'flex', alignItems: 'center' }}
                 >
-                  <div>
-                    <strong style={{ color: 'var(--primary-accent)' }}>{inst.id}</strong>
-                    <span style={{ color: 'var(--text-muted)', marginLeft: '6px', fontSize: '0.7rem' }}>
-                      ({inst.estrutura})
-                    </span>
-                  </div>
-                  <span style={{
-                    fontSize: '0.65rem',
-                    fontWeight: 700,
-                    padding: '0.1rem 0.4rem',
-                    borderRadius: '4px',
-                    backgroundColor: inst.statusCalculado === 'EMERGÊNCIA' ? 'rgba(239, 68, 68, 0.2)' : 'rgba(16, 185, 129, 0.2)',
-                    color: inst.statusCalculado === 'EMERGÊNCIA' ? '#ef4444' : '#10b981'
-                  }}>
-                    {inst.statusCalculado}
-                  </span>
-                </div>
-              ))}
+                  <Save size={14} />
+                  <span>Salvar enquadramento atual</span>
+                </button>
+              )}
+              {typeof window !== 'undefined' && localStorage.getItem('mdsync_map_preset') && (
+                <button
+                  onClick={() => { handleResetMapPreset(); setShowToolsMenu(false); }}
+                  className="btn-subtle"
+                  style={{ width: '100%', justifyContent: 'flex-start', padding: '0.45rem 0.75rem', fontSize: '0.74rem', gap: '8px', color: 'var(--text-muted)', border: 'none', background: 'transparent', textAlign: 'left', cursor: 'pointer', display: 'flex', alignItems: 'center' }}
+                >
+                  <RotateCcw size={14} />
+                  <span>Restaurar visão padrão</span>
+                </button>
+              )}
             </div>
           )}
-        </div>
-
-        {/* 4. Filtro por Tipo */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
-          <Filter size={15} style={{ color: 'var(--text-muted)' }} />
-          <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Tipo:</span>
-          <select
-            value={filterType}
-            onChange={(e) => setFilterType(e.target.value)}
-            className="form-select"
-            style={{ padding: '0.25rem 0.5rem', fontSize: '0.75rem', backgroundColor: 'var(--bg-secondary)', borderRadius: '6px' }}
-          >
-            {availableTypes.map(t => (
-              <option key={t} value={t}>{t}</option>
-            ))}
-          </select>
-        </div>
-
-        {/* 5. Filtro por Status */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
-          <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Status:</span>
-          <select
-            value={filterStatus}
-            onChange={(e) => setFilterStatus(e.target.value)}
-            className="form-select"
-            style={{ padding: '0.25rem 0.5rem', fontSize: '0.75rem', backgroundColor: 'var(--bg-secondary)', borderRadius: '6px' }}
-          >
-            <option value="TODOS">Todos</option>
-            <option value="NORMAL">Normal</option>
-            <option value="ATENÇÃO">Atenção</option>
-            <option value="ALERTA">Alerta</option>
-            <option value="EMERGÊNCIA">Emergência</option>
-          </select>
-        </div>
-
-        {/* 6. Toggles de Camadas: Clusters & Perímetros */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-          <button
-            onClick={() => setUseClustering(!useClustering)}
-            className={`btn-subtle ${useClustering ? 'active' : ''}`}
-            style={{
-              padding: '0.25rem 0.55rem',
-              fontSize: '0.72rem',
-              borderRadius: '6px',
-              backgroundColor: useClustering ? 'rgba(56, 189, 248, 0.15)' : 'var(--bg-secondary)',
-              color: useClustering ? 'var(--primary-accent)' : 'var(--text-muted)',
-              border: useClustering ? '1px solid rgba(56, 189, 248, 0.4)' : '1px solid var(--border-subtle)'
-            }}
-            title="Alternar entre agrupamento inteligente de marcadores ou exibição de todos os pinos individuais"
-          >
-            {useClustering ? '● Clusters Ativos' : '○ Pinos Soltos'}
-          </button>
-
-          <button
-            onClick={() => setShowPerimeters(!showPerimeters)}
-            className={`btn-subtle ${showPerimeters ? 'active' : ''}`}
-            style={{
-              padding: '0.25rem 0.55rem',
-              fontSize: '0.72rem',
-              borderRadius: '6px',
-              backgroundColor: showPerimeters ? 'rgba(16, 185, 129, 0.15)' : 'var(--bg-secondary)',
-              color: showPerimeters ? '#10b981' : 'var(--text-muted)',
-              border: showPerimeters ? '1px solid rgba(16, 185, 129, 0.4)' : '1px solid var(--border-subtle)'
-            }}
-            title="Exibir/Ocultar os perímetros poligonais georreferenciados das 8 estruturas da mina"
-          >
-            {showPerimeters ? 'Perímetros On' : 'Perímetros Off'}
-          </button>
-
-          <button
-            onClick={() => setShowTickets(!showTickets)}
-            className={`btn-subtle ${showTickets ? 'active' : ''}`}
-            style={{
-              padding: '0.25rem 0.55rem',
-              fontSize: '0.72rem',
-              borderRadius: '6px',
-              backgroundColor: showTickets ? 'rgba(245, 158, 11, 0.18)' : 'var(--bg-secondary)',
-              color: showTickets ? '#f59e0b' : 'var(--text-muted)',
-              border: showTickets ? '1px solid rgba(245, 158, 11, 0.4)' : '1px solid var(--border-subtle)'
-            }}
-            title="Exibir/Ocultar chamados de campo reais do PCMI/Fluig georreferenciados"
-          >
-            {showTickets ? `🔧 Chamados (${georeferencedTickets.length})` : '🔧 Chamados Off'}
-          </button>
-
-          <button
-            onClick={() => setShowAnomalies(!showAnomalies)}
-            className={`btn-subtle ${showAnomalies ? 'active' : ''}`}
-            style={{
-              padding: '0.25rem 0.55rem',
-              fontSize: '0.72rem',
-              borderRadius: '6px',
-              backgroundColor: showAnomalies ? 'rgba(56, 189, 248, 0.18)' : 'var(--bg-secondary)',
-              color: showAnomalies ? 'var(--primary-accent)' : 'var(--text-muted)',
-              border: showAnomalies ? '1px solid rgba(56, 189, 248, 0.4)' : '1px solid var(--border-subtle)'
-            }}
-            title="Exibir/Ocultar ocorrências de inspeção georreferenciadas (SYSDAM)"
-          >
-            {showAnomalies ? `🎯 Ocorrências (${georeferencedAnomalies.length})` : '🎯 Ocorrências Off'}
-          </button>
-
-          {/* Toggle Camada de SUMPs no Mapa */}
-          <button
-            onClick={() => setShowSumps(!showSumps)}
-            className={`btn-subtle ${showSumps ? 'active' : ''}`}
-            style={{
-              padding: '0.25rem 0.55rem',
-              fontSize: '0.72rem',
-              borderRadius: '6px',
-              backgroundColor: showSumps ? 'rgba(2, 132, 199, 0.22)' : 'var(--bg-secondary)',
-              color: showSumps ? '#38bdf8' : 'var(--text-muted)',
-              border: showSumps ? '1px solid rgba(56, 189, 248, 0.45)' : '1px solid var(--border-subtle)',
-              fontWeight: 700,
-              display: 'flex',
-              alignItems: 'center',
-              gap: '4px'
-            }}
-            title="Exibir/Ocultar camada de SUMPs georreferenciados no mapa"
-          >
-            <Droplet size={13} style={{ color: showSumps ? '#38bdf8' : 'inherit' }} />
-            <span>{showSumps ? `💧 SUMPs (${(sumps && sumps.length > 0) ? sumps.length : SUMPS_DATA.length})` : '💧 SUMPs Off'}</span>
-          </button>
-
-          {/* Botão Fixar/Exibir Painel Executivo Oficial de SUMPs */}
-          <button
-            onClick={() => setShowSumpsPanel(!showSumpsPanel)}
-            className={`btn-subtle ${showSumpsPanel ? 'active' : ''}`}
-            style={{
-              padding: '0.25rem 0.65rem',
-              fontSize: '0.72rem',
-              borderRadius: '6px',
-              backgroundColor: showSumpsPanel ? 'rgba(2, 132, 199, 0.3)' : 'var(--bg-secondary)',
-              color: showSumpsPanel ? '#ffffff' : '#71d1f8',
-              border: showSumpsPanel ? '1px solid #38bdf8' : '1px solid var(--border-subtle)',
-              fontWeight: 800,
-              boxShadow: showSumpsPanel ? '0 0 10px rgba(56, 189, 248, 0.4)' : 'none',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '4px'
-            }}
-            title="Fixar ou recolher o Painel Executivo Oficial de SUMPs na tela"
-          >
-            <TrendingUp size={13} />
-            <span>📊 Painel SUMPs {showSumpsPanel ? '●' : '○'}</span>
-          </button>
-
-          <button
-            onClick={() => setIsRecordDrawerOpen(!isRecordDrawerOpen)}
-            className={`btn-subtle ${isRecordDrawerOpen ? 'active' : ''}`}
-            style={{
-              padding: '0.25rem 0.65rem',
-              fontSize: '0.72rem',
-              borderRadius: '6px',
-              backgroundColor: isRecordDrawerOpen ? '#7c3aed' : 'var(--bg-secondary)',
-              color: isRecordDrawerOpen ? '#ffffff' : 'var(--text-main)',
-              border: isRecordDrawerOpen ? '1px solid #7c3aed' : '1px solid var(--border-subtle)',
-              fontWeight: 700,
-              display: 'flex',
-              alignItems: 'center',
-              gap: '4px'
-            }}
-            title="Abrir gaveta de cards de registros e ocorrências (SYSDAM)"
-          >
-            <ClipboardList size={13} />
-            <span>📋 Gaveta Registros</span>
-          </button>
-
-          <button
-            onClick={() => setTemplateModalOpen(true)}
-            className="btn-subtle"
-            style={{
-              padding: '0.25rem 0.55rem',
-              fontSize: '0.72rem',
-              borderRadius: '6px',
-              backgroundColor: 'var(--bg-secondary)',
-              color: '#7c3aed',
-              border: '1px solid var(--border-subtle)',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '3px'
-            }}
-            title="Configurar Template do Identificador do Registro (SYSDAM)"
-          >
-            <Sparkles size={13} />
-            <span>Template ID</span>
-          </button>
-
-          <button
-            onClick={() => setInspectionSettingsModalOpen(true)}
-            className="btn-subtle"
-            style={{
-              padding: '0.25rem 0.55rem',
-              fontSize: '0.72rem',
-              borderRadius: '6px',
-              backgroundColor: 'var(--bg-secondary)',
-              color: 'var(--text-main)',
-              border: '1px solid var(--border-subtle)'
-            }}
-            title="Configurar regras operacionais de inspeção (SYSDAM)"
-          >
-            ⚙️ Regras
-          </button>
-        </div>
-
-        {/* 7. Ações de Enquadramento e Persistência do Mapa (SysDam) */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-          {isMapPresetModified && (
-            <button
-              onClick={handleSaveMapPreset}
-              className="sysdam-save-map-btn"
-              title="Salvar enquadramento atual de câmera como preset inicial padrão"
-            >
-              <Save size={13} />
-              <span>Salvar alterações do mapa</span>
-            </button>
-          )}
-
-          {typeof window !== 'undefined' && localStorage.getItem('mdsync_map_preset') && (
-            <button
-              onClick={handleResetMapPreset}
-              className="btn-subtle"
-              style={{
-                padding: '0.25rem 0.5rem',
-                fontSize: '0.7rem',
-                borderRadius: '6px',
-                color: 'var(--text-muted)',
-                backgroundColor: 'var(--bg-secondary)',
-                border: '1px solid var(--border-subtle)'
-              }}
-              title="Restaurar enquadramento mestre original do Complexo Minerário Itaminas"
-            >
-              Restaurar Padrão
-            </button>
-          )}
-
-          <button
-            onClick={() => {
-              handleSelectStructure('TODAS');
-              setSelectedInstrument(null);
-            }}
-            className="btn-secondary"
-            title="Resetar câmera para visualização de todo o complexo minerário"
-            style={{ 
-              padding: '0.28rem 0.65rem', 
-              fontSize: '0.75rem', 
-              display: 'flex', 
-              alignItems: 'center', 
-              gap: '0.35rem'
-            }}
-          >
-            <Compass size={14} style={{ color: 'var(--primary-accent)' }} />
-            <span>Visão Geral</span>
-          </button>
-
-          <button
-            onClick={() => setBlockModelModalOpen(true)}
-            className="btn-subtle"
-            title="Abrir Visualizador do Modelo de Blocos Curto Prazo (CP) Engenho Seco (Datamine)"
-            style={{ 
-              padding: '0.28rem 0.65rem', 
-              fontSize: '0.75rem', 
-              display: 'flex', 
-              alignItems: 'center', 
-              gap: '0.35rem',
-              backgroundColor: 'rgba(16, 185, 129, 0.15)',
-              color: '#10b981',
-              border: '1px solid rgba(16, 185, 129, 0.4)',
-              fontWeight: 700,
-              borderRadius: '6px'
-            }}
-          >
-            <span>📦 Modelo de Blocos CP</span>
-          </button>
         </div>
       </div>
 
       {/* ========================================================
-          HUD Inferior Esquerdo: Legenda e Coordenadas em Tempo Real
+          2. TOP-CENTER HUD: Busca Instantânea & Filtro de Estrutura
          ======================================================== */}
-      <div style={{
-        position: 'absolute',
-        bottom: '16px',
-        left: '16px',
-        zIndex: 1000,
-        display: 'flex',
-        flexDirection: 'column',
-        gap: '0.5rem'
-      }}>
-        {/* Painel de Coordenadas do Cursor (WGS-84 e SIRGAS 2000 UTM 23S) */}
+      <div className="map-hud-top-center">
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          backgroundColor: 'rgba(15, 23, 42, 0.85)',
+          border: '1px solid rgba(255, 255, 255, 0.12)',
+          borderRadius: '12px',
+          padding: '3px 8px',
+          boxShadow: '0 8px 24px rgba(0, 0, 0, 0.45)',
+          backdropFilter: 'blur(16px)',
+          gap: '8px'
+        }}>
+          {/* Seletor de Estrutura */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+            <Building2 size={14} style={{ color: activeStructureId !== 'TODAS' ? '#38bdf8' : '#94a3b8' }} />
+            <select
+              value={activeStructureId}
+              onChange={(e) => handleSelectStructure(e.target.value)}
+              className="form-select"
+              style={{
+                padding: '0.2rem 0.45rem',
+                fontSize: '0.74rem',
+                backgroundColor: 'rgba(30, 41, 59, 0.75)',
+                borderRadius: '6px',
+                border: activeStructureId !== 'TODAS' ? '1px solid #38bdf8' : '1px solid rgba(255, 255, 255, 0.08)',
+                color: '#f8fafc',
+                fontWeight: activeStructureId !== 'TODAS' ? 700 : 500,
+                maxWidth: '160px',
+                cursor: 'pointer'
+              }}
+            >
+              <option value="TODAS">Complexo Geral ({structures.length})</option>
+              {structures.map(s => {
+                const count = instruments.filter(i => 
+                  (i.estrutura?.replace(/\s+/g, '_') === s.id || i.estrutura === s.id || i.estrutura === s.nome)
+                ).length;
+                return (
+                  <option key={s.id} value={s.id}>
+                    {s.nome} ({count})
+                  </option>
+                );
+              })}
+            </select>
+          </div>
+
+          {/* Divisor */}
+          <span style={{ width: '1px', height: '18px', backgroundColor: 'rgba(255, 255, 255, 0.15)' }} />
+
+          {/* Campo de Busca */}
+          <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              backgroundColor: 'rgba(30, 41, 59, 0.75)',
+              borderRadius: '6px',
+              padding: '0.2rem 0.5rem',
+              border: '1px solid rgba(255, 255, 255, 0.08)',
+              gap: '6px',
+              width: '180px'
+            }}>
+              <Search size={13} style={{ color: '#94a3b8' }} />
+              <input
+                type="text"
+                placeholder="Buscar (ex: PZ-01)..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                style={{
+                  background: 'transparent',
+                  border: 'none',
+                  outline: 'none',
+                  color: '#f8fafc',
+                  fontSize: '0.74rem',
+                  width: '100%'
+                }}
+              />
+              {searchQuery && (
+                <button
+                  onClick={() => setSearchQuery('')}
+                  style={{ background: 'none', border: 'none', color: '#94a3b8', cursor: 'pointer', padding: 0 }}
+                >
+                  ✕
+                </button>
+              )}
+            </div>
+
+            {/* Resultados da Busca */}
+            {searchResults.length > 0 && (
+              <div 
+                className="map-hud-popover"
+                style={{
+                  position: 'absolute',
+                  top: 'calc(100% + 6px)',
+                  left: 0,
+                  right: 0,
+                  backgroundColor: 'rgba(15, 23, 42, 0.98)',
+                  borderRadius: '8px',
+                  border: '1px solid var(--border-medium)',
+                  boxShadow: '0 12px 32px rgba(0, 0, 0, 0.65)',
+                  zIndex: 2000,
+                  maxHeight: '220px',
+                  overflowY: 'auto'
+                }}
+              >
+                {searchResults.map(inst => (
+                  <div
+                    key={inst.id}
+                    onClick={() => handleSelectInstrument(inst)}
+                    style={{
+                      padding: '0.45rem 0.65rem',
+                      borderBottom: '1px solid rgba(255, 255, 255, 0.06)',
+                      cursor: 'pointer',
+                      fontSize: '0.74rem',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      transition: 'background-color 0.15s ease'
+                    }}
+                    onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgba(56, 189, 248, 0.15)'}
+                    onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+                  >
+                    <div>
+                      <strong style={{ color: '#38bdf8' }}>{inst.id}</strong>
+                      <span style={{ color: '#94a3b8', marginLeft: '6px', fontSize: '0.68rem' }}>
+                        ({inst.estrutura})
+                      </span>
+                    </div>
+                    <span style={{
+                      fontSize: '0.65rem',
+                      fontWeight: 700,
+                      padding: '0.1rem 0.4rem',
+                      borderRadius: '4px',
+                      backgroundColor: inst.statusCalculado === 'EMERGÊNCIA' ? 'rgba(239, 68, 68, 0.2)' : 'rgba(16, 185, 129, 0.2)',
+                      color: inst.statusCalculado === 'EMERGÊNCIA' ? '#ef4444' : '#10b981'
+                    }}>
+                      {inst.statusCalculado}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* ========================================================
+          3. TOP-RIGHT HUD: GIS Basemap, Visão Geral & Camadas
+         ======================================================== */}
+      <div className="map-hud-top-right">
+        {/* Alternador de Camada Satélite */}
+        <div style={{
+          display: 'flex',
+          backgroundColor: 'rgba(15, 23, 42, 0.85)',
+          borderRadius: '10px',
+          padding: '3px',
+          border: '1px solid rgba(255, 255, 255, 0.12)',
+          boxShadow: '0 4px 14px rgba(0, 0, 0, 0.4)',
+          backdropFilter: 'blur(16px)',
+          gap: '2px'
+        }}>
+          <button
+            onClick={() => setMapType('satellite_google')}
+            style={{
+              padding: '0.25rem 0.55rem',
+              fontSize: '0.72rem',
+              fontWeight: 600,
+              borderRadius: '6px',
+              border: 'none',
+              backgroundColor: mapType === 'satellite_google' ? '#0094ea' : 'transparent',
+              color: mapType === 'satellite_google' ? '#ffffff' : '#94a3b8',
+              cursor: 'pointer'
+            }}
+            title="Google Hybrid Satellite"
+          >
+            Satélite HD
+          </button>
+          <button
+            onClick={() => setMapType('satellite_esri')}
+            style={{
+              padding: '0.25rem 0.55rem',
+              fontSize: '0.72rem',
+              fontWeight: 600,
+              borderRadius: '6px',
+              border: 'none',
+              backgroundColor: mapType === 'satellite_esri' ? '#0094ea' : 'transparent',
+              color: mapType === 'satellite_esri' ? '#ffffff' : '#94a3b8',
+              cursor: 'pointer'
+            }}
+            title="Esri World Imagery"
+          >
+            Esri
+          </button>
+          <button
+            onClick={() => setMapType('topo')}
+            style={{
+              padding: '0.25rem 0.55rem',
+              fontSize: '0.72rem',
+              fontWeight: 600,
+              borderRadius: '6px',
+              border: 'none',
+              backgroundColor: mapType === 'topo' ? '#0094ea' : 'transparent',
+              color: mapType === 'topo' ? '#ffffff' : '#94a3b8',
+              cursor: 'pointer'
+            }}
+            title="Relevo e Curvas Topográficas"
+          >
+            Relevo
+          </button>
+          <button
+            onClick={() => setMapType('dark')}
+            style={{
+              padding: '0.25rem 0.55rem',
+              fontSize: '0.72rem',
+              fontWeight: 600,
+              borderRadius: '6px',
+              border: 'none',
+              backgroundColor: mapType === 'dark' ? '#0094ea' : 'transparent',
+              color: mapType === 'dark' ? '#ffffff' : '#94a3b8',
+              cursor: 'pointer'
+            }}
+            title="Modo Escuro Geotécnico"
+          >
+            Dark
+          </button>
+        </div>
+
+        {/* Botão Visão Geral / Reset Câmera */}
+        <button
+          onClick={() => {
+            handleSelectStructure('TODAS');
+            setSelectedInstrument(null);
+          }}
+          className="btn-secondary"
+          style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '5px',
+            padding: '0.35rem 0.65rem',
+            borderRadius: '10px',
+            backgroundColor: 'rgba(15, 23, 42, 0.85)',
+            border: '1px solid rgba(255, 255, 255, 0.12)',
+            color: '#e2e8f0',
+            fontSize: '0.74rem',
+            fontWeight: 600,
+            cursor: 'pointer',
+            boxShadow: '0 4px 14px rgba(0, 0, 0, 0.4)',
+            backdropFilter: 'blur(16px)'
+          }}
+          title="Centralizar e visualizar todo o complexo minerário"
+        >
+          <Compass size={14} style={{ color: '#38bdf8' }} />
+          <span>Visão Geral</span>
+        </button>
+
+        {/* Botão Flutuante de Camadas & Filtros */}
+        <div style={{ position: 'relative' }}>
+          <button
+            onClick={() => setShowLayersMenu(prev => !prev)}
+            className={`btn-subtle map-hud-trigger ${showLayersMenu ? 'active-glow' : ''}`}
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '5px',
+              padding: '0.35rem 0.7rem',
+              borderRadius: '10px',
+              backgroundColor: showLayersMenu ? 'rgba(56, 189, 248, 0.22)' : 'rgba(15, 23, 42, 0.85)',
+              border: showLayersMenu ? '1px solid #38bdf8' : '1px solid rgba(255, 255, 255, 0.12)',
+              color: showLayersMenu ? '#38bdf8' : '#e2e8f0',
+              fontSize: '0.74rem',
+              fontWeight: 700,
+              cursor: 'pointer',
+              boxShadow: '0 4px 14px rgba(0, 0, 0, 0.4)',
+              backdropFilter: 'blur(16px)'
+            }}
+            title="Alternar camadas do mapa e filtros de instrumentação"
+          >
+            <Filter size={14} style={{ color: '#38bdf8' }} />
+            <span>Camadas</span>
+            <span style={{
+              backgroundColor: 'rgba(56, 189, 248, 0.25)',
+              color: '#38bdf8',
+              padding: '1px 5px',
+              borderRadius: '999px',
+              fontSize: '0.62rem',
+              fontWeight: 800
+            }}>
+              {(useClustering ? 1 : 0) + (showPerimeters ? 1 : 0) + (showTickets ? 1 : 0) + (showAnomalies ? 1 : 0) + (showSumps ? 1 : 0)}
+            </span>
+          </button>
+
+          {/* Popover de Camadas e Filtros */}
+          {showLayersMenu && (
+            <div 
+              className="glass-panel map-hud-popover animate-page-enter"
+              style={{
+                position: 'absolute',
+                top: 'calc(100% + 8px)',
+                right: 0,
+                width: '300px',
+                borderRadius: '14px',
+                padding: '12px',
+                boxShadow: '0 16px 40px rgba(0, 0, 0, 0.65)',
+                border: '1px solid var(--border-medium)',
+                backgroundColor: 'rgba(15, 23, 42, 0.96)',
+                zIndex: 2000,
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '10px'
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid rgba(255,255,255,0.08)', paddingBottom: '6px' }}>
+                <span style={{ fontSize: '0.78rem', fontWeight: 800, color: '#f8fafc', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <Layers size={14} style={{ color: '#38bdf8' }} />
+                  Camadas & Filtros GIS
+                </span>
+                <button
+                  onClick={() => setShowLayersMenu(false)}
+                  style={{ background: 'none', border: 'none', color: '#94a3b8', cursor: 'pointer', padding: 0 }}
+                >
+                  ✕
+                </button>
+              </div>
+
+              {/* Toggles de Camadas */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <span style={{ fontSize: '0.74rem', color: '#cbd5e1' }}>Agrupamento (Clusters):</span>
+                  <button
+                    onClick={() => setUseClustering(!useClustering)}
+                    style={{
+                      fontSize: '0.68rem',
+                      fontWeight: 700,
+                      padding: '2px 8px',
+                      borderRadius: '6px',
+                      backgroundColor: useClustering ? 'rgba(56, 189, 248, 0.2)' : 'rgba(255,255,255,0.06)',
+                      color: useClustering ? '#38bdf8' : '#94a3b8',
+                      border: useClustering ? '1px solid #38bdf8' : '1px solid rgba(255,255,255,0.1)',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    {useClustering ? '● Clusters Ativos' : '○ Pinos Soltos'}
+                  </button>
+                </div>
+
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <span style={{ fontSize: '0.74rem', color: '#cbd5e1' }}>Perímetros das Estruturas:</span>
+                  <button
+                    onClick={() => setShowPerimeters(!showPerimeters)}
+                    style={{
+                      fontSize: '0.68rem',
+                      fontWeight: 700,
+                      padding: '2px 8px',
+                      borderRadius: '6px',
+                      backgroundColor: showPerimeters ? 'rgba(16, 185, 129, 0.2)' : 'rgba(255,255,255,0.06)',
+                      color: showPerimeters ? '#10b981' : '#94a3b8',
+                      border: showPerimeters ? '1px solid #10b981' : '1px solid rgba(255,255,255,0.1)',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    {showPerimeters ? 'Visíveis (8)' : 'Ocultos'}
+                  </button>
+                </div>
+
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <span style={{ fontSize: '0.74rem', color: '#cbd5e1' }}>Chamados PCMI / Fluig:</span>
+                  <button
+                    onClick={() => setShowTickets(!showTickets)}
+                    style={{
+                      fontSize: '0.68rem',
+                      fontWeight: 700,
+                      padding: '2px 8px',
+                      borderRadius: '6px',
+                      backgroundColor: showTickets ? 'rgba(245, 158, 11, 0.2)' : 'rgba(255,255,255,0.06)',
+                      color: showTickets ? '#f59e0b' : '#94a3b8',
+                      border: showTickets ? '1px solid #f59e0b' : '1px solid rgba(255,255,255,0.1)',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    {showTickets ? `Ativos (${georeferencedTickets.length})` : 'Ocultos'}
+                  </button>
+                </div>
+
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <span style={{ fontSize: '0.74rem', color: '#cbd5e1' }}>Ocorrências SYSDAM:</span>
+                  <button
+                    onClick={() => setShowAnomalies(!showAnomalies)}
+                    style={{
+                      fontSize: '0.68rem',
+                      fontWeight: 700,
+                      padding: '2px 8px',
+                      borderRadius: '6px',
+                      backgroundColor: showAnomalies ? 'rgba(168, 85, 247, 0.2)' : 'rgba(255,255,255,0.06)',
+                      color: showAnomalies ? '#c084fc' : '#94a3b8',
+                      border: showAnomalies ? '1px solid #a855f7' : '1px solid rgba(255,255,255,0.1)',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    {showAnomalies ? `Ativas (${georeferencedAnomalies.length})` : 'Ocultas'}
+                  </button>
+                </div>
+
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <span style={{ fontSize: '0.74rem', color: '#cbd5e1' }}>Camada de SUMPs (GIS):</span>
+                  <button
+                    onClick={() => setShowSumps(!showSumps)}
+                    style={{
+                      fontSize: '0.68rem',
+                      fontWeight: 700,
+                      padding: '2px 8px',
+                      borderRadius: '6px',
+                      backgroundColor: showSumps ? 'rgba(2, 132, 199, 0.25)' : 'rgba(255,255,255,0.06)',
+                      color: showSumps ? '#38bdf8' : '#94a3b8',
+                      border: showSumps ? '1px solid #38bdf8' : '1px solid rgba(255,255,255,0.1)',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    {showSumps ? `Visíveis (${(sumps && sumps.length > 0) ? sumps.length : SUMPS_DATA.length})` : 'Ocultos'}
+                  </button>
+                </div>
+              </div>
+
+              <div style={{ height: '1px', backgroundColor: 'rgba(255,255,255,0.08)', margin: '2px 0' }} />
+
+              {/* Filtros de Tipo e Status */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+                <div>
+                  <label style={{ fontSize: '0.68rem', color: '#94a3b8', fontWeight: 600, display: 'block', marginBottom: '3px' }}>Tipo de Instrumento:</label>
+                  <select
+                    value={filterType}
+                    onChange={(e) => setFilterType(e.target.value)}
+                    className="form-select"
+                    style={{ width: '100%', padding: '0.25rem 0.4rem', fontSize: '0.72rem', backgroundColor: 'rgba(30, 41, 59, 0.8)', color: '#f8fafc', borderRadius: '6px', border: '1px solid rgba(255,255,255,0.1)' }}
+                  >
+                    {availableTypes.map(t => (
+                      <option key={t} value={t}>{t}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label style={{ fontSize: '0.68rem', color: '#94a3b8', fontWeight: 600, display: 'block', marginBottom: '3px' }}>Status Operacional:</label>
+                  <select
+                    value={filterStatus}
+                    onChange={(e) => setFilterStatus(e.target.value)}
+                    className="form-select"
+                    style={{ width: '100%', padding: '0.25rem 0.4rem', fontSize: '0.72rem', backgroundColor: 'rgba(30, 41, 59, 0.8)', color: '#f8fafc', borderRadius: '6px', border: '1px solid rgba(255,255,255,0.1)' }}
+                  >
+                    <option value="TODOS">Todos</option>
+                    <option value="NORMAL">Normal</option>
+                    <option value="ATENÇÃO">Atenção</option>
+                    <option value="ALERTA">Alerta</option>
+                    <option value="EMERGÊNCIA">Emergência</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* ========================================================
+          4. BOTTOM-LEFT HUD: Coordenadas em Tempo Real & Legenda Minimalista
+         ======================================================== */}
+      <div className="map-hud-bottom-left">
+        {/* Telemetria Geodésica */}
         {cursorCoords && (
-          <div className="glass-panel" style={{
+          <div style={{
             padding: '0.35rem 0.75rem',
             borderRadius: '8px',
             fontSize: '0.72rem',
             fontFamily: 'var(--font-mono)',
-            color: 'var(--text-muted)',
+            color: '#94a3b8',
             display: 'flex',
             alignItems: 'center',
-            gap: '0.75rem',
-            boxShadow: 'var(--shadow-md)',
-            border: '1px solid var(--border-medium)',
-            flexWrap: 'wrap'
+            gap: '0.65rem',
+            backgroundColor: 'rgba(15, 23, 42, 0.85)',
+            border: '1px solid rgba(255, 255, 255, 0.12)',
+            boxShadow: '0 4px 14px rgba(0, 0, 0, 0.4)',
+            backdropFilter: 'blur(16px)'
           }}>
-            <span>LAT: <strong style={{ color: 'var(--text-main)' }}>{cursorCoords.lat}</strong></span>
-            <span>LON: <strong style={{ color: 'var(--text-main)' }}>{cursorCoords.lon}</strong></span>
+            <span>LAT: <strong style={{ color: '#f8fafc' }}>{cursorCoords.lat}</strong></span>
+            <span>LON: <strong style={{ color: '#f8fafc' }}>{cursorCoords.lon}</strong></span>
             <span>UTM 23S: <strong style={{ color: '#38bdf8' }}>E {cursorCoords.utmE} / N {cursorCoords.utmN}</strong></span>
-            <span>ZOOM: <strong style={{ color: 'var(--primary-accent)' }}>{mapZoom}x</strong></span>
+            <span>ZOOM: <strong style={{ color: '#0094ea' }}>{mapZoom}x</strong></span>
             <button
               onClick={handleCopyCoords}
               style={{
                 display: 'inline-flex',
                 alignItems: 'center',
                 gap: '4px',
-                padding: '2px 8px',
-                borderRadius: '5px',
+                padding: '2px 6px',
+                borderRadius: '4px',
                 backgroundColor: copiedCoords ? 'rgba(34, 197, 94, 0.2)' : 'rgba(255, 255, 255, 0.08)',
-                color: copiedCoords ? '#22c55e' : 'var(--text-muted)',
-                border: copiedCoords ? '1px solid #22c55e' : '1px solid var(--border-subtle)',
+                color: copiedCoords ? '#22c55e' : '#cbd5e1',
+                border: copiedCoords ? '1px solid #22c55e' : '1px solid rgba(255, 255, 255, 0.12)',
                 cursor: 'pointer',
-                fontSize: '0.68rem',
+                fontSize: '0.66rem',
                 fontWeight: 600,
-                transition: 'all 0.2s ease',
-                marginLeft: '4px'
+                marginLeft: '2px'
               }}
-              title="Copiar Coordenadas Geodésicas (WGS-84 e UTM 23S)"
+              title="Copiar Coordenadas Geodésicas"
             >
-              {copiedCoords ? <Check size={12} /> : <Copy size={12} />}
+              {copiedCoords ? <Check size={11} /> : <Copy size={11} />}
               <span>{copiedCoords ? 'Copiado!' : 'Copiar'}</span>
             </button>
           </div>
         )}
 
-        {/* Legenda Georreferenciada */}
-        <div className="glass-panel hide-mobile" style={{
-          padding: '0.65rem 0.85rem',
-          borderRadius: '8px',
-          fontSize: '0.72rem',
-          display: 'flex',
-          flexDirection: 'column',
-          gap: '0.35rem',
-          boxShadow: 'var(--shadow-md)',
-          border: '1px solid var(--border-medium)'
-        }}>
-          <div style={{ fontWeight: 700, color: 'var(--text-main)', marginBottom: '2px', display: 'flex', alignItems: 'center', gap: '5px' }}>
-            <MapPin size={13} style={{ color: 'var(--primary-accent)' }} />
-            <span>Legenda Geotécnica</span>
+        {/* Legenda Geotécnica Inline Compacta (Não obstrui o mapa) */}
+        <div style={{ position: 'relative' }}>
+          <div 
+            onClick={() => setShowLegendPopover(prev => !prev)}
+            className="map-hud-trigger"
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '8px',
+              padding: '0.35rem 0.75rem',
+              borderRadius: '8px',
+              fontSize: '0.72rem',
+              fontWeight: 600,
+              color: '#e2e8f0',
+              backgroundColor: 'rgba(15, 23, 42, 0.85)',
+              border: '1px solid rgba(255, 255, 255, 0.12)',
+              boxShadow: '0 4px 14px rgba(0, 0, 0, 0.4)',
+              backdropFilter: 'blur(16px)',
+              cursor: 'pointer'
+            }}
+            title="Clique para ver detalhes das convenções geotécnicas"
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+              <MapPin size={12} style={{ color: '#38bdf8' }} />
+              <span>Legenda:</span>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '3px' }}>
+                <span style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: 'var(--geo-normal)' }} />
+                <span>Normal</span>
+              </span>
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '3px' }}>
+                <span style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: 'var(--geo-atencao)' }} />
+                <span>Atenção</span>
+              </span>
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '3px' }}>
+                <span style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: 'var(--geo-alerta)' }} />
+                <span>Alerta</span>
+              </span>
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '3px' }}>
+                <span style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: 'var(--geo-emergencia)' }} />
+                <span>Emergência</span>
+              </span>
+            </div>
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-            <span style={{ width: '10px', height: '10px', borderRadius: '50%', backgroundColor: 'var(--geo-normal)' }}></span>
-            <span>Normal (Operação Estável)</span>
-          </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-            <span style={{ width: '10px', height: '10px', borderRadius: '50%', backgroundColor: 'var(--geo-atencao)' }}></span>
-            <span>Atenção Operacional</span>
-          </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-            <span style={{ width: '10px', height: '10px', borderRadius: '50%', backgroundColor: 'var(--geo-alerta)' }}></span>
-            <span>Alerta Geotécnico</span>
-          </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-            <span style={{ width: '10px', height: '10px', borderRadius: '50%', backgroundColor: 'var(--geo-emergencia)' }}></span>
-            <span>Emergência (PAEBM)</span>
-          </div>
+
+          {/* Popover Detalhado da Legenda */}
+          {showLegendPopover && (
+            <div 
+              className="glass-panel map-hud-popover animate-page-enter"
+              style={{
+                position: 'absolute',
+                bottom: 'calc(100% + 8px)',
+                left: 0,
+                width: '230px',
+                borderRadius: '10px',
+                padding: '8px 12px',
+                backgroundColor: 'rgba(15, 23, 42, 0.96)',
+                border: '1px solid var(--border-medium)',
+                boxShadow: '0 12px 32px rgba(0, 0, 0, 0.65)',
+                zIndex: 2000,
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '6px',
+                fontSize: '0.72rem'
+              }}
+            >
+              <div style={{ fontWeight: 700, color: '#f8fafc', marginBottom: '2px' }}>Convenções Geotécnicas</div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <span style={{ width: '9px', height: '9px', borderRadius: '50%', backgroundColor: 'var(--geo-normal)' }} />
+                <span>Normal (Operação Estável)</span>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <span style={{ width: '9px', height: '9px', borderRadius: '50%', backgroundColor: 'var(--geo-atencao)' }} />
+                <span>Atenção Operacional</span>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <span style={{ width: '9px', height: '9px', borderRadius: '50%', backgroundColor: 'var(--geo-alerta)' }} />
+                <span>Alerta Geotécnico</span>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <span style={{ width: '9px', height: '9px', borderRadius: '50%', backgroundColor: 'var(--geo-emergencia)' }} />
+                <span>Emergência (PAEBM)</span>
+              </div>
+            </div>
+          )}
         </div>
       </div>
 
