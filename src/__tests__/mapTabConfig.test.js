@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 import { describe, it, expect } from 'vitest';
 import { STRUCTURE_BOUNDARIES, STRUCTURE_CATEGORIES } from '../data/structureBoundaries';
 
@@ -38,5 +39,11 @@ describe('MapTab GIS Configuration & Boundaries', () => {
     expect(b1.crestLine.length).toBeGreaterThanOrEqual(2);
     expect(b4.crestLine).toBeDefined();
     expect(b4.crestLine.length).toBeGreaterThanOrEqual(2);
+  });
+
+  it('should cleanly import MapTab component without ReferenceError (e.g. TrendingUp)', async () => {
+    const { MapTab } = await import('../components/MapTab');
+    expect(MapTab).toBeDefined();
+    expect(typeof MapTab).toBe('function');
   });
 });

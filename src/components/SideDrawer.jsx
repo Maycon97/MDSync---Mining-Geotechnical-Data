@@ -166,7 +166,7 @@ export const SideDrawer = ({
         },
         {
           id: 'mapa',
-          title: 'Planta (GIS / Satélite)',
+          title: 'Georeferenciamento Espacial',
           icon: MapPin,
           type: 'tab',
           tabId: 'mapa'

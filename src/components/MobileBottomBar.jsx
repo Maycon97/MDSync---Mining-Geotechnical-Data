@@ -36,7 +36,7 @@ export const MobileBottomBar = ({
     },
     {
       id: 'mapa',
-      label: 'Planta GIS',
+      label: 'Georeferenciamento Espacial',
       icon: MapPin,
       isActive: activeTab === 'mapa',
       onClick: () => onNavigateTab('mapa')

@@ -38,7 +38,8 @@ import {
   ClipboardList,
   Save,
   Copy,
-  Check
+  Check,
+  TrendingUp
 } from 'lucide-react';
 import { MapInspectionRecordDrawer } from './MapInspectionRecordDrawer';
 import { MapInspectionDetailPanel } from './MapInspectionDetailPanel';

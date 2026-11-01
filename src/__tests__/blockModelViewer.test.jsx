@@ -60,3 +60,4 @@ describe('EngenhoSecoBlockModelViewer', () => {
     expect(container.textContent).toContain('Mês de Lavra:');
   });
 });
+

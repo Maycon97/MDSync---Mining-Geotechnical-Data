@@ -12,7 +12,7 @@ import {
 const TAB_TITLES = {
   home: 'Página Inicial',
   dashboard: 'Dashboard Executivo',
-  mapa: 'Planta (GIS / Satélite)',
+  mapa: 'Georeferenciamento Espacial',
   anomalias_inspecoes: 'Anomalias & ISR',
   campo: 'Coleta de Campo (Inspect)',
   mobile_inspecao: 'App de Campo (APK SYSDAM)',

@@ -16,7 +16,7 @@ describe('MobileBottomBar Navigation Component', () => {
 
     expect(html).toContain('Início');
     expect(html).toContain('Dashboard');
-    expect(html).toContain('Planta GIS');
+    expect(html).toContain('Georeferenciamento Espacial');
     expect(html).toContain('Inspeção');
     expect(html).toContain('Menu');
     expect(html).toContain('role="navigation"');
@@ -40,7 +40,7 @@ describe('MobileBottomBar Navigation Component', () => {
         onToggleDrawer={() => {}} 
       />
     );
-    expect(htmlMap).toContain('Planta GIS');
+    expect(htmlMap).toContain('Georeferenciamento Espacial');
     expect(htmlMap).toContain('active');
   });
 

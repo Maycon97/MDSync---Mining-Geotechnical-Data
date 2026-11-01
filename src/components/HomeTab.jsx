@@ -68,14 +68,14 @@ export const HomeTab = ({ onNavigateTab }) => {
     },
     {
       id: 'mapa',
-      title: 'Georreferenciamento',
+      title: 'Georeferenciamento Espacial',
       category: 'Cartografia & GIS',
       icon: MapPin,
       color: '#10b981',
       bgColor: 'rgba(16, 185, 129, 0.12)',
       desc: `Mapeamento espacial com ortofoto de satélite, polígonos das estruturas e posicionamento exato de ${instruments.length} instrumentos.`,
       stat: `${structures.length} Estruturas Georreferenciadas`,
-      action: 'Abrir Mapa 2D'
+      action: 'Abrir Georeferenciamento Espacial'
     },
     {
       id: 'campo',
