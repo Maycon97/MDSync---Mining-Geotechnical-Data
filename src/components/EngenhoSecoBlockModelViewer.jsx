@@ -29,6 +29,7 @@ import {
 } from 'lucide-react';
 
 export const EngenhoSecoBlockModelViewer = ({ onClose, onNavigateToMap }) => {
+  const [viewMode, setViewMode] = useState('3d'); // '3d' (Padrão: WebGL Datamine Real) | 'mensal' (Planejamento CP 2026)
   const [selectedModelId, setSelectedModelId] = useState('BM_1126'); // Modelo com dados reais carregados (bm_1126_2.dm)
   const [selectedSectorId, setSelectedSectorId] = useState('ENS_INDIA');
   const [selectedCota, setSelectedCota] = useState(820);
@@ -177,7 +178,60 @@ export const EngenhoSecoBlockModelViewer = ({ onClose, onNavigateToMap }) => {
           </div>
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
+          {/* Alternador de Modo: 3D WebGL vs Planejamento Mensal */}
+          <div style={{
+            display: 'flex',
+            backgroundColor: 'var(--bg-secondary)',
+            borderRadius: '8px',
+            padding: '2px',
+            border: '1px solid var(--border-medium)',
+            gap: '2px'
+          }}>
+            <button
+              onClick={() => setViewMode('3d')}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '5px',
+                padding: '0.35rem 0.7rem',
+                fontSize: '0.74rem',
+                fontWeight: 700,
+                borderRadius: '6px',
+                border: 'none',
+                cursor: 'pointer',
+                backgroundColor: viewMode === '3d' ? 'var(--primary-accent)' : 'transparent',
+                color: viewMode === '3d' ? '#ffffff' : 'var(--text-muted)',
+                transition: 'all 0.15s ease'
+              }}
+              title="Abrir modelo de blocos 3D interativo WebGL com 55 bancadas do Datamine"
+            >
+              <Box size={14} />
+              <span>🧊 Visualizador 3D Datamine</span>
+            </button>
+            <button
+              onClick={() => setViewMode('mensal')}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '5px',
+                padding: '0.35rem 0.7rem',
+                fontSize: '0.74rem',
+                fontWeight: 700,
+                borderRadius: '6px',
+                border: 'none',
+                cursor: 'pointer',
+                backgroundColor: viewMode === 'mensal' ? 'var(--primary-accent)' : 'transparent',
+                color: viewMode === 'mensal' ? '#ffffff' : 'var(--text-muted)',
+                transition: 'all 0.15s ease'
+              }}
+              title="Consultar planejamento de curto prazo mês a mês"
+            >
+              <Calendar size={14} />
+              <span>📋 Planejamento Mensal (CP)</span>
+            </button>
+          </div>
+
           {onNavigateToMap && (
             <button
               onClick={() => onNavigateToMap('ENGENHO_SECO')}
@@ -213,62 +267,92 @@ export const EngenhoSecoBlockModelViewer = ({ onClose, onNavigateToMap }) => {
         </div>
       </div>
 
-      {/* 2. Seletor do modelo mensal */}
-      <div style={{
-        display: 'flex',
-        flexWrap: 'wrap',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        gap: '0.75rem',
-        padding: '0.75rem 1rem',
-        borderRadius: '10px',
-        backgroundColor: 'var(--bg-secondary)',
-        border: '1px solid var(--border-medium)'
-      }}>
-        {/* Seletor de Modelo de Bloco Mensal */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem' }}>
-          <Calendar size={15} style={{ color: 'var(--primary-accent)' }} />
-          <span style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)' }}>Mês de Lavra:</span>
-          <select
-            value={selectedModelId}
-            onChange={(e) => setSelectedModelId(e.target.value)}
-            className="form-select"
-            style={{
-              padding: '0.3rem 0.6rem',
-              fontSize: '0.76rem',
-              fontWeight: 700,
-              borderRadius: '6px',
-              backgroundColor: 'var(--bg-surface)',
-              border: '1px solid var(--primary-accent)',
-              color: 'var(--text-main)',
-              minWidth: '160px'
-            }}
-          >
-            {ENGENHO_SECO_BLOCK_MODELS.map(m => (
-              <option key={m.id} value={m.id}>
-                {m.mes} / {m.ano} ({m.arquivo})
-              </option>
-            ))}
-          </select>
-        </div>
-
-          {activeModel.dadosReais ? (
-            <span style={{ fontSize: '0.7rem', fontWeight: 700, padding: '2px 8px', borderRadius: '6px', backgroundColor: 'rgba(16, 185, 129, 0.18)', color: '#10b981', border: '1px solid rgba(16, 185, 129, 0.4)' }}>
-              Dados reais do arquivo .dm
-            </span>
-          ) : (
-            <span style={{ fontSize: '0.7rem', fontWeight: 700, padding: '2px 8px', borderRadius: '6px', backgroundColor: 'rgba(245, 158, 11, 0.18)', color: '#f59e0b', border: '1px solid rgba(245, 158, 11, 0.4)' }}>
-              Dados ilustrativos — arquivo ainda não convertido
-            </span>
-          )}
-        </div>
-
-      {activeModel.dadosReais ? (
-        <Suspense fallback={<div className="glass-panel" style={{ padding: '1rem', color: 'var(--text-muted)', fontSize: '0.8rem' }}>Carregando visualizador 3D...</div>}>
-          <BlockModelRealPanel modelId={activeModel.id} />
+      {viewMode === '3d' ? (
+        <Suspense fallback={
+          <div className="glass-panel" style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.85rem' }}>
+            <Box size={24} style={{ marginBottom: 8 }} />
+            <div>Carregando Visualizador 3D Datamine WebGL (bm_1126_2.dm)...</div>
+          </div>
+        }>
+          <BlockModelRealPanel modelId="BM_1126" />
         </Suspense>
       ) : (
         <>
+          {/* 2. Seletor do modelo mensal (Modo CP Mensal) */}
+          <div style={{
+            display: 'flex',
+            flexWrap: 'wrap',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: '0.75rem',
+            padding: '0.75rem 1rem',
+            borderRadius: '10px',
+            backgroundColor: 'var(--bg-secondary)',
+            border: '1px solid var(--border-medium)'
+          }}>
+            {/* Seletor de Modelo de Bloco Mensal */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem' }}>
+              <Calendar size={15} style={{ color: 'var(--primary-accent)' }} />
+              <span style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)' }}>Mês de Lavra:</span>
+              <select
+                value={selectedModelId}
+                onChange={(e) => setSelectedModelId(e.target.value)}
+                className="form-select"
+                style={{
+                  padding: '0.3rem 0.6rem',
+                  fontSize: '0.76rem',
+                  fontWeight: 700,
+                  borderRadius: '6px',
+                  backgroundColor: 'var(--bg-surface)',
+                  border: '1px solid var(--primary-accent)',
+                  color: 'var(--text-main)',
+                  minWidth: '220px'
+                }}
+              >
+                {ENGENHO_SECO_BLOCK_MODELS.map(m => (
+                  <option key={m.id} value={m.id}>
+                    {m.mes} / {m.ano} ({m.arquivo}) {m.dadosReais ? '★ [3D Real Datamine]' : ''}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              {activeModel.dadosReais ? (
+                <span style={{ fontSize: '0.7rem', fontWeight: 700, padding: '2px 8px', borderRadius: '6px', backgroundColor: 'rgba(16, 185, 129, 0.18)', color: '#10b981', border: '1px solid rgba(16, 185, 129, 0.4)' }}>
+                  Dados reais do arquivo .dm
+                </span>
+              ) : (
+                <button
+                  onClick={() => setViewMode('3d')}
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: 4,
+                    fontSize: '0.7rem',
+                    fontWeight: 700,
+                    padding: '3px 8px',
+                    borderRadius: '6px',
+                    backgroundColor: 'rgba(124, 58, 237, 0.2)',
+                    color: '#c4b5fd',
+                    border: '1px solid rgba(124, 58, 237, 0.4)',
+                    cursor: 'pointer'
+                  }}
+                  title="Abrir modelo 3D com 55 bancadas reais"
+                >
+                  <Box size={12} />
+                  Abrir Modelo 3D Datamine Oficial
+                </button>
+              )}
+            </div>
+          </div>
+
+          {activeModel.dadosReais ? (
+            <Suspense fallback={<div className="glass-panel" style={{ padding: '1rem', color: 'var(--text-muted)', fontSize: '0.8rem' }}>Carregando visualizador 3D...</div>}>
+              <BlockModelRealPanel modelId={activeModel.id} />
+            </Suspense>
+          ) : (
+            <>
       {/* 2b. Barra de Controle (modelos ilustrativos): Setor, Cota e Rampa */}
       <div style={{
         display: 'flex',
@@ -750,6 +834,8 @@ export const EngenhoSecoBlockModelViewer = ({ onClose, onNavigateToMap }) => {
           ))}
         </div>
       </div>
+        </>
+      )}
         </>
       )}
     </div>

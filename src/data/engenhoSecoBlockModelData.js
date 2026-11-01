@@ -7,6 +7,50 @@
 
 export const ENGENHO_SECO_BLOCK_MODELS = [
   {
+    id: 'BM_1126',
+    mes: 'Novembro',
+    ano: 2026,
+    codigoMes: '1126',
+    arquivo: 'bm_1126_2.dm',
+    caminhoRelativo: 'Modelo_CP_EngenhoSeco/bm_1126_2.zip',
+    tamanhoBytes: 9682051072,
+    tamanhoFormatado: '9.68 GB',
+    status: 'Planejado / CP',
+    dataModelo: '29/10/2026',
+    dadosReais: true, // convertido com scripts/convert_dm_block_model.py -> public/data/block-model/BM_1126
+    areasAtivas: ['Cava Índia', 'Cava Oeste Inferior', 'Samambaia'],
+    romEspecial: {
+      massa: 367243.77,
+      fe: 61.80,
+      sio2: 7.27,
+      p: 0.083,
+      al2o3: 1.06,
+      mn: 0.156,
+      pf: 3.20,
+      g1_pct: 47.8,
+      sinter_pct: 52.2
+    },
+    romComum: {
+      massa: 541844.91,
+      fe: 49.49,
+      sio2: 20.10,
+      p: 0.106,
+      al2o3: 1.60,
+      mn: 0.250,
+      pf: 4.18,
+      g1_pct: 29.2,
+      sinter_pct: 70.8
+    },
+    esteril: {
+      massa: 440000.00,
+      volumeM3: 209523.00,
+      densidadeMedia: 2.10,
+      destinoPrincipal: 'PDE ES1 / PDE Jacó / PDE Mangaba'
+    },
+    rem: 1.22,
+    bancadasAtivas: [790, 800, 810, 820, 830, 840, 850]
+  },
+  {
     id: 'BM_0226',
     mes: 'Fevereiro',
     ano: 2026,
@@ -392,50 +436,6 @@ export const ENGENHO_SECO_BLOCK_MODELS = [
     },
     rem: 1.20,
     bancadasAtivas: [800, 810, 820, 830, 840, 850, 860]
-  },
-  {
-    id: 'BM_1126',
-    mes: 'Novembro',
-    ano: 2026,
-    codigoMes: '1126',
-    arquivo: 'bm_1126_2.dm',
-    caminhoRelativo: 'Modelo_CP_EngenhoSeco/bm_1126_2.zip',
-    tamanhoBytes: 9682051072,
-    tamanhoFormatado: '9.68 GB',
-    status: 'Planejado / CP',
-    dataModelo: '29/10/2026',
-    dadosReais: true, // convertido com scripts/convert_dm_block_model.py -> public/data/block-model/BM_1126
-    areasAtivas: ['Cava Índia', 'Cava Oeste Inferior', 'Samambaia'],
-    romEspecial: {
-      massa: 367243.77,
-      fe: 61.80,
-      sio2: 7.27,
-      p: 0.083,
-      al2o3: 1.06,
-      mn: 0.156,
-      pf: 3.20,
-      g1_pct: 47.8,
-      sinter_pct: 52.2
-    },
-    romComum: {
-      massa: 541844.91,
-      fe: 49.49,
-      sio2: 20.10,
-      p: 0.106,
-      al2o3: 1.60,
-      mn: 0.250,
-      pf: 4.18,
-      g1_pct: 29.2,
-      sinter_pct: 70.8
-    },
-    esteril: {
-      massa: 440000.00,
-      volumeM3: 209523.00,
-      densidadeMedia: 2.10,
-      destinoPrincipal: 'PDE ES1 / PDE Jacó / PDE Mangaba'
-    },
-    rem: 1.22,
-    bancadasAtivas: [790, 800, 810, 820, 830, 840, 850]
   },
   {
     id: 'BM_1226',
