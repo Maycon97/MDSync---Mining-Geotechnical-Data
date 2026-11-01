@@ -2260,3 +2260,238 @@ textarea:focus-visible,
 }
 
 
+
+
+/* ============================================================
+   NEXUS_FUTURE_UI — Sistema de Animação & Design Futurista
+   Especificação 60 FPS com Física Spring, Glow & Gradiente Animado
+   ============================================================ */
+
+:root {
+  --nexus-bg: #080B16;
+  --nexus-surface: #11182A;
+  --nexus-surface-secondary: #19243A;
+  --nexus-primary: #7C5CFF;
+  --nexus-secondary: #00D9FF;
+  --nexus-accent: #00F5A0;
+  --nexus-text: #FFFFFF;
+  --nexus-text-secondary: #A7B2CC;
+  --nexus-border: #293653;
+  --nexus-glow: #7655FF;
+}
+
+/* 1. Transição de Telas (screen_transitions) */
+@keyframes nexusScreenEnter {
+  0% {
+    opacity: 0;
+    transform: translateY(35px) scale(0.96);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes nexusScreenExit {
+  0% {
+    opacity: 1;
+    transform: translateX(0);
+  }
+  100% {
+    opacity: 0;
+    transform: translateX(-20px);
+  }
+}
+
+@keyframes nexusModalEnter {
+  0% {
+    opacity: 0;
+    transform: scale(0.88) translateY(30px);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.animate-page-enter {
+  animation: nexusScreenEnter 450ms cubic-bezier(0.215, 0.61, 0.355, 1) both;
+  will-change: transform, opacity;
+}
+
+.animate-page-exit {
+  animation: nexusScreenExit 250ms cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+.animate-modal-enter,
+.modal-content,
+.modal-dialog-panel {
+  animation: nexusModalEnter 400ms cubic-bezier(0.34, 1.56, 0.64, 1) both;
+  will-change: transform, opacity;
+}
+
+/* 2. Botões Interativos (buttons) */
+button,
+.btn-primary,
+.btn-secondary,
+.nexus-btn {
+  transition: transform 120ms cubic-bezier(0.215, 0.61, 0.355, 1),
+              box-shadow 250ms cubic-bezier(0.34, 1.56, 0.64, 1),
+              background-color 200ms ease;
+  will-change: transform, box-shadow;
+}
+
+button:active:not(:disabled),
+.btn-primary:active:not(:disabled),
+.btn-secondary:active:not(:disabled),
+.nexus-btn:active:not(:disabled) {
+  transform: scale(0.94);
+  box-shadow: 0 0 16px rgba(118, 85, 255, 0.8), 0 0 32px rgba(124, 92, 255, 0.35);
+}
+
+/* 3. Cards com Entrada Escalonada e Profundidade 3D (cards) */
+@keyframes nexusCardEntrance {
+  0% {
+    opacity: 0;
+    transform: translateY(45px) scale(0.94);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.card-panel {
+  perspective: 1000px;
+  transform-style: preserve-3d;
+  animation: nexusCardEntrance 550ms cubic-bezier(0.215, 0.61, 0.355, 1) both;
+  transition: transform 250ms cubic-bezier(0.34, 1.56, 0.64, 1),
+              box-shadow 300ms ease,
+              border-color 300ms ease;
+}
+
+.card-panel:hover {
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.45), 0 0 20px rgba(124, 92, 255, 0.12);
+  border-color: rgba(124, 92, 255, 0.35);
+}
+
+.card-panel:active {
+  transform: scale(0.97);
+}
+
+/* Stagger de Cards */
+.nexus-stagger > *:nth-child(1) { animation-delay: 0ms; }
+.nexus-stagger > *:nth-child(2) { animation-delay: 90ms; }
+.nexus-stagger > *:nth-child(3) { animation-delay: 180ms; }
+.nexus-stagger > *:nth-child(4) { animation-delay: 270ms; }
+.nexus-stagger > *:nth-child(5) { animation-delay: 360ms; }
+.nexus-stagger > *:nth-child(6) { animation-delay: 450ms; }
+.nexus-stagger > *:nth-child(7) { animation-delay: 540ms; }
+.nexus-stagger > *:nth-child(8) { animation-delay: 630ms; }
+
+/* 4. Gradiente Animado de Fundo em Loop de 9000ms (background.animated_gradient) */
+.nexus-animated-gradient {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, #080B16 0%, #19113B 35%, #101D39 70%, #080B16 100%);
+  background-size: 300% 300%;
+  animation: nexusGradientLoop 9000ms ease-in-out infinite;
+  opacity: 0.95;
+}
+
+@keyframes nexusGradientLoop {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+/* 5. Microinterações (micro_interactions) */
+@keyframes nexusNotificationSlide {
+  0% {
+    transform: translateY(20px);
+    opacity: 0;
+  }
+  100% {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes nexusSuccessPop {
+  0% {
+    transform: scale(0.7);
+  }
+  60% {
+    transform: scale(1.1);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+@keyframes nexusPulseLoading {
+  0% {
+    transform: scale(0.95);
+    opacity: 0.85;
+  }
+  50% {
+    transform: scale(1.05);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(0.95);
+    opacity: 0.85;
+  }
+}
+
+.nexus-toast {
+  animation: nexusNotificationSlide 350ms cubic-bezier(0.215, 0.61, 0.355, 1) both;
+}
+
+.nexus-success {
+  animation: nexusSuccessPop 500ms cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
+.nexus-loading-pulse {
+  animation: nexusPulseLoading 1000ms ease-in-out infinite;
+}
+
+/* 6. Navegação Inferior Móvel (navigation) */
+.mobile-bottom-bar-btn {
+  opacity: 0.55 !important;
+  transition: opacity 300ms cubic-bezier(0.34, 1.56, 0.64, 1),
+              transform 300ms cubic-bezier(0.34, 1.56, 0.64, 1) !important;
+}
+
+.mobile-bottom-bar-btn.active {
+  opacity: 1 !important;
+}
+
+.mobile-bottom-bar-btn.active .mobile-bottom-bar-icon-wrap {
+  transform: scale(1.2) !important;
+  box-shadow: 0 0 14px rgba(124, 92, 255, 0.45) !important;
+  background-color: rgba(124, 92, 255, 0.15) !important;
+  color: var(--nexus-secondary) !important;
+}
+
+/* 7. Acessibilidade (accessibility - prefers-reduced-motion) */
+@media (prefers-reduced-motion: reduce) {
+  *, ::before, ::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+  .nexus-animated-gradient {
+    animation: none !important;
+  }
+  .nexus-particles-canvas {
+    display: none !important;
+  }
+}

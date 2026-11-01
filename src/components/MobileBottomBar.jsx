@@ -6,6 +6,7 @@ import {
   Smartphone, 
   Menu 
 } from 'lucide-react';
+import { triggerHaptic } from '../utils/nexusMotion';
 
 /**
  * MobileBottomBar - Barra de navegação inferior estilo nativo para smartphones e tablets.
@@ -70,7 +71,10 @@ export const MobileBottomBar = ({
             key={item.id}
             type="button"
             className={`mobile-bottom-bar-btn ${item.isActive ? 'active' : ''}`}
-            onClick={item.onClick}
+            onClick={(e) => {
+              triggerHaptic('light');
+              item.onClick(e);
+            }}
             aria-label={item.label}
             aria-current={item.isActive ? 'page' : undefined}
           >

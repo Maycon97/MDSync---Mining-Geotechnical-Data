@@ -1,0 +1,178 @@
+{
+  "project": {
+    "name": "NEXUS_FUTURE_UI",
+    "animation_engine": "react-native-reanimated",
+    "version": "1.0.0",
+    "platforms": ["android", "ios", "web", "windows"],
+    "target_fps": 60
+  },
+  "theme": {
+    "style": "premium_futuristic",
+    "colors": {
+      "background": "#080B16",
+      "surface": "#11182A",
+      "surface_secondary": "#19243A",
+      "primary": "#7C5CFF",
+      "secondary": "#00D9FF",
+      "accent": "#00F5A0",
+      "text": "#FFFFFF",
+      "text_secondary": "#A7B2CC",
+      "border": "#293653",
+      "glow": "#7655FF"
+    },
+    "effects": {
+      "glassmorphism": true,
+      "neon_glow": true,
+      "soft_shadows": true,
+      "depth_effects": true,
+      "gradient_backgrounds": true
+    }
+  },
+  "global_animation": {
+    "enabled": true,
+    "fps": 60,
+    "default_duration": 350,
+    "easing": "out_cubic",
+    "spring": {
+      "damping": 18,
+      "stiffness": 180,
+      "mass": 0.8
+    }
+  },
+  "screen_transitions": {
+    "enter": {
+      "opacity": [0, 1],
+      "translateY": [35, 0],
+      "scale": [0.96, 1],
+      "duration": 450,
+      "easing": "out_cubic"
+    },
+    "exit": {
+      "opacity": [1, 0],
+      "translateX": [0, -20],
+      "duration": 250
+    },
+    "modal": {
+      "opacity": [0, 1],
+      "scale": [0.88, 1],
+      "translateY": [30, 0],
+      "spring": true
+    }
+  },
+  "buttons": {
+    "interactive": true,
+    "press": {
+      "scale": 0.94,
+      "duration": 120
+    },
+    "release": {
+      "scale": 1,
+      "spring": true
+    },
+    "glow": {
+      "enabled": true,
+      "intensity": 0.8,
+      "color": "#7655FF"
+    },
+    "haptic_feedback": true
+  },
+  "cards": {
+    "entrance": {
+      "opacity": [0, 1],
+      "translateY": [45, 0],
+      "scale": [0.94, 1],
+      "stagger": 90,
+      "duration": 550
+    },
+    "interaction": {
+      "press_scale": 0.97,
+      "spring": true
+    },
+    "depth": {
+      "enabled": true,
+      "parallax": true,
+      "perspective": 1000
+    }
+  },
+  "background": {
+    "animated_gradient": {
+      "enabled": true,
+      "colors": [
+        "#080B16",
+        "#19113B",
+        "#101D39",
+        "#080B16"
+      ],
+      "duration": 9000,
+      "loop": true
+    },
+    "particles": {
+      "enabled": true,
+      "count": 18,
+      "opacity": 0.35,
+      "movement": "floating",
+      "speed": "slow"
+    }
+  },
+  "micro_interactions": {
+    "toggle": {
+      "duration": 250,
+      "spring": true
+    },
+    "notification": {
+      "translateY": [20, 0],
+      "opacity": [0, 1],
+      "duration": 350
+    },
+    "success": {
+      "scale": [0.7, 1.1, 1],
+      "duration": 500
+    },
+    "loading": {
+      "type": "pulse",
+      "scale": [0.95, 1.05],
+      "duration": 1000,
+      "loop": true
+    }
+  },
+  "gestures": {
+    "swipe": {
+      "enabled": true,
+      "threshold": 60,
+      "spring": true
+    },
+    "drag": {
+      "enabled": true,
+      "resistance": 0.7
+    },
+    "long_press": {
+      "enabled": true,
+      "duration": 450
+    },
+    "pinch": {
+      "enabled": true,
+      "min_scale": 0.7,
+      "max_scale": 2
+    }
+  },
+  "navigation": {
+    "tab_transition": "spring",
+    "active_icon_scale": 1.2,
+    "inactive_opacity": 0.55,
+    "indicator_animation": true,
+    "duration": 300
+  },
+  "accessibility": {
+    "respect_reduced_motion": true,
+    "disable_parallax_when_reduced_motion": true,
+    "disable_infinite_animations_when_reduced_motion": true,
+    "maintain_interaction_feedback": true
+  },
+  "performance": {
+    "use_ui_thread": true,
+    "avoid_unnecessary_renders": true,
+    "optimize_offscreen_animations": true,
+    "use_native_gestures": true,
+    "avoid_heavy_blur": true
+  }
+}

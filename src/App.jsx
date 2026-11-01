@@ -9,6 +9,8 @@ import { ErrorBoundary } from './components/ErrorBoundary';
 import { MobileBottomBar } from './components/MobileBottomBar';
 import { AuthModal } from './components/AuthModal';
 import { CookieConsentBanner } from './components/CookieConsentBanner';
+import { NexusBackground } from './components/NexusBackground';
+import { useNexusGestures } from './hooks/useNexusGestures';
 
 // Lazy loading sob demanda para aceleração de arranque e economia de memória (Mobile & Desktop)
 const MapTab = lazy(() => import('./components/MapTab').then(m => ({ default: m.MapTab })));
@@ -112,6 +114,23 @@ export function App() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
+  // Gestos de Deslize (Swipe) conforme especificação NEXUS_FUTURE_UI
+  const mobileTabOrder = ['home', 'dashboard', 'mapa', 'mobile_inspecao'];
+  useNexusGestures({
+    onSwipeLeft: () => {
+      const idx = mobileTabOrder.indexOf(activeTab);
+      if (idx !== -1 && idx < mobileTabOrder.length - 1) {
+        handleNavigateTab(mobileTabOrder[idx + 1]);
+      }
+    },
+    onSwipeRight: () => {
+      const idx = mobileTabOrder.indexOf(activeTab);
+      if (idx > 0) {
+        handleNavigateTab(mobileTabOrder[idx - 1]);
+      }
+    }
+  });
+
   if (loading) {
     return (
       <div className="mdsync-loading-container">
@@ -187,7 +206,10 @@ export function App() {
   }
 
   return (
-    <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', backgroundColor: 'var(--bg-primary)' }}>
+    <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', backgroundColor: 'var(--bg-primary)', position: 'relative' }}>
+      {/* Sistema de Fundo Futurista NEXUS: Gradiente 9000ms & Partículas 60 FPS */}
+      <NexusBackground />
+
       {/* Link de Acessibilidade: Pular para o Conteúdo Principal (Item 8 e 11 da Auditoria) */}
       <a href="#main-content" className="skip-to-content">
         Pular para o conteúdo principal
