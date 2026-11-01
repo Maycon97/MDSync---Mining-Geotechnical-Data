@@ -25,6 +25,7 @@ export const ImportacoesTab = () => {
 
   const pcmiPath = `C:\\Users\\maycon.nascimento\\ITAMINAS\\SPLO - General\\03) Geotecnia\\01) PCMI`;
   const jgdPath = `C:\\Users\\maycon.nascimento\\ITAMINAS\\SPLO - General\\03) Geotecnia\\11) Hidrogeologia\\10) Monitoramento\\JGD`;
+  const sumpsPath = `C:\\Users\\maycon.nascimento\\ITAMINAS\\SPLO - General\\03) Geotecnia\\01) PCMI\\00) Gestão à Vista\\01) Sumps\\GUT_SUMPS.xlsx`;
 
   const handleSyncPcmi = () => {
     setIsSyncing(true);
@@ -146,6 +147,36 @@ export const ImportacoesTab = () => {
 
           <p style={{ fontSize: '0.76rem', color: 'var(--text-muted)', margin: 0 }}>
             Monitoramento hidrogeológico da Cava Jangada, vazão dos 21 vertedouros e níveis de água subterrâneos.
+          </p>
+        </div>
+
+        {/* Diretório 3: SUMPs & Drenagem (Auto-Sync) */}
+        <div className="card-panel" style={{ padding: '1.25rem', borderLeft: '4px solid #38bdf8' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.6rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+              <Layers size={18} style={{ color: '#38bdf8' }} />
+              <strong style={{ fontSize: '0.88rem', color: 'var(--text-main)' }}>SUMPs & Drenagem (GUT)</strong>
+            </div>
+            <span style={{ fontSize: '0.68rem', fontWeight: 700, padding: '0.15rem 0.45rem', borderRadius: '10px', backgroundColor: 'rgba(56, 189, 248, 0.15)', color: '#38bdf8' }}>
+              AUTO-SYNC ATIVO
+            </span>
+          </div>
+
+          <code style={{
+            display: 'block',
+            padding: '0.5rem 0.75rem',
+            borderRadius: '6px',
+            backgroundColor: 'var(--bg-secondary)',
+            fontSize: '0.74rem',
+            wordBreak: 'break-all',
+            color: 'var(--text-muted)',
+            marginBottom: '0.6rem'
+          }}>
+            {sumpsPath}
+          </code>
+
+          <p style={{ fontSize: '0.76rem', color: 'var(--text-muted)', margin: 0 }}>
+            91 SUMPs cadastrados e georreferenciados. Vigilância contínua com atualização em tempo real ao salvar o Excel.
           </p>
         </div>
 

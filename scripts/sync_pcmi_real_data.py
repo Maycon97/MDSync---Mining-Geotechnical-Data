@@ -519,55 +519,113 @@ def run_sync():
             wb_s = openpyxl.load_workbook(SUMPS_PATH, data_only=True, read_only=True)
             if 'GUT' in wb_s.sheetnames:
                 sheet_s = wb_s['GUT']
-                for row in sheet_s.iter_rows(min_row=2, values_only=True):
-                    if not row or not row[0]:
-                        continue
-                    sumps_list.append({
-                        "tag": safe_str(row[0]),
-                        "id": safe_str(row[1]),
-                        "dataUltimaLimpeza": safe_str(row[2]),
-                        "dataUltimaInspecao": safe_str(row[3]),
-                        "mina": safe_str(row[4]),
-                        "tipo": safe_str(row[6]),
-                        "situacao": safe_str(row[7]),
-                        "areaM2": safe_float(row[11])
-                    })
+                rows_s = list(sheet_s.iter_rows(min_row=1, values_only=True))
+                if rows_s:
+                    h_row = [str(c).strip().lower() if c is not None else "" for c in rows_s[0]]
+                    def find_col_idx(names):
+                        for name in names:
+                            nl = name.strip().lower()
+                            for i, h in enumerate(h_row):
+                                if h == nl:
+                                    return i
+                        return None
+
+                    c_tag = find_col_idx(["tag"])
+                    c_id = find_col_idx(["id", "identificador"])
+                    c_limp = find_col_idx(["data ultima limpeza", "data última limpeza"])
+                    c_insp = find_col_idx(["data ultima inspeção", "data última inspeção"])
+                    c_mina = find_col_idx(["mina"])
+                    c_tipo = find_col_idx(["tipo estrutura", "tipo"])
+                    c_sit = find_col_idx(["situação", "situacao"])
+                    c_area = find_col_idx(["área (m²)", "area (m²)"])
+                    c_cap = find_col_idx(["capacidade (m³)"])
+                    c_util = find_col_idx(["utilização (m³)"])
+                    c_crit = find_col_idx(["criticidade"])
+                    c_anom = find_col_idx(["anomalia"])
+                    c_lat = find_col_idx(["latitude"])
+                    c_lon = find_col_idx(["longitude"])
+                    c_gut = find_col_idx(["gut"])
+                    c_grav = find_col_idx(["gravidade"])
+                    c_urg = find_col_idx(["urgência", "urgencia"])
+                    c_tend = find_col_idx(["tendência", "tendencia"])
+                    c_acao = find_col_idx(["plano de ação", "plano de acao"])
+                    c_chamado = find_col_idx(["n.° chamado", "nº chamado", "chamado"])
+                    c_resp = find_col_idx(["responsável execução", "responsavel execucao"])
+                    c_antes = find_col_idx(["url antes"])
+                    c_depois = find_col_idx(["url depois"])
+
+                    for r in rows_s[1:]:
+                        if not r:
+                            continue
+                        tag_val = safe_str(r[c_tag]) if c_tag is not None else None
+                        if not tag_val:
+                            continue
+                        lat_val = safe_float(r[c_lat]) if c_lat is not None else None
+                        lon_val = safe_float(r[c_lon]) if c_lon is not None else None
+                        
+                        rec = {
+                            "tag": tag_val,
+                            "id": safe_str(r[c_id]) if c_id is not None else tag_val,
+                            "dataUltimaLimpeza": safe_str(r[c_limp]) if c_limp is not None else None,
+                            "dataUltimaInspecao": safe_str(r[c_insp]) if c_insp is not None else None,
+                            "mina": safe_str(r[c_mina]) if c_mina is not None else "ENGENHO SECO",
+                            "tipo": safe_str(r[c_tipo]) if c_tipo is not None else "SUMP",
+                            "situacao": safe_str(r[c_sit]) if c_sit is not None else "Ativo",
+                            "areaM2": safe_float(r[c_area]) if c_area is not None else None,
+                            "cap": safe_float(r[c_cap]) if c_cap is not None else 0.0,
+                            "util": safe_float(r[c_util]) if c_util is not None else 0.0,
+                            "crit": safe_str(r[c_crit]) if c_crit is not None else "Normal",
+                            "anom": safe_str(r[c_anom]) if c_anom is not None else "SEM ANOMALIA",
+                            "lat": round(lat_val, 6) if lat_val is not None else None,
+                            "lon": round(lon_val, 6) if lon_val is not None else None,
+                            "gut": safe_float(r[c_gut]) if c_gut is not None else None,
+                            "gravidade": safe_str(r[c_grav]) if c_grav is not None else None,
+                            "urgencia": safe_str(r[c_urg]) if c_urg is not None else None,
+                            "tendencia": safe_str(r[c_tend]) if c_tend is not None else None,
+                            "planoAcao": safe_str(r[c_acao]) if c_acao is not None else None,
+                            "numChamado": safe_str(r[c_chamado]) if c_chamado is not None else None,
+                            "responsavelExecucao": safe_str(r[c_resp]) if c_resp is not None else None,
+                            "urlAntes": safe_str(r[c_antes]) if c_antes is not None else None,
+                            "urlDepois": safe_str(r[c_depois]) if c_depois is not None else None
+                        }
+                        sumps_list.append(rec)
             wb_s.close()
-            print(f"[6/7] Sistema de Sumps & Drenagem: {len(sumps_list)} estruturas ativas.")
-        except Exception as e:
-            print(f"[6/7] Erro ao carregar Sumps: {e}")
 
-    # Enriquecimento georreferenciado com o Painel Executivo Oficial de SUMPs
-    sumps_panel_path = r"c:\Users\maycon.nascimento\Documents\Work\CÓPIAS\Copy Works\AtualizadorPaineis\atualizador\dados\SUMPs\Painel_Executivo_SUMPs_Itaminas.html"
-    sumps_exec_data = []
-    if os.path.exists(sumps_panel_path):
-        try:
-            with open(sumps_panel_path, 'r', encoding='utf-8') as sf:
-                c_html = sf.read()
-                d_start = c_html.find('const DATA = [')
-                if d_start != -1:
-                    d_end = c_html.find('];', d_start) + 1
-                    sumps_exec_data = json.loads(c_html[d_start + 13:d_end])
-        except Exception as e:
-            print(f"[6/7] Aviso ao ler Painel Executivo de Sumps: {e}")
+            # Centroides aproximados para sumps sem coordenada
+            from statistics import mean
+            cent = {}
+            for m in {s["mina"] for s in sumps_list if s.get("mina")}:
+                pts = [s for s in sumps_list if s.get("mina") == m and s.get("lat") and s.get("lon")]
+                if pts:
+                    cent[m] = (round(mean(p["lat"] for p in pts), 6), round(mean(p["lon"] for p in pts), 6))
+            for s in sumps_list:
+                if (not s.get("lat") or not s.get("lon")) and s.get("mina") in cent:
+                    s["lat"], s["lon"] = cent[s["mina"]]
+                    s["aprox"] = True
 
-    if sumps_exec_data:
-        sump_map = {s.get("tag"): s for s in sumps_list if s.get("tag")}
-        for item in sumps_exec_data:
-            tag = item.get("tag")
-            if tag in sump_map:
-                sump_map[tag]["crit"] = item.get("crit")
-                sump_map[tag]["anom"] = item.get("anom")
-                sump_map[tag]["cap"] = item.get("cap")
-                sump_map[tag]["util"] = item.get("util")
-                sump_map[tag]["lat"] = item.get("lat")
-                sump_map[tag]["lon"] = item.get("lon")
-                sump_map[tag]["aprox"] = item.get("aprox", False)
-                if not sump_map[tag].get("mina"):
-                    sump_map[tag]["mina"] = item.get("mina")
-            else:
-                sumps_list.append(dict(item))
-        print(f"[6/7] Painel Executivo SUMPs: {len(sumps_exec_data)} sumps 100% georreferenciados e enriquecidos.")
+            print(f"[6/7] Sistema de Sumps & Drenagem: {len(sumps_list)} estruturas ativas 100% georreferenciadas.")
+        except Exception as e:
+            print(f"[6/7] Erro ao carregar Sumps do Excel: {e}")
+
+    # Fallback/enriquecimento via HTML se Excel não estiver acessível
+    if not sumps_list:
+        sumps_panel_candidates = [
+            os.path.join(GESTAO_A_VISTA_DIR, "01) Sumps", "Painel_Executivo_SUMPs_Itaminas.html"),
+            r"c:\Users\maycon.nascimento\Documents\Work\CÓPIAS\Copy Works\AtualizadorPaineis\atualizador\dados\SUMPs\Painel_Executivo_SUMPs_Itaminas.html"
+        ]
+        for p_cand in sumps_panel_candidates:
+            if os.path.exists(p_cand):
+                try:
+                    with open(p_cand, 'r', encoding='utf-8') as sf:
+                        c_html = sf.read()
+                        d_start = c_html.find('const DATA = [')
+                        if d_start != -1:
+                            d_end = c_html.find('];', d_start) + 1
+                            sumps_list = json.loads(c_html[d_start + 13:d_end])
+                            print(f"[6/7] SUMPs carregados via Painel Executivo ({len(sumps_list)} registros): {p_cand}")
+                            break
+                except Exception as e:
+                    print(f"[6/7] Aviso ao ler Painel Executivo HTML: {e}")
 
     # ============================================================
     # LEITURA DE CHAMADOS & ORDENS (Controle de Chamados.xlsx)

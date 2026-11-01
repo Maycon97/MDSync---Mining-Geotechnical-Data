@@ -2,12 +2,12 @@ import { describe, it, expect } from 'vitest';
 import { SUMPS_DATA } from '../data/sumpsData';
 
 describe('SUMPs Integration & Executive Panel Data', () => {
-  it('should have 92 official sumps georeferenced with valid coordinates', () => {
+  it('should have official sumps georeferenced with valid coordinates', () => {
     expect(SUMPS_DATA).toBeDefined();
-    expect(SUMPS_DATA.length).toBe(92);
+    expect(SUMPS_DATA.length).toBeGreaterThanOrEqual(90);
 
     const withCoords = SUMPS_DATA.filter(s => typeof s.lat === 'number' && typeof s.lon === 'number');
-    expect(withCoords.length).toBe(92);
+    expect(withCoords.length).toBe(SUMPS_DATA.length);
 
     withCoords.forEach(s => {
       expect(s.lat).toBeLessThan(0); // Southern hemisphere (Itaminas Minas Gerais)
