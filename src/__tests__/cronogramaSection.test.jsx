@@ -99,3 +99,4 @@ describe('CronogramaSection Component Mount', () => {
     expect(container.textContent).toContain('Aderência no Prazo');
   });
 });
+

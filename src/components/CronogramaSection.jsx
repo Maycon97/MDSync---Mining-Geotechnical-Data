@@ -1242,3 +1242,4 @@ export const CronogramaSection = ({ onNavigateTab }) => {
   );
 };
 export default CronogramaSection;
+
