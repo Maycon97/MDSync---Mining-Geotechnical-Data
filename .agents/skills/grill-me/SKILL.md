@@ -5,3 +5,4 @@ disable-model-invocation: true
 ---
 
 Call the Skill tool with "grilling".
+
