@@ -1,6 +1,7 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 import L from '../utils/leafletCompat';
 import logoItaminas from '../assets/logo_itaminas.png';
+import { chamadosSyncTunnel } from '../services/chamadosSyncTunnel';
 import {
   CONTROLE_CHAMADOS_DATA,
   STATUS_COLORS,
@@ -37,10 +38,102 @@ import {
   FileSpreadsheet,
   Building2,
   Flame,
-  Info
+  Info,
+  FolderInput,
+  Upload,
+  Camera,
+  Sparkles,
+  RefreshCw
 } from 'lucide-react';
 
 export const ChamadosPainelExecutivo = ({ onNavigateTab, onOpenNewTicket, onOpenFluigList }) => {
+  // TÚNEL DE CONEXÃO AUTOMÁTICA & ESTADO REATIVO
+  const [rawTickets, setRawTickets] = useState(() => chamadosSyncTunnel.getActiveTickets());
+  const [tunnelStatus, setTunnelStatus] = useState(() => chamadosSyncTunnel.getStatus());
+  const [isDraggingFile, setIsDraggingFile] = useState(false);
+  const [syncToastMessage, setSyncToastMessage] = useState(null);
+  const [photoEnlargeModal, setPhotoEnlargeModal] = useState(null);
+  const fileInputRef = useRef(null);
+
+  // Escuta atualizações automáticas via BroadcastChannel e Eventos Globais do Túnel
+  useEffect(() => {
+    const unsub = chamadosSyncTunnel.subscribe((payload) => {
+      if (payload?.tickets) {
+        setRawTickets(payload.tickets);
+        setTunnelStatus(chamadosSyncTunnel.getStatus());
+        setSyncToastMessage(`Túnel Sincronizado: ${payload.tickets.length} chamados atualizados em tempo real!`);
+        setTimeout(() => setSyncToastMessage(null), 5000);
+      }
+    });
+
+    const handleCustomEvent = (e) => {
+      if (e.detail?.tickets) {
+        setRawTickets(e.detail.tickets);
+        setTunnelStatus(chamadosSyncTunnel.getStatus());
+      }
+    };
+    window.addEventListener('mdsync_chamados_updated', handleCustomEvent);
+
+    return () => {
+      unsub();
+      window.removeEventListener('mdsync_chamados_updated', handleCustomEvent);
+    };
+  }, []);
+
+  // Handlers do Túnel de Conexão
+  const handleConnectFileTunnel = async () => {
+    try {
+      const res = await chamadosSyncTunnel.connectLocalFileWatcher();
+      if (res) {
+        setSyncToastMessage(`Túnel Conectado: monitorando ${res.name} ativamente!`);
+        setTunnelStatus(chamadosSyncTunnel.getStatus());
+        setTimeout(() => setSyncToastMessage(null), 5000);
+      }
+    } catch (err) {
+      console.warn('File System Access API fallback para seletor padrão:', err);
+      fileInputRef.current?.click();
+    }
+  };
+
+  const handleFileInputChange = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    try {
+      const count = await chamadosSyncTunnel.readAndProcessFile(file);
+      if (count > 0) {
+        setSyncToastMessage(`Arquivo ${file.name} carregado com sucesso (${count} chamados)!`);
+      } else {
+        setSyncToastMessage(`Arquivo lido, nenhum chamado compatível detectado.`);
+      }
+    } catch (err) {
+      setSyncToastMessage(`Erro ao processar: ${err.message}`);
+    }
+    setTimeout(() => setSyncToastMessage(null), 5000);
+    e.target.value = '';
+  };
+
+  const handleResetTunnel = () => {
+    chamadosSyncTunnel.resetToBaseData();
+    setSyncToastMessage('Base Oficial Itaminas (248 chamados) restaurada com sucesso!');
+    setTimeout(() => setSyncToastMessage(null), 4000);
+  };
+
+  const handleDropFile = async (e) => {
+    e.preventDefault();
+    setIsDraggingFile(false);
+    const file = e.dataTransfer.files?.[0];
+    if (!file) return;
+    try {
+      const count = await chamadosSyncTunnel.readAndProcessFile(file);
+      if (count > 0) {
+        setSyncToastMessage(`Túnel: Arquivo ${file.name} importado via arrastar e soltar (${count} chamados)!`);
+      }
+    } catch (err) {
+      setSyncToastMessage(`Erro no drag & drop: ${err.message}`);
+    }
+    setTimeout(() => setSyncToastMessage(null), 5000);
+  };
+
   // Filtros
   const [selectedMes, setSelectedMes] = useState('Todos');
   const [selectedEstrutura, setSelectedEstrutura] = useState('Todas');
@@ -60,14 +153,14 @@ export const ChamadosPainelExecutivo = ({ onNavigateTab, onOpenNewTicket, onOpen
 
   // Filtragem dos chamados
   const filteredTickets = useMemo(() => {
-    return CONTROLE_CHAMADOS_DATA.tickets.filter(t => {
+    return rawTickets.filter(t => {
       const matchMes = selectedMes === 'Todos' || t.mesano === selectedMes;
       const matchEstr = selectedEstrutura === 'Todas' || t.estr === selectedEstrutura;
       const matchTipo = selectedTipo === 'Todos' || t.tipo === selectedTipo;
       const matchStatus = selectedStatus === 'Todos' || t.status === selectedStatus;
       return matchMes && matchEstr && matchTipo && matchStatus;
     });
-  }, [selectedMes, selectedEstrutura, selectedTipo, selectedStatus]);
+  }, [rawTickets, selectedMes, selectedEstrutura, selectedTipo, selectedStatus]);
 
   // Cálculos Executivos e KPIs
   const totalCount = filteredTickets.length;
@@ -200,18 +293,24 @@ export const ChamadosPainelExecutivo = ({ onNavigateTab, onOpenNewTicket, onOpen
           });
 
           const popupContent = `
-            <div style="font-family: inherit; font-size: 12px; line-height: 1.45; min-width: 170px;">
-              <div style="font-size: 13px; font-weight: 800; color: #0284c7; margin-bottom: 3px;">
-                Protocolo #${t.proto || '—'}
+            <div style="font-family: inherit; font-size: 12px; line-height: 1.45; min-width: 210px; max-width: 280px;">
+              <div style="font-size: 13px; font-weight: 800; color: #0284c7; margin-bottom: 3px; display: flex; justify-content: space-between;">
+                <span>Protocolo #${t.proto || '—'}</span>
+                <span style="font-size: 11px; font-weight: 700; color: ${getCritColor(t.crit)}">${t.crit || '—'}</span>
               </div>
-              <div><b>Estrutura:</b> ${t.estr || '—'}</div>
-              <div><b>Tipo:</b> ${t.tipo || '—'}</div>
-              <div><b>Criticidade:</b> <span style="font-weight: 700; color: ${getCritColor(t.crit)}">${t.crit || '—'}</span></div>
+              <div><b>Estrutura:</b> ${t.estr || '—'} · <small style="color: #64748b">${t.tipo || '—'}</small></div>
+              ${t.requerido ? `<div><b>Requerido:</b> <small>${t.requerido}</small></div>` : ''}
+              ${t.acaoCorretiva ? `<div style="margin-top: 3px; font-size: 11px; color: #334155; font-style: italic;">“${t.acaoCorretiva}”</div>` : ''}
               <div style="margin-top: 4px; padding-top: 4px; border-top: 1px solid rgba(0,0,0,0.1);">
                 <b>Status:</b> <span style="font-weight: 700; color: ${color}">${t.status}</span>
               </div>
               ${t.limite ? `<div><b>Limite:</b> ${t.limite.split('-').reverse().join('/')}</div>` : ''}
               ${t.statusCh ? `<div><small style="color: #64748b">Etapa: ${t.statusCh}</small></div>` : ''}
+              ${t.fotoAberturaUrl ? `
+                <div style="margin-top: 6px;">
+                  <img src="${t.fotoAberturaUrl}" alt="Anomalia" style="width: 100%; height: 95px; object-fit: cover; border-radius: 6px; border: 1px solid rgba(0,0,0,0.15); display: block;" />
+                </div>
+              ` : ''}
             </div>
           `;
 
@@ -263,7 +362,7 @@ export const ChamadosPainelExecutivo = ({ onNavigateTab, onOpenNewTicket, onOpen
     if (!searchTableQuery.trim()) return filteredTickets;
     const q = searchTableQuery.toLowerCase();
     return filteredTickets.filter(t => {
-      const str = `${t.proto} ${t.estr} ${t.tipo} ${t.crit} ${t.status} ${t.statusCh}`.toLowerCase();
+      const str = `${t.proto} ${t.estr} ${t.tipo} ${t.crit} ${t.status} ${t.statusCh} ${t.acaoCorretiva || ''} ${t.requerido || ''} ${t.planoAcao || ''}`.toLowerCase();
       return str.includes(q);
     });
   }, [filteredTickets, searchTableQuery]);
@@ -274,7 +373,44 @@ export const ChamadosPainelExecutivo = ({ onNavigateTab, onOpenNewTicket, onOpen
   const gaugeOffset = gaugeCircumference * (1 - Math.max(0, Math.min(1, efetividadeRatio)));
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', width: '100%' }}>
+    <div 
+      onDragOver={(e) => { e.preventDefault(); setIsDraggingFile(true); }}
+      onDragLeave={() => setIsDraggingFile(false)}
+      onDrop={handleDropFile}
+      style={{ 
+        display: 'flex', 
+        flexDirection: 'column', 
+        gap: '1rem', 
+        width: '100%',
+        position: 'relative'
+      }}
+    >
+      {/* OVERLAY DE ARRASTAR ARQUIVO */}
+      {isDraggingFile && (
+        <div style={{
+          position: 'fixed',
+          inset: 0,
+          backgroundColor: 'rgba(2, 132, 199, 0.45)',
+          backdropFilter: 'blur(8px)',
+          border: '4px dashed #38bdf8',
+          borderRadius: '16px',
+          zIndex: 99999,
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          color: '#ffffff',
+          pointerEvents: 'none'
+        }}>
+          <Upload size={64} style={{ animation: 'bounce 1s infinite', color: '#71d1f8' }} />
+          <h2 style={{ fontFamily: "'Montserrat', sans-serif", fontSize: '1.8rem', fontWeight: 800, marginTop: '1rem' }}>
+            Solte o Arquivo de Chamados Aqui
+          </h2>
+          <p style={{ fontSize: '1rem', color: '#e0f2fe', margin: '6px 0 0 0' }}>
+            O Túnel de Conexão processará os dados e atualizará todo o site instantaneamente
+          </p>
+        </div>
+      )}
       
       {/* CABEÇALHO DO PAINEL EXECUTIVO */}
       <div style={{
@@ -424,6 +560,201 @@ export const ChamadosPainelExecutivo = ({ onNavigateTab, onOpenNewTicket, onOpen
               <span>{currentBand.label}</span>
             </div>
           </div>
+        </div>
+      </div>
+
+      {/* TOAST DE SINCRONIZAÇÃO EM TEMPO REAL */}
+      {syncToastMessage && (
+        <div style={{
+          background: 'linear-gradient(90deg, rgba(16,185,129,0.92), rgba(5,150,105,0.92))',
+          color: '#ffffff',
+          padding: '0.75rem 1.25rem',
+          borderRadius: '10px',
+          boxShadow: '0 8px 24px rgba(16,185,129,0.4)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          fontWeight: 700,
+          fontSize: '0.86rem',
+          animation: 'fadeIn 0.3s ease'
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <Sparkles size={18} />
+            <span>{syncToastMessage}</span>
+          </div>
+          <button 
+            onClick={() => setSyncToastMessage(null)}
+            style={{ background: 'transparent', border: 'none', color: '#ffffff', cursor: 'pointer', padding: '2px' }}
+          >
+            <X size={16} />
+          </button>
+        </div>
+      )}
+
+      {/* TÚNEL DE CONEXÃO AUTOMÁTICA · BARRA ESTRATÉGICA */}
+      <div style={{
+        background: 'linear-gradient(90deg, rgba(10,38,71,0.90) 0%, rgba(11,28,56,0.95) 100%)',
+        border: '1px solid rgba(16,185,129,0.35)',
+        borderRadius: '14px',
+        padding: '0.75rem 1.25rem',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        flexWrap: 'wrap',
+        gap: '0.85rem',
+        boxShadow: '0 4px 16px rgba(0,0,0,0.25)'
+      }}>
+        {/* Indicador de Status do Túnel */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.85rem', flexWrap: 'wrap' }}>
+          <div style={{ position: 'relative', width: '12px', height: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <div style={{
+              position: 'absolute',
+              width: '14px',
+              height: '14px',
+              borderRadius: '50%',
+              backgroundColor: '#10b981',
+              opacity: 0.6,
+              animation: 'ping 2s cubic-bezier(0, 0, 0.2, 1) infinite'
+            }} />
+            <div style={{
+              width: '10px',
+              height: '10px',
+              borderRadius: '50%',
+              backgroundColor: '#10b981'
+            }} />
+          </div>
+
+          <div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
+              <span style={{
+                fontFamily: "'Montserrat', sans-serif",
+                fontWeight: 800,
+                fontSize: '0.82rem',
+                letterSpacing: '0.06em',
+                color: '#34d399',
+                textTransform: 'uppercase'
+              }}>
+                Túnel de Conexão Automática
+              </span>
+              <span style={{
+                fontSize: '0.68rem',
+                fontWeight: 700,
+                backgroundColor: 'rgba(16,185,129,0.18)',
+                color: '#6ee7b7',
+                padding: '2px 8px',
+                borderRadius: '999px',
+                border: '1px solid rgba(16,185,129,0.35)'
+              }}>
+                {tunnelStatus.isAutoWatching ? 'Monitoramento Contínuo Ativo' : 'Sincronizado'}
+              </span>
+            </div>
+            <div style={{ fontSize: '0.74rem', color: '#9db3d1', marginTop: '2px' }}>
+              Fonte: <strong style={{ color: '#ffffff' }}>{tunnelStatus.source}</strong> ·{' '}
+              <strong style={{ color: '#71d1f8' }}>{rawTickets.length} chamados ativos</strong>
+              {tunnelStatus.lastSyncTime && (
+                <span> · Última sync: {new Date(tunnelStatus.lastSyncTime).toLocaleTimeString('pt-BR')}</span>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Ações do Túnel */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
+          <button
+            onClick={handleConnectFileTunnel}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              padding: '6px 12px',
+              borderRadius: '8px',
+              fontSize: '0.75rem',
+              fontWeight: 700,
+              backgroundColor: 'rgba(16,185,129,0.22)',
+              color: '#6ee7b7',
+              border: '1px solid rgba(16,185,129,0.45)',
+              cursor: 'pointer',
+              transition: 'all 0.15s'
+            }}
+            title="Conectar arquivo local (HTML, XLSX, CSV, JSON) com sincronização em tempo real"
+          >
+            <RefreshCw size={13} />
+            Conectar Arquivo Local / Rede
+          </button>
+
+          <button
+            onClick={() => fileInputRef.current?.click()}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              padding: '6px 12px',
+              borderRadius: '8px',
+              fontSize: '0.75rem',
+              fontWeight: 600,
+              backgroundColor: 'rgba(56,189,248,0.18)',
+              color: '#7dd3fc',
+              border: '1px solid rgba(56,189,248,0.35)',
+              cursor: 'pointer',
+              transition: 'all 0.15s'
+            }}
+            title="Carregar arquivo e atualizar painel"
+          >
+            <FolderInput size={13} />
+            Importar
+          </button>
+
+          {tunnelStatus.mode !== 'nativa' && (
+            <button
+              onClick={handleResetTunnel}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+                padding: '6px 10px',
+                borderRadius: '8px',
+                fontSize: '0.75rem',
+                fontWeight: 600,
+                backgroundColor: 'rgba(239,68,68,0.18)',
+                color: '#fca5a5',
+                border: '1px solid rgba(239,68,68,0.35)',
+                cursor: 'pointer'
+              }}
+              title="Restaurar base nativa oficial de 248 chamados"
+            >
+              <RotateCcw size={12} />
+              Base Oficial (248)
+            </button>
+          )}
+
+          <button
+            onClick={() => chamadosSyncTunnel.exportBackup()}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              padding: '6px 10px',
+              borderRadius: '8px',
+              fontSize: '0.75rem',
+              fontWeight: 600,
+              backgroundColor: 'rgba(255,255,255,0.06)',
+              color: '#cbd5e1',
+              border: '1px solid rgba(255,255,255,0.14)',
+              cursor: 'pointer'
+            }}
+            title="Exportar backup completo em JSON"
+          >
+            <Download size={12} />
+            Backup JSON
+          </button>
+
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept=".html,.htm,.json,.csv,.xlsx"
+            style={{ display: 'none' }}
+            onChange={handleFileInputChange}
+          />
         </div>
       </div>
 
@@ -1223,7 +1554,7 @@ export const ChamadosPainelExecutivo = ({ onNavigateTab, onOpenNewTicket, onOpen
                 Base Detalhada de Chamados Geotécnicos
               </h2>
               <p style={{ fontSize: '0.8rem', color: '#9db3d1', margin: '3px 0 0 0' }}>
-                Exibindo {tableDisplayTickets.length} registros de {filteredTickets.length} filtrados ({CONTROLE_CHAMADOS_DATA.tickets.length} total)
+                Exibindo {tableDisplayTickets.length} registros de {filteredTickets.length} filtrados ({rawTickets.length} total)
               </p>
             </div>
 
@@ -1499,6 +1830,85 @@ export const ChamadosPainelExecutivo = ({ onNavigateTab, onOpenNewTicket, onOpen
         </div>
       </div>
 
+      {/* MODAL EXPANSÃO DE FOTO DA ANOMALIA */}
+      {photoEnlargeModal && (
+        <div 
+          onClick={() => setPhotoEnlargeModal(null)}
+          style={{
+            position: 'fixed',
+            inset: 0,
+            backgroundColor: 'rgba(0, 0, 0, 0.88)',
+            backdropFilter: 'blur(8px)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 100000,
+            padding: '1.5rem',
+            cursor: 'zoom-out'
+          }}
+        >
+          <div 
+            onClick={e => e.stopPropagation()} 
+            style={{
+              position: 'relative',
+              maxWidth: '90vw',
+              maxHeight: '90vh',
+              background: '#0e2244',
+              borderRadius: '16px',
+              border: '1px solid rgba(113,209,248,0.4)',
+              overflow: 'hidden',
+              boxShadow: '0 25px 60px rgba(0,0,0,0.8)',
+              display: 'flex',
+              flexDirection: 'column'
+            }}
+          >
+            <div style={{
+              padding: '0.85rem 1.25rem',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              background: 'rgba(11,28,56,0.95)',
+              borderBottom: '1px solid rgba(113,209,248,0.2)'
+            }}>
+              <div>
+                <h3 style={{ margin: 0, color: '#ffffff', fontSize: '1rem', fontWeight: 800 }}>
+                  {photoEnlargeModal.title || 'Foto de Inspeção Geotécnica'}
+                </h3>
+                {photoEnlargeModal.subtitle && (
+                  <p style={{ margin: '2px 0 0 0', fontSize: '0.78rem', color: '#9db3d1' }}>
+                    {photoEnlargeModal.subtitle}
+                  </p>
+                )}
+              </div>
+              <button
+                onClick={() => setPhotoEnlargeModal(null)}
+                style={{
+                  background: 'rgba(255,255,255,0.1)',
+                  border: 'none',
+                  color: '#ffffff',
+                  borderRadius: '50%',
+                  width: '32px',
+                  height: '32px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  cursor: 'pointer'
+                }}
+              >
+                <X size={18} />
+              </button>
+            </div>
+            <div style={{ padding: '1rem', display: 'flex', justifyContent: 'center', alignItems: 'center', overflow: 'auto' }}>
+              <img 
+                src={photoEnlargeModal.url} 
+                alt="Foto em alta resolução" 
+                style={{ maxWidth: '100%', maxHeight: '75vh', objectFit: 'contain', borderRadius: '8px' }} 
+              />
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* MODAL DETALHES DO TICKET */}
       {selectedTicketDetail && (
         <div style={{
@@ -1588,11 +1998,74 @@ export const ChamadosPainelExecutivo = ({ onNavigateTab, onOpenNewTicket, onOpen
                   {selectedTicketDetail.limite ? selectedTicketDetail.limite.split('-').reverse().join('/') : '—'}
                 </div>
               </div>
+              {selectedTicketDetail.requerido && (
+                <div style={{ gridColumn: 'span 2' }}>
+                  <div style={{ color: '#9db3d1', fontSize: '0.74rem', textTransform: 'uppercase' }}>Departamento Requerido</div>
+                  <div style={{ color: '#ffffff', fontWeight: 600, marginTop: '2px' }}>{selectedTicketDetail.requerido}</div>
+                </div>
+              )}
+              {selectedTicketDetail.acaoCorretiva && (
+                <div style={{ gridColumn: 'span 2' }}>
+                  <div style={{ color: '#9db3d1', fontSize: '0.74rem', textTransform: 'uppercase' }}>Ação Corretiva Solicitada</div>
+                  <div style={{ color: '#71d1f8', fontWeight: 600, marginTop: '2px' }}>{selectedTicketDetail.acaoCorretiva}</div>
+                </div>
+              )}
+              {selectedTicketDetail.planoAcao && (
+                <div style={{ gridColumn: 'span 2', background: 'rgba(2,132,199,0.12)', padding: '10px 12px', borderRadius: '8px', border: '1px solid rgba(113,209,248,0.25)' }}>
+                  <div style={{ color: '#71d1f8', fontSize: '0.74rem', fontWeight: 700, textTransform: 'uppercase', marginBottom: '4px' }}>Plano de Ação Geotécnico</div>
+                  <div style={{ color: '#e2e8f0', fontSize: '0.82rem', lineHeight: '1.5', whiteSpace: 'pre-wrap' }}>{selectedTicketDetail.planoAcao}</div>
+                </div>
+              )}
+              {selectedTicketDetail.prazoEstimado && (
+                <div>
+                  <div style={{ color: '#9db3d1', fontSize: '0.74rem', textTransform: 'uppercase' }}>Prazo Estimado (SLA)</div>
+                  <div style={{ color: '#ffffff', fontWeight: 700, marginTop: '2px' }}>{selectedTicketDetail.prazoEstimado} dias</div>
+                </div>
+              )}
+              {selectedTicketDetail.prazoReal && (
+                <div>
+                  <div style={{ color: '#9db3d1', fontSize: '0.74rem', textTransform: 'uppercase' }}>Prazo Realizado</div>
+                  <div style={{ color: '#34d399', fontWeight: 700, marginTop: '2px' }}>{selectedTicketDetail.prazoReal} dias</div>
+                </div>
+              )}
               {selectedTicketDetail.lat && selectedTicketDetail.lon && (
                 <div style={{ gridColumn: 'span 2' }}>
                   <div style={{ color: '#9db3d1', fontSize: '0.74rem', textTransform: 'uppercase' }}>Coordenadas Geográficas</div>
                   <div style={{ color: '#71d1f8', fontFamily: 'monospace', marginTop: '2px' }}>
                     LAT: {selectedTicketDetail.lat.toFixed(6)} | LON: {selectedTicketDetail.lon.toFixed(6)}
+                  </div>
+                </div>
+              )}
+              {selectedTicketDetail.fotoAberturaUrl && (
+                <div style={{ gridColumn: 'span 2', marginTop: '4px' }}>
+                  <div style={{ color: '#9db3d1', fontSize: '0.74rem', textTransform: 'uppercase', marginBottom: '4px' }}>Registro Fotográfico da Anomalia</div>
+                  <div style={{ position: 'relative', borderRadius: '8px', overflow: 'hidden', border: '1px solid rgba(113,209,248,0.3)', cursor: 'pointer' }}
+                    onClick={() => setPhotoEnlargeModal({
+                      url: selectedTicketDetail.fotoAberturaUrl,
+                      title: `Chamado #${selectedTicketDetail.proto} · Foto da Anomalia`,
+                      subtitle: `${selectedTicketDetail.estr} · ${selectedTicketDetail.tipo}`
+                    })}
+                  >
+                    <img 
+                      src={selectedTicketDetail.fotoAberturaUrl} 
+                      alt="Registro fotográfico" 
+                      style={{ width: '100%', maxHeight: '180px', objectFit: 'cover', display: 'block' }} 
+                    />
+                    <div style={{
+                      position: 'absolute',
+                      bottom: '8px',
+                      right: '8px',
+                      backgroundColor: 'rgba(0,0,0,0.7)',
+                      color: '#ffffff',
+                      fontSize: '0.72rem',
+                      padding: '3px 8px',
+                      borderRadius: '4px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '4px'
+                    }}>
+                      <Camera size={12} /> Clique para ampliar
+                    </div>
                   </div>
                 </div>
               )}

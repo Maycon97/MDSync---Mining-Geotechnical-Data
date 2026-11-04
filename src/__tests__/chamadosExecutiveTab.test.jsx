@@ -16,12 +16,13 @@ import {
 } from '../data/controleChamadosData';
 import { TABS } from '../components/Navigation';
 import { ChamadosPainelExecutivo } from '../components/ChamadosPainelExecutivo';
+import { chamadosSyncTunnel } from '../services/chamadosSyncTunnel';
 
 describe('Controle de Chamados — Dataset & Business Logic', () => {
   it('should validate ticket dataset structure and count', () => {
     expect(CONTROLE_CHAMADOS_DATA.tickets).toBeDefined();
-    expect(CONTROLE_CHAMADOS_DATA.tickets.length).toBe(220);
-    expect(CONTROLE_CHAMADOS_DATA.mesanos.length).toBe(14);
+    expect(CONTROLE_CHAMADOS_DATA.tickets.length).toBe(248);
+    expect(CONTROLE_CHAMADOS_DATA.mesanos.length).toBe(17);
     expect(CONTROLE_CHAMADOS_DATA.estruturas.length).toBeGreaterThanOrEqual(20);
     expect(CONTROLE_CHAMADOS_DATA.tipos.length).toBeGreaterThanOrEqual(10);
     expect(CONTROLE_CHAMADOS_DATA.statuses).toContain('Realizado e Aprovado');
@@ -116,3 +117,51 @@ describe('ChamadosPainelExecutivo Component Mount', () => {
     expect(container.textContent).toContain('Pontos de Anomalia');
   });
 });
+
+describe('Túnel de Conexão Automática — chamadosSyncTunnel', () => {
+  it('should initialize tunnel with active tickets and correct status', () => {
+    const tickets = chamadosSyncTunnel.getActiveTickets();
+    expect(tickets).toBeDefined();
+    expect(tickets.length).toBeGreaterThanOrEqual(248);
+
+    const status = chamadosSyncTunnel.getStatus();
+    expect(status.totalTickets).toBeGreaterThanOrEqual(248);
+    expect(status.source).toBeDefined();
+  });
+
+  it('should parse CSV ticket rows correctly', () => {
+    const sampleCsv = `Protocolo;Estrutura;Tipo;Criticidade;Status da Aprovação;Status do Chamado;Ponto da Anomalia LAT;Ponto da Anomalia LONG
+999001;Barragem B1;Barragem;A1;Realizado e Aprovado;Finalizado;-20.0639;-44.1144`;
+    const parsed = chamadosSyncTunnel.parseCsv(sampleCsv);
+    expect(parsed.length).toBe(1);
+    expect(parsed[0].proto).toBe('999001');
+    expect(parsed[0].estr).toBe('Barragem B1');
+    expect(parsed[0].crit).toBe('A1');
+    expect(parsed[0].lat).toBeCloseTo(-20.0639);
+    expect(parsed[0].lon).toBeCloseTo(-44.1144);
+  });
+
+  it('should notify subscribers when new data is injected via updateTickets', () => {
+    const subscriber = vi.fn();
+    const unsub = chamadosSyncTunnel.subscribe(subscriber);
+
+    const testTicket = {
+      proto: 'TEST_999',
+      estr: 'Barragem B4',
+      tipo: 'Barragem',
+      crit: 'A2',
+      status: 'Realizado e Aprovado',
+      statusCh: 'Finalizado'
+    };
+
+    chamadosSyncTunnel.updateTickets([testTicket], 'Teste Automatizado');
+    expect(subscriber).toHaveBeenCalled();
+    const active = chamadosSyncTunnel.getActiveTickets();
+    expect(active.some(t => t.proto === 'TEST_999')).toBe(true);
+
+    // Reset back
+    chamadosSyncTunnel.resetToBaseData();
+    unsub();
+  });
+});
+
