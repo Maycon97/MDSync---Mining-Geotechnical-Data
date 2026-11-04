@@ -10,8 +10,15 @@ const dir = path.resolve(__dirname, '../../public/data/block-model/BM_1126');
 const hasData = fs.existsSync(path.join(dir, 'meta.json'));
 
 vi.mock('../components/BlockModel3D', () => ({
-  BlockModel3D: ({ cells, visible }) => (
-    <div data-testid="three" data-cells={cells ? cells.n : 0} data-visible={visible ? visible.reduce((a, b) => a + b, 0) : 0} />
+  BlockModel3D: ({ cells, visible, markers, labels, surface }) => (
+    <div
+      data-testid="three"
+      data-cells={cells ? cells.n : 0}
+      data-visible={visible ? visible.reduce((a, b) => a + b, 0) : 0}
+      data-markers={markers ? markers.n : 0}
+      data-labels={labels ? labels.length : 0}
+      data-surface={surface ? surface.nVerts : 0}
+    />
   )
 }));
 
@@ -26,11 +33,22 @@ vi.mock('../services/blockModelService', async (importActual) => {
   return {
     ...actual,
     loadMeta: async () => JSON.parse(fsm.readFileSync(pathm.join(base, 'meta.json'), 'utf8')),
-    loadOverview: async (_id, meta) => {
-      const ov = meta.overview;
+    loadLod: async (_id, meta, which = 'overview') => {
+      const ov = meta[which];
       const layout = ['ci:u16', 'cj:u16', 'ck:u16', ...meta.colunasCat.map((d) => `${d}:u8`), 'vol:u16', 'dens50:u8', ...ov.colunasGrade.map((v) => `${v}:u16`)];
       const cols = actual.decodeColumns(ab(ov.arquivo), layout, ov.n);
-      return actual.shapeCells(cols, meta, ov.colunasGrade, ov.n, { i: cols.ci, j: cols.cj, k: cols.ck, kind: 'overview' });
+      return actual.shapeCells(cols, meta, ov.colunasGrade, ov.n, { i: cols.ci, j: cols.cj, k: cols.ck, kind: 'overview', lod: { lx: ov.lx, ly: ov.ly, lz: ov.lz }, lodKey: which });
+    },
+    loadTerrain: async (_id, meta) => {
+      const t = meta.terreno;
+      const raw = new Uint16Array(ab(t.arquivo).slice(0, t.nx * t.ny * 2));
+      const elev = new Float32Array(raw.length);
+      for (let i = 0; i < raw.length; i++) elev[i] = raw[i] === 65535 ? NaN : raw[i] / t.escala;
+      return { nx: t.nx, ny: t.ny, elev };
+    },
+    loadGeoAssets: async () => {
+      const j = JSON.parse(fsm.readFileSync(pathm.resolve(__dirname, '../../public/data/geotech_master.json'), 'utf8'));
+      return { instrumentos: j.instrumentos, estruturas: j.estruturas };
     },
     loadBench: async (_id, meta, k) => {
       const info = meta.bancadas.find((b) => b.k === k);
@@ -88,5 +106,46 @@ describe.skipIf(!hasData)('BlockModelRealPanel com dados reais', () => {
 
     await click(tabBtn('Planta por bancada'));
     expect(container.textContent).toContain('Cota / Bancada');
+  });
+
+  it('LOD 20 m refinado, camadas geoespaciais e filtros de seção/teor', async () => {
+    const tabBtn = (label) => [...container.querySelectorAll('button')].find((b) => b.textContent.includes(label));
+    await click(tabBtn('Modelo 3D'));
+    // por padrão usa o LOD de 20 m (muito mais células que o de 40 m)
+    expect(await waitFor(container, (c) => Number(c.querySelector('[data-testid=three]')?.dataset.cells) > 100000)).toBe(true);
+    const three = () => container.querySelector('[data-testid=three]');
+    expect(container.textContent).toContain('Camadas geoespaciais');
+    expect(Number(three().dataset.labels)).toBeGreaterThan(5); // eixos UTM/cotas
+
+    // instrumentos do MDSync
+    const chk = (txt) => [...container.querySelectorAll('label')].find((l) => l.textContent.includes(txt)).querySelector('input');
+    await click(chk('Instrumentos MDSync'));
+    expect(await waitFor(container, (c) => Number(c.querySelector('[data-testid=three]')?.dataset.markers) > 50)).toBe(true);
+    expect(container.textContent).toMatch(/Instrumentos MDSync \(\d+ na área\)/);
+
+    // estruturas georreferenciadas
+    const before = Number(three().dataset.labels);
+    await click(chk('Estruturas'));
+    expect(await waitFor(container, (c) => Number(c.querySelector('[data-testid=three]')?.dataset.labels) > before)).toBe(true);
+
+    // seção + teor de corte reduzem as células visíveis
+    const vis0 = Number(three().dataset.visible);
+    const sel = [...container.querySelectorAll('select')].find((x) => [...x.options].some((o) => o.value === 'FEGL'));
+    await act(async () => {
+      const setter = Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype, 'value').set;
+      setter.call(sel, 'FEGL');
+      sel.dispatchEvent(new Event('change', { bubbles: true }));
+    });
+    const inputs = [...container.querySelectorAll('input[type=number]')];
+    expect(inputs.length).toBe(2);
+    await act(async () => {
+      const setter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value').set;
+      setter.call(inputs[0], '60');
+      inputs[0].dispatchEvent(new Event('input', { bubbles: true }));
+    });
+    await tick();
+    const vis1 = Number(three().dataset.visible);
+    expect(vis1).toBeGreaterThan(0);
+    expect(vis1).toBeLessThan(vis0);
   });
 });

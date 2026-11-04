@@ -3,27 +3,95 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { rayBoxDistance } from '../utils/blockModelView';
 
-// sRGB (0..1) -> linear, necessário porque o three trabalha em espaço linear
-const toLinear = (c) => (c <= 0.04045 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4));
+// sRGB (0..255) -> linear: o three trabalha em espaço linear
+const LIN = new Float32Array(256);
+for (let i = 0; i < 256; i++) {
+  const c = i / 255;
+  LIN[i] = c <= 0.04045 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4);
+}
+
+function makeCircleTexture() {
+  const c = document.createElement('canvas');
+  c.width = c.height = 64;
+  const ctx = c.getContext('2d');
+  if (!ctx) return null;
+  ctx.beginPath();
+  ctx.arc(32, 32, 28, 0, Math.PI * 2);
+  ctx.fillStyle = '#ffffff';
+  ctx.fill();
+  const tex = new THREE.CanvasTexture(c);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  return tex;
+}
+
+function makeLabelSprite(text, color, weight = 1) {
+  const fontPx = 46;
+  const canvas = document.createElement('canvas');
+  let ctx = canvas.getContext('2d');
+  if (!ctx) return null;
+  ctx.font = `700 ${fontPx}px Inter, Arial, sans-serif`;
+  const w = Math.ceil(ctx.measureText(text).width) + 28;
+  canvas.width = w;
+  canvas.height = fontPx + 22;
+  ctx = canvas.getContext('2d');
+  ctx.font = `700 ${fontPx}px Inter, Arial, sans-serif`;
+  ctx.fillStyle = 'rgba(7,11,20,0.7)';
+  ctx.beginPath();
+  const r = 14;
+  ctx.moveTo(r, 0); ctx.lineTo(w - r, 0); ctx.quadraticCurveTo(w, 0, w, r);
+  ctx.lineTo(w, canvas.height - r); ctx.quadraticCurveTo(w, canvas.height, w - r, canvas.height);
+  ctx.lineTo(r, canvas.height); ctx.quadraticCurveTo(0, canvas.height, 0, canvas.height - r);
+  ctx.lineTo(0, r); ctx.quadraticCurveTo(0, 0, r, 0);
+  ctx.fill();
+  ctx.fillStyle = color;
+  ctx.textBaseline = 'middle';
+  ctx.fillText(text, 14, canvas.height / 2 + 2);
+  const tex = new THREE.CanvasTexture(canvas);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  const mat = new THREE.SpriteMaterial({ map: tex, depthTest: false, transparent: true });
+  const sp = new THREE.Sprite(mat);
+  sp.renderOrder = 20;
+  sp.userData = { aspect: canvas.width / canvas.height, weight };
+  return sp;
+}
+
+function disposeObject(o) {
+  if (!o) return;
+  o.geometry?.dispose?.();
+  if (o.material) {
+    o.material.map?.dispose?.();
+    o.material.dispose?.();
+  }
+}
 
 /**
- * Visualizador 3D de blocos (InstancedMesh).
- *  cells: { n, px, py, pz (Float32Array, metros relativos à origem), sx, sy, sz (tamanho da célula) }
- *  colors: Float32Array(n*3) em sRGB 0..1
- *  visible: Uint8Array(n)
- *  fitKey: muda quando o enquadramento da câmera deve ser refeito
+ * Visualizador 3D de blocos (InstancedMesh compacto) com camadas geoespaciais.
+ *  cells:   { n, px, py, pz, sx, sy, sz }  (metros relativos à origem do modelo)
+ *  colors:  Float32Array(n*3) sRGB 0..1       visible: Uint8Array(n)
+ *  surface: { positions, uvs, index, offset } malha do terreno/base (x=E-X0, y=cota-Z0, z=N-Y0)
+ *  surfaceTexture: canvas com imagem de satélite (opcional)
+ *  markers: { n, positions, colors } instrumentos (x=E-X0, y=cota-Z0, z=N-Y0)
+ *  labels:  [{ text, x, y, z, color, weight }]
  */
 export const BlockModel3D = forwardRef(function BlockModel3D(
-  { cells, colors, visible, vExag = 1, selected = -1, onPick, fitKey, height = 540 },
+  {
+    cells, colors, visible, vExag = 1, selected = -1, onPick, fitKey, height = 540,
+    surface = null, surfaceTexture = null, surfaceOpacity = 0.85,
+    markers = null, selectedMarker = -1, onPickMarker, labels = null
+  },
   ref
 ) {
   const hostRef = useRef(null);
   const compassRef = useRef(null);
   const stateRef = useRef({});
   const propsRef = useRef({});
+  const surfaceOpacityRef = useRef(surfaceOpacity);
+  const selectedMarkerRef = useRef(selectedMarker);
   const [error, setError] = useState(null);
 
-  propsRef.current = { cells, colors, visible, vExag, selected, onPick };
+  propsRef.current = { cells, colors, visible, vExag, selected, onPick, markers, onPickMarker, surface, labels };
+  surfaceOpacityRef.current = surfaceOpacity;
+  selectedMarkerRef.current = selectedMarker;
 
   const requestRender = () => {
     const st = stateRef.current;
@@ -33,14 +101,22 @@ export const BlockModel3D = forwardRef(function BlockModel3D(
       st.pending = false;
       if (!st.renderer) return;
       st.renderer.render(st.scene, st.camera);
-      // bússola: projeta a direção Norte (-Z) na tela
       if (compassRef.current) {
         const t = st.controls.target.clone();
         const a = t.clone().project(st.camera);
         const b = t.clone().add(new THREE.Vector3(0, 0, -1)).project(st.camera);
-        const ang = Math.atan2(b.x - a.x, b.y - a.y);
-        compassRef.current.style.transform = `rotate(${ang}rad)`;
+        compassRef.current.style.transform = `rotate(${Math.atan2(b.x - a.x, b.y - a.y)}rad)`;
       }
+    });
+  };
+
+  const applyLabelScale = () => {
+    const st = stateRef.current;
+    if (!st.labelGroup || !st.R) return;
+    const H = st.R * 0.028;
+    st.labelGroup.children.forEach((sp) => {
+      const k = sp.userData.weight || 1;
+      sp.scale.set(H * k * sp.userData.aspect, H * k, 1);
     });
   };
 
@@ -58,27 +134,23 @@ export const BlockModel3D = forwardRef(function BlockModel3D(
     }
     const center = min.clone().add(max).multiplyScalar(0.5);
     const R = Math.max(max.x - min.x, max.y - min.y, max.z - min.z, 50) * 0.75;
+    st.R = R;
     st.camera.near = R * 0.002;
     st.camera.far = R * 40;
     st.camera.updateProjectionMatrix();
     st.controls.target.copy(center);
-    const offs = {
-      iso: [-0.55, 0.85, 1.25],
-      top: [0, 2.3, 0.18],
-      south: [0, 0.18, 2.3]
-    }[view] || [-0.55, 0.85, 1.25];
+    const offs = { iso: [-0.55, 0.85, 1.25], top: [0, 2.3, 0.18], south: [0, 0.18, 2.3] }[view] || [-0.55, 0.85, 1.25];
     st.camera.position.set(center.x + offs[0] * R, center.y + offs[1] * R, center.z + offs[2] * R);
     st.controls.update();
     st.grid.position.set(center.x, min.y - 0.5, center.z);
     const span = Math.max(max.x - min.x, max.z - min.z) * 1.4;
     const step = span > 3000 ? 500 : span > 1200 ? 200 : 100;
     st.grid.scale.setScalar(Math.max(span, step * 4) / st.gridSize);
+    applyLabelScale();
     requestRender();
   };
 
-  useImperativeHandle(ref, () => ({
-    setView: (v) => fitCamera(v)
-  }));
+  useImperativeHandle(ref, () => ({ setView: (v) => fitCamera(v) }));
 
   // ---- montagem única -----------------------------------------------------
   useEffect(() => {
@@ -115,8 +187,14 @@ export const BlockModel3D = forwardRef(function BlockModel3D(
     const grid = new THREE.GridHelper(gridSize, 20, 0x2b3a55, 0x1a2438);
     scene.add(grid);
 
+    const labelGroup = new THREE.Group();
+    scene.add(labelGroup);
+
     const st = stateRef.current;
-    Object.assign(st, { renderer, scene, camera, controls, grid, gridSize, mesh: null, pending: false });
+    Object.assign(st, {
+      renderer, scene, camera, controls, grid, gridSize, labelGroup,
+      mesh: null, map: null, count: 0, pending: false, circle: makeCircleTexture()
+    });
 
     const resize = () => {
       const w = host.clientWidth || 600;
@@ -133,7 +211,7 @@ export const BlockModel3D = forwardRef(function BlockModel3D(
     resize();
     controls.addEventListener('change', requestRender);
 
-    // clique (sem arrastar) => seleção
+    // clique (sem arrastar): instrumento mais próximo na tela, senão o bloco sob o cursor
     let down = null;
     const onDown = (e) => { down = { x: e.clientX, y: e.clientY }; };
     const onUp = (e) => {
@@ -142,17 +220,31 @@ export const BlockModel3D = forwardRef(function BlockModel3D(
       down = null;
       if (moved > 5) return;
       const p = propsRef.current;
-      if (!p.cells || !p.onPick) return;
       const rect = renderer.domElement.getBoundingClientRect();
-      const ndc = new THREE.Vector2(((e.clientX - rect.left) / rect.width) * 2 - 1, -((e.clientY - rect.top) / rect.height) * 2 + 1);
+      const mx = e.clientX - rect.left, my = e.clientY - rect.top;
+
+      if (p.markers && p.markers.n && p.onPickMarker) {
+        const v = new THREE.Vector3();
+        let bestM = -1, bestD = 12;
+        for (let k = 0; k < p.markers.n; k++) {
+          v.set(p.markers.positions[k * 3], p.markers.positions[k * 3 + 1] * p.vExag, -p.markers.positions[k * 3 + 2]).project(camera);
+          if (v.z < -1 || v.z > 1) continue;
+          const d = Math.hypot((v.x * 0.5 + 0.5) * rect.width - mx, (-v.y * 0.5 + 0.5) * rect.height - my);
+          if (d < bestD) { bestD = d; bestM = k; }
+        }
+        if (bestM >= 0) { p.onPickMarker(bestM); return; }
+      }
+
+      if (!p.cells || !p.onPick || !st.map) return;
+      const ndc = new THREE.Vector2((mx / rect.width) * 2 - 1, -(my / rect.height) * 2 + 1);
       const ray = new THREE.Raycaster();
       ray.setFromCamera(ndc, camera);
       const o = ray.ray.origin, d = ray.ray.direction;
       const c = p.cells;
       const hx = c.sx / 2, hy = (c.sz / 2) * p.vExag, hz = c.sy / 2;
       let best = -1, bestT = Infinity;
-      for (let i = 0; i < c.n; i++) {
-        if (!p.visible[i]) continue;
+      for (let k = 0; k < st.count; k++) {
+        const i = st.map[k];
         const t = rayBoxDistance(o.x, o.y, o.z, d.x, d.y, d.z, c.px[i], c.pz[i] * p.vExag, -c.py[i], hx, hy, hz);
         if (t >= 0 && t < bestT) { bestT = t; best = i; }
       }
@@ -167,8 +259,10 @@ export const BlockModel3D = forwardRef(function BlockModel3D(
       renderer.domElement.removeEventListener('pointerdown', onDown);
       renderer.domElement.removeEventListener('pointerup', onUp);
       controls.dispose();
-      if (st.mesh) { st.mesh.geometry.dispose(); st.mesh.material.dispose(); }
-      if (st.sel) { st.sel.geometry.dispose(); st.sel.material.dispose(); }
+      [st.mesh, st.sel, st.surfaceMesh, st.pts, st.ptsSel].forEach(disposeObject);
+      labelGroup.children.forEach(disposeObject);
+      st.circle?.dispose?.();
+      st.texture?.dispose?.();
       grid.geometry.dispose();
       grid.material.dispose?.();
       renderer.dispose();
@@ -178,59 +272,36 @@ export const BlockModel3D = forwardRef(function BlockModel3D(
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // ---- (re)constrói a malha quando os dados mudam -------------------------
-  useEffect(() => {
-    const st = stateRef.current;
-    if (!st.scene || !cells) return;
-    if (st.mesh) {
-      st.scene.remove(st.mesh);
-      st.mesh.geometry.dispose();
-      st.mesh.material.dispose();
-      st.mesh.dispose?.();
-      st.mesh = null;
-    }
-    const geo = new THREE.BoxGeometry(1, 1, 1);
-    const mat = new THREE.MeshLambertMaterial({ color: 0xffffff });
-    const mesh = new THREE.InstancedMesh(geo, mat, Math.max(cells.n, 1));
-    mesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
-    mesh.instanceColor = new THREE.InstancedBufferAttribute(new Float32Array(Math.max(cells.n, 1) * 3), 3);
-    mesh.frustumCulled = false;
-    st.scene.add(mesh);
-    st.mesh = mesh;
-    st.dataKey = cells;
-    // dispara atualização de matrizes/cores/enquadramento
-    st.rebuilt = true;
-    syncAll();
-    fitCamera('iso');
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [cells]);
-
-  const syncMatrices = () => {
+  // ---- instâncias (apenas células visíveis, compactadas) -----------------
+  const syncInstances = () => {
     const st = stateRef.current;
     const p = propsRef.current;
     if (!st.mesh || !p.cells) return;
     const c = p.cells;
-    const arr = st.mesh.instanceMatrix.array;
+    const mat = st.mesh.instanceMatrix.array;
+    const col = st.mesh.instanceColor.array;
     const g = 0.97;
-    for (let i = 0; i < c.n; i++) {
-      const o = i * 16;
-      const s = p.visible && p.visible[i] ? 1 : 0;
-      arr[o] = c.sx * g * s; arr[o + 1] = 0; arr[o + 2] = 0; arr[o + 3] = 0;
-      arr[o + 4] = 0; arr[o + 5] = c.sz * p.vExag * g * s; arr[o + 6] = 0; arr[o + 7] = 0;
-      arr[o + 8] = 0; arr[o + 9] = 0; arr[o + 10] = c.sy * g * s; arr[o + 11] = 0;
-      arr[o + 12] = c.px[i]; arr[o + 13] = c.pz[i] * p.vExag; arr[o + 14] = -c.py[i]; arr[o + 15] = 1;
-    }
-    st.mesh.instanceMatrix.needsUpdate = true;
-  };
-
-  const syncColors = () => {
-    const st = stateRef.current;
-    const p = propsRef.current;
-    if (!st.mesh || !p.cells || !p.colors) return;
-    const arr = st.mesh.instanceColor.array;
+    const sx = c.sx * g, sy = c.sz * p.vExag * g, sz = c.sy * g;
     const src = p.colors;
-    const n = Math.min(p.cells.n * 3, src.length);
-    for (let i = 0; i < n; i++) arr[i] = toLinear(src[i]);
+    let k = 0;
+    for (let i = 0; i < c.n; i++) {
+      if (!p.visible || !p.visible[i]) continue;
+      const o = k * 16;
+      mat[o] = sx; mat[o + 1] = 0; mat[o + 2] = 0; mat[o + 3] = 0;
+      mat[o + 4] = 0; mat[o + 5] = sy; mat[o + 6] = 0; mat[o + 7] = 0;
+      mat[o + 8] = 0; mat[o + 9] = 0; mat[o + 10] = sz; mat[o + 11] = 0;
+      mat[o + 12] = c.px[i]; mat[o + 13] = c.pz[i] * p.vExag; mat[o + 14] = -c.py[i]; mat[o + 15] = 1;
+      if (src) {
+        col[k * 3] = LIN[(src[i * 3] * 255 + 0.5) | 0];
+        col[k * 3 + 1] = LIN[(src[i * 3 + 1] * 255 + 0.5) | 0];
+        col[k * 3 + 2] = LIN[(src[i * 3 + 2] * 255 + 0.5) | 0];
+      }
+      st.map[k] = i;
+      k++;
+    }
+    st.count = k;
+    st.mesh.count = k;
+    st.mesh.instanceMatrix.needsUpdate = true;
     st.mesh.instanceColor.needsUpdate = true;
   };
 
@@ -253,17 +324,188 @@ export const BlockModel3D = forwardRef(function BlockModel3D(
     }
   };
 
-  const syncAll = () => {
-    syncMatrices();
-    syncColors();
-    syncSelection();
-    requestRender();
+  // ---- superfície (terreno / base) ---------------------------------------
+  const syncSurface = () => {
+    const st = stateRef.current;
+    const p = propsRef.current;
+    if (!st.scene) return;
+    if (!p.surface) {
+      if (st.surfaceMesh) st.surfaceMesh.visible = false;
+      st.grid.visible = true;
+      return;
+    }
+    st.grid.visible = false;
+    if (st.surfaceMesh && st.surfaceMesh.userData.src !== p.surface) {
+      st.scene.remove(st.surfaceMesh);
+      st.surfaceMesh.geometry.dispose();
+      st.surfaceMesh.material.dispose();
+      st.surfaceMesh = null;
+    }
+    if (!st.surfaceMesh) {
+      const geo = new THREE.BufferGeometry();
+      geo.setAttribute('position', new THREE.BufferAttribute(p.surface.positions, 3));
+      geo.setAttribute('uv', new THREE.BufferAttribute(p.surface.uvs, 2));
+      geo.setIndex(new THREE.BufferAttribute(p.surface.index, 1));
+      const m = new THREE.MeshBasicMaterial({ color: 0x1f2937, side: THREE.DoubleSide });
+      const mesh = new THREE.Mesh(geo, m);
+      mesh.userData.src = p.surface;
+      mesh.renderOrder = 1;
+      st.scene.add(mesh);
+      st.surfaceMesh = mesh;
+    }
+    const mesh = st.surfaceMesh;
+    mesh.visible = true;
+    mesh.scale.set(1, p.vExag, -1); // z do three = -N
+    mesh.position.y = (p.surface.offset || 0) * p.vExag;
+    const op = Math.min(1, Math.max(0, surfaceOpacityRef.current));
+    mesh.material.opacity = op;
+    mesh.material.transparent = op < 0.999;
+    mesh.material.depthWrite = op >= 0.999;
+    const tex = st.texture || null;
+    if (mesh.material.map !== tex) {
+      mesh.material.map = tex;
+      mesh.material.color.set(tex ? 0xffffff : 0x1f2937);
+      mesh.material.needsUpdate = true;
+    }
   };
 
-  useEffect(() => { syncColors(); requestRender(); }, [colors]); // eslint-disable-line react-hooks/exhaustive-deps
-  useEffect(() => { syncMatrices(); syncSelection(); requestRender(); }, [visible, vExag]); // eslint-disable-line react-hooks/exhaustive-deps
+  // ---- marcadores (instrumentos) -----------------------------------------
+  const syncMarkers = () => {
+    const st = stateRef.current;
+    const p = propsRef.current;
+    if (!st.scene) return;
+    const m = p.markers;
+    if (st.pts && st.pts.userData.src !== m) {
+      st.scene.remove(st.pts);
+      st.pts.geometry.dispose();
+      st.pts.material.dispose();
+      st.pts = null;
+    }
+    if (!m || !m.n) {
+      if (st.ptsSel) st.ptsSel.visible = false;
+      return;
+    }
+    if (!st.pts) {
+      const geo = new THREE.BufferGeometry();
+      geo.setAttribute('position', new THREE.BufferAttribute(new Float32Array(m.n * 3), 3));
+      geo.setAttribute('color', new THREE.BufferAttribute(m.colors, 3));
+      const mat = new THREE.PointsMaterial({
+        size: 11, sizeAttenuation: false, vertexColors: true, map: st.circle, alphaTest: 0.4, transparent: true, depthTest: false
+      });
+      const pts = new THREE.Points(geo, mat);
+      pts.userData.src = m;
+      pts.renderOrder = 15;
+      pts.frustumCulled = false;
+      st.scene.add(pts);
+      st.pts = pts;
+    }
+    const pos = st.pts.geometry.attributes.position.array;
+    for (let k = 0; k < m.n; k++) {
+      pos[k * 3] = m.positions[k * 3];
+      pos[k * 3 + 1] = m.positions[k * 3 + 1] * p.vExag;
+      pos[k * 3 + 2] = -m.positions[k * 3 + 2];
+    }
+    st.pts.geometry.attributes.position.needsUpdate = true;
+
+    if (!st.ptsSel) {
+      const g = new THREE.BufferGeometry();
+      g.setAttribute('position', new THREE.BufferAttribute(new Float32Array(3), 3));
+      const mt = new THREE.PointsMaterial({ size: 22, sizeAttenuation: false, color: 0xffffff, map: st.circle, alphaTest: 0.4, transparent: true, depthTest: false });
+      st.ptsSel = new THREE.Points(g, mt);
+      st.ptsSel.renderOrder = 14;
+      st.ptsSel.frustumCulled = false;
+      st.scene.add(st.ptsSel);
+    }
+    const k = selectedMarkerRef.current;
+    if (k >= 0 && k < m.n) {
+      const a = st.ptsSel.geometry.attributes.position.array;
+      a[0] = m.positions[k * 3]; a[1] = m.positions[k * 3 + 1] * p.vExag; a[2] = -m.positions[k * 3 + 2];
+      st.ptsSel.geometry.attributes.position.needsUpdate = true;
+      st.ptsSel.visible = true;
+    } else {
+      st.ptsSel.visible = false;
+    }
+  };
+
+  // ---- rótulos --------------------------------------------------------------
+  const syncLabels = () => {
+    const st = stateRef.current;
+    const p = propsRef.current;
+    if (!st.labelGroup) return;
+    if (st.labelSrc !== p.labels) {
+      st.labelGroup.children.slice().forEach((sp) => { st.labelGroup.remove(sp); disposeObject(sp); });
+      (p.labels || []).forEach((l) => {
+        const sp = makeLabelSprite(l.text, l.color || '#e2e8f0', l.weight || 1);
+        if (!sp) return;
+        sp.userData.base = l;
+        st.labelGroup.add(sp);
+      });
+      st.labelSrc = p.labels;
+      applyLabelScale();
+    }
+    st.labelGroup.children.forEach((sp) => {
+      const l = sp.userData.base;
+      sp.position.set(l.x, l.y * p.vExag, -l.z);
+    });
+  };
+
+  // ---- (re)constrói a malha quando as células mudam -----------------------
+  useEffect(() => {
+    const st = stateRef.current;
+    if (!st.scene || !cells) return;
+    if (st.mesh) {
+      st.scene.remove(st.mesh);
+      disposeObject(st.mesh);
+      st.mesh = null;
+    }
+    const cap = Math.max(cells.n, 1);
+    const geo = new THREE.BoxGeometry(1, 1, 1);
+    const mat = new THREE.MeshLambertMaterial({ color: 0xffffff });
+    const mesh = new THREE.InstancedMesh(geo, mat, cap);
+    mesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+    mesh.instanceColor = new THREE.InstancedBufferAttribute(new Float32Array(cap * 3), 3);
+    mesh.instanceColor.setUsage(THREE.DynamicDrawUsage);
+    mesh.frustumCulled = false;
+    mesh.renderOrder = 2;
+    st.scene.add(mesh);
+    st.mesh = mesh;
+    st.map = new Int32Array(cap);
+    syncInstances();
+    syncSelection();
+    fitCamera('iso');
+    syncSurface();
+    syncMarkers();
+    syncLabels();
+    requestRender();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [cells]);
+
+  useEffect(() => { syncInstances(); requestRender(); }, [colors, visible]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    syncInstances(); syncSelection(); syncSurface(); syncMarkers(); syncLabels(); requestRender();
+  }, [vExag]); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => { syncSelection(); requestRender(); }, [selected]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { syncMarkers(); requestRender(); }, [markers, selectedMarker]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { syncLabels(); requestRender(); }, [labels]); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => { if (cells) fitCamera('iso'); }, [fitKey]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // textura de satélite
+  useEffect(() => {
+    const st = stateRef.current;
+    if (!st.scene) return;
+    if (st.texture) { st.texture.dispose(); st.texture = null; }
+    if (surfaceTexture) {
+      const tex = new THREE.CanvasTexture(surfaceTexture);
+      tex.colorSpace = THREE.SRGBColorSpace;
+      tex.anisotropy = st.renderer?.capabilities?.getMaxAnisotropy?.() || 1;
+      st.texture = tex;
+    }
+    if (st.surfaceMesh) st.surfaceMesh.material.map = null; // força reatribuição em syncSurface
+    syncSurface();
+    requestRender();
+  }, [surfaceTexture]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => { syncSurface(); requestRender(); }, [surface, surfaceOpacity]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const btn = {
     padding: '3px 9px', fontSize: '0.7rem', fontWeight: 600, borderRadius: '6px', cursor: 'pointer',

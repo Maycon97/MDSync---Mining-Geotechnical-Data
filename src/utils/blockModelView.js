@@ -16,7 +16,7 @@ export function buildGeometry(meta, data) {
   const { tamanhoPai } = meta;
   let sx, sy, sz;
   if (data.kind === 'overview') {
-    const { lx, ly, lz } = meta.overview;
+    const { lx, ly, lz } = data.lod || meta.overview;
     sx = lx * tamanhoPai.x; sy = ly * tamanhoPai.y; sz = lz * tamanhoPai.z;
     for (let c = 0; c < n; c++) {
       px[c] = data.i[c] * sx + sx / 2;
@@ -51,13 +51,26 @@ export function computeVisible(meta, data, geom, f) {
   const okCity = allowedByName(meta, 'city', null, f.city || null);
   const X0 = meta.origem.x, Y0 = meta.origem.y, Z0 = meta.origem.z;
   const zMin = f.zMin ?? -Infinity, zMax = f.zMax ?? Infinity;
+  const eMin = f.eMin ?? -Infinity, eMax = f.eMax ?? Infinity;
+  const nMin = f.nMin ?? -Infinity, nMax = f.nMax ?? Infinity;
   const poly = f.sectorPoly || null;
+  // teor de corte: faixa [valueMin, valueMax] aplicada à variável numérica indicada
+  const vcol = f.valueVar && data.g[f.valueVar] ? data.g[f.valueVar] : null;
+  const hasMin = Number.isFinite(f.valueMin), hasMax = Number.isFinite(f.valueMax);
+  const useValue = !!vcol && (hasMin || hasMax);
+  const vMin = hasMin ? f.valueMin : -Infinity, vMax = hasMax ? f.valueMax : Infinity;
   for (let c = 0; c < n; c++) {
     if (!okTipo[data.cat.tipo[c]] || !okDest[data.cat.destino[c]] || !okRisco[data.cat.risco[c]]) continue;
     if (!okLito[data.cat.lito[c]] || !okDm[data.cat.dm[c]] || !okCity[data.cat.city[c]]) continue;
     const z = Z0 + geom.pz[c];
     if (z < zMin || z > zMax) continue;
-    if (poly && !pointInPolygon(X0 + geom.px[c], Y0 + geom.py[c], poly)) continue;
+    const E = X0 + geom.px[c], N = Y0 + geom.py[c];
+    if (E < eMin || E > eMax || N < nMin || N > nMax) continue;
+    if (poly && !pointInPolygon(E, N, poly)) continue;
+    if (useValue) {
+      const x = vcol[c];
+      if (Number.isNaN(x) || x < vMin || x > vMax) continue;
+    }
     vis[c] = 1;
   }
   return vis;

@@ -2,13 +2,19 @@ import React, { useEffect, useMemo, useState } from 'react';
 import {
   AlertTriangle, Box, Database, FileCode, Grid, Layers, Loader2, Sliders, Table2
 } from 'lucide-react';
-import { loadMeta, loadOverview, loadBench, mergeBenches } from '../services/blockModelService';
+import {
+  loadMeta, loadLod, loadBench, loadTerrain, loadGeoAssets, mergeBenches
+} from '../services/blockModelService';
+import { loadSatelliteMosaic, maxTextureSize } from '../services/satelliteTiles';
+import {
+  buildAxisLabels, buildInstrumentMarkers, buildStructureLabels, buildSurface, mosaicBounds, pickZoom
+} from '../utils/blockModelGeo';
 import {
   buildGeometry, buildLegend, cellInfo, computeColors, computeStats, computeVisible
 } from '../utils/blockModelView';
 import {
   CODE_HINTS, GRADE_META, categoryColor, categoryLabel, formatGrade, fmtBytes, fmtDec, fmtInt, fmtMt,
-  gradeTitle, latLonToUtm23S, rampCss
+  INSTRUMENT_TYPES, gradeTitle, latLonToUtm23S, rampCss, statusColor
 } from '../utils/blockModelFormat';
 import { ENGENHO_SECO_SECTORS } from '../data/engenhoSecoBlockModelData';
 import { BlockModel3D } from './BlockModel3D';
@@ -124,6 +130,47 @@ const GradeTable = ({ info, vars }) => (
   </table>
 );
 
+const InstrumentCard = ({ ins, terrainZ }) => {
+  if (!ins) return null;
+  const tp = INSTRUMENT_TYPES[ins.tipo];
+  const row = (k, v, color) => (
+    <div key={k} style={{ display: 'flex', justifyContent: 'space-between', gap: 8, padding: '2px 0', borderBottom: '1px solid var(--border-subtle)' }}>
+      <span style={{ color: 'var(--text-muted)' }}>{k}</span>
+      <strong style={{ color: color || 'var(--text-main)', textAlign: 'right' }}>{v}</strong>
+    </div>
+  );
+  const num = (v, d = 2) => (Number.isFinite(Number(v)) && v !== null ? fmtDec(Number(v), d) : '—');
+  return (
+    <div style={{ fontSize: '0.72rem', padding: '0.65rem 0.8rem' }}>
+      <div style={{ fontWeight: 800, color: tp?.color || 'var(--primary-accent)', marginBottom: 4 }}>
+        Instrumento {ins.id} — {tp?.label || ins.tipo}
+      </div>
+      {row('Estrutura', ins.estrutura)}
+      {row('Seção', ins.secao || '—')}
+      {row('Status', ins.statusCalculado || '—', statusColor(ins.statusCalculado))}
+      {row('Situação', ins.situacao || '—')}
+      {row('UTM E', fmtInt(ins.coordenadaEW))}
+      {row('UTM N', fmtInt(ins.coordenadaNS))}
+      {row('Cota do topo', `${num(ins.cotaTopo)} m`)}
+      {row('Cota da base', `${num(ins.cotaBase)} m`)}
+      {row('Cota do fundo', `${num(ins.cotaFundo)} m`)}
+      {terrainZ != null && row('Topo do modelo no ponto', `${fmtDec(terrainZ, 1)} m (Δ ${fmtDec(Number(ins.cotaTopo) - terrainZ, 1)} m)`)}
+      {row('Profundidade instalada', `${num(ins.profundidadeInstalacao)} m`)}
+      {row('Instalação', ins.dataInstalacao || '—')}
+      {row('Última leitura', `${num(ins.ultimaLeitura)} (${ins.ultimaData || '—'})`)}
+      {row('Última cota', `${num(ins.ultimaCota)} m`)}
+      <div style={{ marginTop: 8, fontSize: '0.68rem', fontWeight: 800, textTransform: 'uppercase', color: 'var(--text-muted)' }}>Limites de controle</div>
+      {row('Normal', num(ins.limiteNormal))}
+      {row('Atenção', num(ins.limiteAtencao))}
+      {row('Alerta', num(ins.limiteAlerta))}
+      {row('Emergência', num(ins.limiteEmergencia))}
+      <div style={{ marginTop: 8, fontSize: '0.67rem', color: 'var(--text-muted)' }}>
+        Dados do banco geotécnico do MDSync, georreferenciados sobre o modelo de blocos (SIRGAS 2000 / UTM 23S).
+      </div>
+    </div>
+  );
+};
+
 const Inspector = ({ info, meta, onFocusBench }) => {
   if (!info) {
     return (
@@ -205,15 +252,32 @@ export const BlockModelRealPanel = ({ modelId }) => {
   const [city, setCity] = useState('');
   const [sectorId, setSectorId] = useState('ALL');
 
-  const [res, setRes] = useState('overview');
+  const [res, setRes] = useState('lod20'); // 'overview' (40 m) | 'lod20' (20 m) | 'detail' (10 m)
   const [zFrom, setZFrom] = useState(null);
   const [zTo, setZTo] = useState(null);
   const [vExag, setVExag] = useState(1.5);
   const [overview, setOverview] = useState(null);
+  const [lod20, setLod20] = useState(null);
   const [detail, setDetail] = useState(null);
   const [loadingMsg, setLoadingMsg] = useState('');
   const [sel3d, setSel3d] = useState(-1);
   const [fitKey, setFitKey] = useState(0);
+
+  // camadas geoespaciais, seções e teor de corte
+  const [satMode, setSatMode] = useState('off'); // 'off' | 'flat' | 'dem'
+  const [satOpacity, setSatOpacity] = useState(0.9);
+  const [showInstr, setShowInstr] = useState(false);
+  const [showStruct, setShowStruct] = useState(false);
+  const [showAxes, setShowAxes] = useState(true);
+  const [terrain, setTerrain] = useState(null);
+  const [geoAssets, setGeoAssets] = useState(null);
+  const [mosaic, setMosaic] = useState(null);
+  const [satMsg, setSatMsg] = useState('');
+  const [selMarker, setSelMarker] = useState(-1);
+  const [secE, setSecE] = useState(null);
+  const [secN, setSecN] = useState(null);
+  const [valMin, setValMin] = useState('');
+  const [valMax, setValMax] = useState('');
 
   const [planZ, setPlanZ] = useState(null);
   const [planData, setPlanData] = useState(null);
@@ -232,6 +296,9 @@ export const BlockModelRealPanel = ({ modelId }) => {
       const zs = m.bancadas.map((b) => b.z0);
       setZFrom(Math.min(...zs));
       setZTo(Math.max(...zs));
+      setSecE([m.extensao.xmin, m.extensao.xmax]);
+      setSecN([m.extensao.ymin, m.extensao.ymax]);
+      if (!m.lod20) setRes('overview');
       // bancada padrão da planta: a de maior massa de minério
       const rows = (m.resumos.bench_tipo || []).filter((r) => r.tipo === 'minerio');
       let best = rows.sort((a, b) => b.massa - a.massa)[0];
@@ -240,15 +307,53 @@ export const BlockModelRealPanel = ({ modelId }) => {
     return () => { alive = false; };
   }, [modelId]);
 
-  // ---- overview ----------------------------------------------------------
+  // ---- células agregadas (LOD) -------------------------------------------
   useEffect(() => {
-    if (!meta) return;
+    if (!meta || res === 'detail') return;
+    const which = res === 'lod20' && meta.lod20 ? 'lod20' : 'overview';
+    if ((which === 'lod20' && lod20) || (which === 'overview' && overview)) return;
     let alive = true;
-    setLoadingMsg('Carregando modelo 3D...');
-    loadOverview(modelId, meta).then((d) => { if (alive) { setOverview(d); setLoadingMsg(''); } })
-      .catch((e) => alive && (setError(e.message), setLoadingMsg('')));
+    setLoadingMsg(which === 'lod20' ? 'Carregando modelo 3D (20 m)...' : 'Carregando modelo 3D...');
+    loadLod(modelId, meta, which).then((d) => {
+      if (!alive) return;
+      if (which === 'lod20') setLod20(d); else setOverview(d);
+      setLoadingMsg('');
+    }).catch((e) => alive && (setError(e.message), setLoadingMsg('')));
     return () => { alive = false; };
-  }, [meta, modelId]);
+  }, [meta, modelId, res, lod20, overview]);
+
+  // ---- terreno, ativos geoespaciais e satélite ----------------------------
+  useEffect(() => {
+    if (!meta || !meta.terreno || terrain || !(satMode === 'dem' || showStruct || showInstr)) return;
+    let alive = true;
+    loadTerrain(modelId, meta).then((t) => alive && setTerrain(t)).catch(() => {});
+    return () => { alive = false; };
+  }, [meta, modelId, satMode, showStruct, showInstr, terrain]);
+
+  useEffect(() => {
+    if (!(showInstr || showStruct) || geoAssets) return;
+    let alive = true;
+    loadGeoAssets().then((g) => alive && setGeoAssets(g)).catch(() => alive && setSatMsg('Dados geoespaciais do MDSync indisponíveis'));
+    return () => { alive = false; };
+  }, [showInstr, showStruct, geoAssets]);
+
+  const satBounds = useMemo(
+    () => (meta && satMode !== 'off' ? mosaicBounds(meta, pickZoom(meta, maxTextureSize())) : null),
+    [meta, satMode]
+  );
+  useEffect(() => {
+    if (!satBounds) return undefined;
+    let alive = true;
+    setSatMsg('Carregando imagem de satélite...');
+    loadSatelliteMosaic(satBounds, {
+      onProgress: (d, t) => alive && setSatMsg(`Carregando imagem de satélite ${d}/${t}...`)
+    }).then((r) => {
+      if (!alive) return;
+      setMosaic(r.ok > 0 ? r : null);
+      setSatMsg(r.ok === 0 ? 'Imagem de satélite indisponível (sem rede ou bloqueada)' : r.failed ? `${r.failed} de ${r.total} tiles de satélite indisponíveis` : '');
+    });
+    return () => { alive = false; };
+  }, [satBounds]);
 
   // ---- detalhe (bancadas selecionadas) -----------------------------------
   const benchList = useMemo(() => (meta ? meta.bancadas.map((b) => b.z0) : []), [meta]);
@@ -289,16 +394,57 @@ export const BlockModelRealPanel = ({ modelId }) => {
   }, [sectorId]);
 
   const filters = useMemo(() => ({ tipoOff, destinoOff, riscoOff, litoOff, dm, city, sectorPoly }), [tipoOff, destinoOff, riscoOff, litoOff, dm, city, sectorPoly]);
-  const filters3d = useMemo(() => ({ ...filters, zMin: zFrom ?? undefined, zMax: zTo != null ? zTo + 10 : undefined }), [filters, zFrom, zTo]);
-
-  const data3d = res === 'overview' ? overview : detail;
-  const geom3d = useMemo(() => (meta && data3d ? buildGeometry(meta, data3d) : null), [meta, data3d]);
-  const visible3d = useMemo(() => (geom3d ? computeVisible(meta, data3d, geom3d, filters3d) : null), [meta, data3d, geom3d, filters3d]);
+  const data3d = res === 'detail' ? detail : res === 'lod20' && meta?.lod20 ? lod20 : overview;
   const modes3d = data3d ? Object.keys(data3d.g) : [];
   const mode3d = ['lito', 'tipo', 'destino', 'risco', 'dm', 'city', 'cota', 'dens'].includes(colorMode) || modes3d.includes(colorMode) ? colorMode : 'lito';
+  const numericMode = modes3d.includes(mode3d);
+  const vMinNum = valMin === '' ? NaN : Number(String(valMin).replace(',', '.'));
+  const vMaxNum = valMax === '' ? NaN : Number(String(valMax).replace(',', '.'));
+  const ext = meta?.extensao;
+  const secActive = !!(meta && secE && secN && (secE[0] > ext.xmin || secE[1] < ext.xmax || secN[0] > ext.ymin || secN[1] < ext.ymax));
+  const filters3d = useMemo(() => ({
+    ...filters,
+    zMin: zFrom ?? undefined,
+    zMax: zTo != null ? zTo + 10 : undefined,
+    eMin: secE && secActive ? secE[0] : undefined,
+    eMax: secE && secActive ? secE[1] : undefined,
+    nMin: secN && secActive ? secN[0] : undefined,
+    nMax: secN && secActive ? secN[1] : undefined,
+    valueVar: numericMode ? mode3d : undefined,
+    valueMin: vMinNum,
+    valueMax: vMaxNum
+  }), [filters, zFrom, zTo, secE, secN, secActive, numericMode, mode3d, vMinNum, vMaxNum]);
+
+  const geom3d = useMemo(() => (meta && data3d ? buildGeometry(meta, data3d) : null), [meta, data3d]);
+  const visible3d = useMemo(() => (geom3d ? computeVisible(meta, data3d, geom3d, filters3d) : null), [meta, data3d, geom3d, filters3d]);
   const colors3d = useMemo(() => (geom3d ? computeColors(meta, data3d, geom3d, mode3d) : null), [meta, data3d, geom3d, mode3d]);
   const stats3d = useMemo(() => (data3d && visible3d ? computeStats(data3d, visible3d) : null), [data3d, visible3d]);
   const legend = useMemo(() => (meta && data3d ? buildLegend(meta, mode3d) : null), [meta, data3d, mode3d]);
+
+  // ---- derivados geoespaciais ---------------------------------------------
+  const surface = useMemo(() => {
+    if (!meta || satMode === 'off' || !satBounds) return null;
+    if (satMode === 'dem') {
+      if (!terrain) return null;
+      return { ...buildSurface(meta, terrain, satBounds, { mode: 'dem', stride: 2 }), offset: 1.2 };
+    }
+    return { ...buildSurface(meta, null, satBounds, { mode: 'flat', flatZ: meta.extensao.zmin }), offset: -1 };
+  }, [meta, satMode, satBounds, terrain]);
+  const markers = useMemo(() => (meta && showInstr && geoAssets ? buildInstrumentMarkers(geoAssets, meta, { colorBy: 'status' }) : null), [meta, showInstr, geoAssets]);
+  const structs = useMemo(() => (meta && showStruct && geoAssets ? buildStructureLabels(geoAssets, meta, terrain) : null), [meta, showStruct, geoAssets, terrain]);
+  const labels3d = useMemo(() => {
+    if (!meta) return null;
+    const list = [...(showAxes ? buildAxisLabels(meta) : []), ...(structs ? structs.labels : [])];
+    return list.length ? list : null;
+  }, [meta, showAxes, structs]);
+  const markerInfo = markers && selMarker >= 0 && selMarker < markers.n ? markers.items[selMarker] : null;
+  const markerTerrainZ = useMemo(() => {
+    if (!markerInfo || !terrain || !meta) return null;
+    const i = Math.floor((Number(markerInfo.coordenadaEW) - meta.origem.x) / meta.tamanhoPai.x);
+    const j = Math.floor((Number(markerInfo.coordenadaNS) - meta.origem.y) / meta.tamanhoPai.y);
+    const t = terrain.elev[i * terrain.ny + j];
+    return Number.isNaN(t) || t === undefined ? null : t;
+  }, [markerInfo, terrain, meta]);
 
   // ---- derivados planta ----------------------------------------------------
   const geomPlan = useMemo(() => (meta && planData ? buildGeometry(meta, planData) : null), [meta, planData]);
@@ -461,8 +607,9 @@ export const BlockModelRealPanel = ({ modelId }) => {
         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
           <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '0.75rem' }}>
             <div style={group}>
-              <button style={pill(res === 'overview', '#0284c7')} onClick={() => switchRes('overview')} title="Células agregadas de 40×40×20 m — mina inteira">Mina inteira (40×40×20 m)</button>
-              <button style={pill(res === 'detail', '#0284c7')} onClick={() => switchRes('detail')} title="Células-pai de 10×10×10 m (até 6 bancadas)">Detalhe (10 m)</button>
+              <button style={pill(res === 'overview', '#0284c7')} onClick={() => switchRes('overview')} title="Células agregadas de 40×40×20 m — mina inteira (leve)">Mina 40 m</button>
+              {meta.lod20 && <button style={pill(res === 'lod20', '#0284c7')} onClick={() => switchRes('lod20')} title="Células agregadas de 20×20×10 m — mina inteira, refinado">Mina 20 m</button>}
+              <button style={pill(res === 'detail', '#0284c7')} onClick={() => switchRes('detail')} title="Células-pai de 10×10×10 m (até 6 bancadas)">Detalhe 10 m</button>
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
               <span style={labelStyle}>Bancadas de</span>
@@ -481,6 +628,70 @@ export const BlockModelRealPanel = ({ modelId }) => {
             </div>
             {loadingMsg && <span style={{ ...labelStyle, display: 'inline-flex', alignItems: 'center', gap: 5 }}><Loader2 size={13} className="spin-animation" /> {loadingMsg}</span>}
           </div>
+
+          {/* Camadas geoespaciais */}
+          <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '0.5rem 0.9rem', padding: '0.45rem 0.7rem', borderRadius: 8, backgroundColor: 'var(--bg-secondary)', border: '1px solid var(--border-subtle)' }}>
+            <span style={{ ...labelStyle, color: 'var(--text-main)' }}>🌎 Camadas geoespaciais</span>
+            <div style={group}>
+              <button style={pill(satMode === 'off', '#475569')} onClick={() => setSatMode('off')}>Sem imagem</button>
+              <button style={pill(satMode === 'flat', '#0d9488')} onClick={() => { setSatMode('flat'); setSatOpacity(0.9); }} title="Imagem de satélite como base plana sob o modelo">Satélite (base)</button>
+              {meta.terreno && <button style={pill(satMode === 'dem', '#0d9488')} onClick={() => { setSatMode('dem'); setSatOpacity(0.6); }} title="Imagem de satélite sobre a superfície do terreno derivada do modelo de blocos">Satélite sobre o terreno</button>}
+            </div>
+            {satMode !== 'off' && (
+              <label style={{ ...labelStyle, display: 'inline-flex', alignItems: 'center', gap: 5 }}>
+                Opacidade
+                <input type="range" min="0.1" max="1" step="0.05" value={satOpacity} onChange={(e) => setSatOpacity(Number(e.target.value))} />
+              </label>
+            )}
+            <label style={{ ...labelStyle, display: 'inline-flex', alignItems: 'center', gap: 4, cursor: 'pointer' }}>
+              <input type="checkbox" checked={showInstr} onChange={(e) => { setShowInstr(e.target.checked); if (!e.target.checked) setSelMarker(-1); }} />
+              Instrumentos MDSync{markers ? ` (${markers.n} na área)` : ''}
+            </label>
+            <label style={{ ...labelStyle, display: 'inline-flex', alignItems: 'center', gap: 4, cursor: 'pointer' }}>
+              <input type="checkbox" checked={showStruct} onChange={(e) => setShowStruct(e.target.checked)} />
+              Estruturas{structs ? ` (${structs.items.length} na área)` : ''}
+            </label>
+            <label style={{ ...labelStyle, display: 'inline-flex', alignItems: 'center', gap: 4, cursor: 'pointer' }}>
+              <input type="checkbox" checked={showAxes} onChange={(e) => setShowAxes(e.target.checked)} />
+              Coordenadas UTM / cotas
+            </label>
+            {satMsg && <span style={{ ...labelStyle, color: '#f59e0b' }}>{satMsg}</span>}
+          </div>
+
+          {/* Seções e teor de corte */}
+          {secE && secN && (
+            <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '0.4rem 0.9rem', padding: '0.45rem 0.7rem', borderRadius: 8, backgroundColor: 'var(--bg-secondary)', border: '1px solid var(--border-subtle)' }}>
+              <span style={{ ...labelStyle, color: 'var(--text-main)' }}>✂️ Seção</span>
+              <label style={{ ...labelStyle, display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                Leste (E)
+                <input type="range" style={{ width: 100 }} min={meta.extensao.xmin} max={meta.extensao.xmax} step="10" value={secE[0]} onChange={(e) => setSecE([Math.min(Number(e.target.value), secE[1] - 10), secE[1]])} />
+                <input type="range" style={{ width: 100 }} min={meta.extensao.xmin} max={meta.extensao.xmax} step="10" value={secE[1]} onChange={(e) => setSecE([secE[0], Math.max(Number(e.target.value), secE[0] + 10)])} />
+                <span style={{ minWidth: 118 }}>{fmtInt(secE[0])}–{fmtInt(secE[1])}</span>
+              </label>
+              <label style={{ ...labelStyle, display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                Norte (N)
+                <input type="range" style={{ width: 100 }} min={meta.extensao.ymin} max={meta.extensao.ymax} step="10" value={secN[0]} onChange={(e) => setSecN([Math.min(Number(e.target.value), secN[1] - 10), secN[1]])} />
+                <input type="range" style={{ width: 100 }} min={meta.extensao.ymin} max={meta.extensao.ymax} step="10" value={secN[1]} onChange={(e) => setSecN([secN[0], Math.max(Number(e.target.value), secN[0] + 10)])} />
+                <span style={{ minWidth: 134 }}>{fmtInt(secN[0])}–{fmtInt(secN[1])}</span>
+              </label>
+              {numericMode && (
+                <label style={{ ...labelStyle, display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                  Teor de corte ({gradeTitle(mode3d)})
+                  <input type="number" step="any" placeholder="mín" value={valMin} onChange={(e) => setValMin(e.target.value)} style={{ ...selectStyle, width: 64 }} />
+                  <input type="number" step="any" placeholder="máx" value={valMax} onChange={(e) => setValMax(e.target.value)} style={{ ...selectStyle, width: 64 }} />
+                </label>
+              )}
+              {(secActive || valMin !== '' || valMax !== '') && (
+                <button
+                  className="btn-subtle"
+                  style={{ padding: '2px 8px', fontSize: '0.7rem', borderRadius: 6 }}
+                  onClick={() => { setSecE([meta.extensao.xmin, meta.extensao.xmax]); setSecN([meta.extensao.ymin, meta.extensao.ymax]); setValMin(''); setValMax(''); }}
+                >
+                  Limpar seção/teor
+                </button>
+              )}
+            </div>
+          )}
 
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.4rem 1.2rem', alignItems: 'center' }}>
             <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap', alignItems: 'center' }}>
@@ -525,18 +736,25 @@ export const BlockModelRealPanel = ({ modelId }) => {
                 visible={visible3d}
                 vExag={vExag}
                 selected={sel3d}
-                onPick={setSel3d}
+                onPick={(i) => { setSel3d(i); setSelMarker(-1); }}
                 fitKey={fitKey}
                 height={540}
+                surface={surface}
+                surfaceTexture={mosaic ? mosaic.canvas : null}
+                surfaceOpacity={satOpacity}
+                markers={markers}
+                selectedMarker={selMarker}
+                onPickMarker={(k) => { setSelMarker(k); setSel3d(-1); }}
+                labels={labels3d}
               />
               <Legend legend={legend} />
               <div style={{ fontSize: '0.67rem', color: 'var(--text-muted)' }}>
                 Arraste para girar • botão direito/dois dedos para mover • roda para zoom • clique para inspecionar. Norte para o fundo da cena (bússola no canto).
-                {res === 'overview' && ' Estéril oculto por padrão; ative em “Tipo”.'}
+                {res !== 'detail' && ' Estéril oculto por padrão; ative em “Tipo”.'}
               </div>
             </div>
             <div className="glass-panel" style={{ flex: '0 1 300px', minWidth: 260, borderRadius: 10, maxHeight: 640, overflowY: 'auto' }}>
-              <Inspector info={info3d} meta={meta} onFocusBench={focusBench} />
+              {markerInfo ? <InstrumentCard ins={markerInfo} terrainZ={markerTerrainZ} /> : <Inspector info={info3d} meta={meta} onFocusBench={focusBench} />}
             </div>
           </div>
         </div>

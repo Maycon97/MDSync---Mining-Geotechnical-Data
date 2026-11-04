@@ -111,9 +111,11 @@ export function loadBench(id, meta, k) {
   });
 }
 
-export function loadOverview(id, meta) {
-  return once(`${id}:overview`, async () => {
-    const ov = meta.overview;
+// Células agregadas (LOD): 'overview' (40x40x20 m) ou 'lod20' (20x20x10 m)
+export function loadLod(id, meta, which = 'overview') {
+  return once(`${id}:${which}`, async () => {
+    const ov = meta[which];
+    if (!ov) throw new Error(`LOD ${which} inexistente no modelo ${id}`);
     const layout = [
       'ci:u16', 'cj:u16', 'ck:u16',
       ...meta.colunasCat.map((d) => `${d}:u8`),
@@ -126,8 +128,38 @@ export function loadOverview(id, meta) {
       i: cols.ci,
       j: cols.cj,
       k: cols.ck,
-      kind: 'overview'
+      kind: 'overview',
+      lod: { lx: ov.lx, ly: ov.ly, lz: ov.lz },
+      lodKey: which
     });
+  });
+}
+
+export function loadOverview(id, meta) {
+  return loadLod(id, meta, 'overview');
+}
+
+// Superfície do terreno: cota (m) do topo do modelo por coluna (NaN = sem dado)
+export function loadTerrain(id, meta) {
+  return once(`${id}:terrain`, async () => {
+    const t = meta.terreno;
+    if (!t) throw new Error('Modelo sem superfície de terreno');
+    const buf = await gunzip(await fetchBuffer(`${baseUrl(id)}/${t.arquivo}`));
+    const raw = new Uint16Array(buf.slice(0, t.nx * t.ny * 2));
+    const elev = new Float32Array(raw.length);
+    for (let i = 0; i < raw.length; i++) elev[i] = raw[i] === NULL16 ? NaN : raw[i] / t.escala;
+    return { nx: t.nx, ny: t.ny, elev };
+  });
+}
+
+// Ativos geoespaciais do MDSync (instrumentos e estruturas) — public/data/geotech_master.json
+export function loadGeoAssets() {
+  return once('geo-assets', async () => {
+    const base = (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.BASE_URL) || './';
+    const res = await fetch(`${base}data/geotech_master.json`);
+    if (!res.ok) throw new Error(`geotech_master.json indisponível (HTTP ${res.status})`);
+    const j = await res.json();
+    return { instrumentos: j.instrumentos || [], estruturas: j.estruturas || [] };
   });
 }
 
@@ -174,7 +206,7 @@ export function mergeBenches(benches) {
 export function cellGeometry(meta, data, index) {
   const { origem, tamanhoPai } = meta;
   if (data.kind === 'overview') {
-    const { lx, ly, lz } = meta.overview;
+    const { lx, ly, lz } = data.lod || meta.overview;
     const sx = lx * tamanhoPai.x, sy = ly * tamanhoPai.y, sz = lz * tamanhoPai.z;
     return {
       e: origem.x + data.i[index] * sx + sx / 2,

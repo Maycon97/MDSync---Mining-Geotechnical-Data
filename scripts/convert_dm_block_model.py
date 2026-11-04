@@ -10,6 +10,8 @@ public/data/block-model/<id>/ :
                           resumos (global, por litologia, bancada, destino...)
   bench_<cota>.bin.gz  -> células-pai (10x10x10 m) de cada bancada, colunar
   overview.bin.gz      -> células agregadas (LOD) para o 3D da mina inteira
+  lod20.bin.gz         -> células agregadas de 20x20x10 m (3D refinado)   [block_model_extras.py]
+  terrain.bin.gz       -> superfície do terreno derivada do modelo        [block_model_extras.py]
 
 Uso:
   python scripts/convert_dm_block_model.py caminho/bm_1126_2.dm \
@@ -555,6 +557,10 @@ def main():
     res = scan(a.dm, header, a.limit_pages, a.chunk_pages)
     print('registros:', res['n_records'], 'células-pai:', len(res['parents']['ijk']))
     export(res, header, a.out, a.id, os.path.basename(a.dm))
+    # derivados: superfície do terreno e LOD de 20 m (a partir dos arquivos de bancada recém-gerados)
+    sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+    import block_model_extras
+    block_model_extras.build(a.out)
 
 
 if __name__ == '__main__':

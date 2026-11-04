@@ -211,3 +211,86 @@ export function pointInPolygon(x, y, poly) {
   }
   return inside;
 }
+
+// ----------------------------------------------------------------------------
+// UTM 23S -> lat/lon (SIRGAS 2000 ≈ WGS-84) — inversa de latLonToUtm23S
+// ----------------------------------------------------------------------------
+export function utm23SToLatLon(easting, northing) {
+  const a = 6378137.0;
+  const f = 1 / 298.257223563;
+  const e2 = 2 * f - f * f;
+  const ep2 = e2 / (1 - e2);
+  const k0 = 0.9996;
+  const lon0 = (-45.0 * Math.PI) / 180;
+  const x = easting - 500000;
+  const y = northing - 10000000;
+  const M = y / k0;
+  const mu = M / (a * (1 - e2 / 4 - (3 * e2 * e2) / 64 - (5 * e2 ** 3) / 256));
+  const e1 = (1 - Math.sqrt(1 - e2)) / (1 + Math.sqrt(1 - e2));
+  const phi1 =
+    mu +
+    ((3 * e1) / 2 - (27 * e1 ** 3) / 32) * Math.sin(2 * mu) +
+    ((21 * e1 * e1) / 16 - (55 * e1 ** 4) / 32) * Math.sin(4 * mu) +
+    ((151 * e1 ** 3) / 96) * Math.sin(6 * mu) +
+    ((1097 * e1 ** 4) / 512) * Math.sin(8 * mu);
+  const sin1 = Math.sin(phi1);
+  const cos1 = Math.cos(phi1);
+  const tan1 = Math.tan(phi1);
+  const N1 = a / Math.sqrt(1 - e2 * sin1 * sin1);
+  const T1 = tan1 * tan1;
+  const C1 = ep2 * cos1 * cos1;
+  const R1 = (a * (1 - e2)) / Math.pow(1 - e2 * sin1 * sin1, 1.5);
+  const D = x / (N1 * k0);
+  const phi =
+    phi1 -
+    ((N1 * tan1) / R1) *
+      (D ** 2 / 2 -
+        ((5 + 3 * T1 + 10 * C1 - 4 * C1 * C1 - 9 * ep2) * D ** 4) / 24 +
+        ((61 + 90 * T1 + 298 * C1 + 45 * T1 * T1 - 252 * ep2 - 3 * C1 * C1) * D ** 6) / 720);
+  const lam =
+    lon0 +
+    (D -
+      ((1 + 2 * T1 + C1) * D ** 3) / 6 +
+      ((5 - 2 * C1 + 28 * T1 - 3 * C1 * C1 + 8 * ep2 + 24 * T1 * T1) * D ** 5) / 120) /
+      cos1;
+  return { lat: (phi * 180) / Math.PI, lon: (lam * 180) / Math.PI };
+}
+
+// lat/lon -> pixel global do Web Mercator (tiles de 256 px) no zoom z
+export function latLonToMercatorPx(lat, lon, z) {
+  const scale = 256 * 2 ** z;
+  const s = Math.sin((lat * Math.PI) / 180);
+  return {
+    x: ((lon + 180) / 360) * scale,
+    y: (0.5 - Math.log((1 + s) / (1 - s)) / (4 * Math.PI)) * scale
+  };
+}
+
+// ----------------------------------------------------------------------------
+// Instrumentação geotécnica (dados do MDSync)
+// ----------------------------------------------------------------------------
+export const INSTRUMENT_TYPES = {
+  PZ: { label: 'Piezômetro', color: '#38bdf8' },
+  INA: { label: 'Indicador de nível d’água', color: '#22d3ee' },
+  MCD: { label: 'Marco de controle (deslocamento)', color: '#f59e0b' },
+  VT: { label: 'Vertedouro', color: '#a78bfa' },
+  REF: { label: 'Referência', color: '#94a3b8' },
+  TILT: { label: 'Inclinômetro', color: '#f472b6' },
+  ETR: { label: 'Estação / extensômetro', color: '#4ade80' },
+  MV: { label: 'Medidor de vazão', color: '#2dd4bf' }
+};
+
+export const STATUS_COLORS = {
+  NORMAL: '#22c55e',
+  ATENCAO: '#facc15',
+  ALERTA: '#f97316',
+  EMERGENCIA: '#ef4444'
+};
+
+export function statusColor(status) {
+  const key = String(status || 'NORMAL')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toUpperCase();
+  return STATUS_COLORS[key] || '#94a3b8';
+}
