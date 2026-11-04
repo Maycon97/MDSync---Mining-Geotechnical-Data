@@ -41,6 +41,15 @@ const TAB_TITLES = {
 export const Header = ({ onToggleDrawer, onOpenProfile, onNavigateTab, activeTab = 'home' }) => {
   const { currentUser } = useAuth();
   const { isOnline } = useGeotechData();
+  const [isScrolled, setIsScrolled] = React.useState(false);
+
+  React.useEffect(() => {
+    const handleScroll = () => {
+      setIsScrolled(window.scrollY > 15);
+    };
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
   return (
     <header className="header-bar" style={{
@@ -57,30 +66,21 @@ export const Header = ({ onToggleDrawer, onOpenProfile, onNavigateTab, activeTab
       backdropFilter: 'blur(10px)',
       boxShadow: '0 2px 10px rgba(0, 0, 0, 0.08)'
     }}>
-      {/* Lado Esquerdo: Botão Oficial MENU + Logo e Indicador de Sessão */}
+      {/* Lado Esquerdo: Botão Oficial MENU (Flutuante & Persistente) + Logo e Indicador de Sessão */}
       <div style={{ display: 'flex', alignItems: 'center', gap: '0.85rem' }}>
         
-        {/* Botão Oficial MENU com Destaque Corporativo */}
+        {/* Placeholder para preservar o alinhamento da logo e títulos quando o botão flutua */}
+        <div 
+          className="menu-button-spacer"
+          aria-hidden="true" 
+        />
+
+        {/* Botão Oficial MENU Flutuante com Destaque Corporativo & Alta Visibilidade */}
         <button
           onClick={onToggleDrawer}
-          className="btn-menu-clean"
+          className={`btn-menu-clean btn-menu-floating ${isScrolled ? 'is-scrolled' : ''}`}
           title="Clique para abrir o Menu Lateral com todas as 20 opções do MDSync"
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '0.45rem',
-            padding: '0.45rem 0.85rem',
-            borderRadius: '8px',
-            backgroundColor: 'var(--primary-accent-bg)',
-            color: 'var(--primary-accent)',
-            border: '1.5px solid var(--border-highlight)',
-            fontWeight: 800,
-            fontSize: '0.82rem',
-            letterSpacing: '0.04em',
-            cursor: 'pointer',
-            transition: 'all 0.2s ease',
-            boxShadow: '0 2px 6px rgba(0, 0, 0, 0.08)'
-          }}
+          aria-label="Abrir Menu Lateral de Navegação do MDSync"
         >
           <Menu size={18} />
           <span>MENU</span>

@@ -155,7 +155,7 @@ html, body {
   background-color: var(--bg-primary);
   color: var(--text-main);
   line-height: 1.5;
-  overflow-x: hidden;
+  overflow-x: clip;
   transition: background-color var(--transition-normal), color var(--transition-normal);
 }
 
@@ -1468,6 +1468,90 @@ textarea:focus-visible,
 .btn-menu-clean:active,
 .btn-menu-3d:active {
   transform: scale(0.97);
+}
+
+/* Botão Flutuante do Menu Lateral - Sempre em Evidência em Qualquer Rolagem */
+.btn-menu-floating {
+  position: fixed !important;
+  top: calc(0.65rem + var(--safe-top, 0px)) !important;
+  left: calc(1.25rem + var(--safe-left, 0px)) !important;
+  z-index: 1250 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 0.45rem !important;
+  padding: 0.45rem 0.85rem !important;
+  border-radius: 8px !important;
+  background-color: var(--bg-surface) !important;
+  color: var(--primary-accent) !important;
+  border: 1.5px solid var(--primary-accent) !important;
+  font-weight: 800 !important;
+  font-size: 0.82rem !important;
+  letter-spacing: 0.04em !important;
+  cursor: pointer !important;
+  backdrop-filter: blur(12px) !important;
+  -webkit-backdrop-filter: blur(12px) !important;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25), 0 0 12px var(--primary-glow) !important;
+  transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1) !important;
+  user-select: none !important;
+}
+
+.btn-menu-floating:hover {
+  background-color: var(--primary-accent) !important;
+  color: #ffffff !important;
+  border-color: var(--primary-accent) !important;
+  transform: translateY(-2px) scale(1.04) !important;
+  box-shadow: 0 6px 20px rgba(2, 132, 199, 0.5), 0 0 16px rgba(56, 189, 248, 0.6) !important;
+}
+
+.btn-menu-floating:active {
+  transform: scale(0.96) !important;
+}
+
+.btn-menu-floating.is-scrolled {
+  background-color: var(--bg-surface) !important;
+  border-color: var(--primary-accent) !important;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.45), 0 0 16px var(--primary-glow) !important;
+  animation: pulseMenuGlow 3s infinite alternate ease-in-out;
+}
+
+@keyframes pulseMenuGlow {
+  0% {
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35), 0 0 8px rgba(56, 189, 248, 0.3);
+  }
+  100% {
+    box-shadow: 0 6px 22px rgba(0, 0, 0, 0.5), 0 0 18px rgba(56, 189, 248, 0.65);
+  }
+}
+
+.menu-button-spacer {
+  width: 94px;
+  height: 36px;
+  flex-shrink: 0;
+}
+
+@media (max-width: 768px) {
+  .btn-menu-floating {
+    top: calc(0.5rem + var(--safe-top, 0px)) !important;
+    left: calc(0.75rem + var(--safe-left, 0px)) !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .btn-menu-floating {
+    left: calc(0.5rem + var(--safe-left, 0px)) !important;
+    padding: 0.4rem 0.65rem !important;
+    font-size: 0.78rem !important;
+  }
+  .menu-button-spacer {
+    width: 86px;
+    height: 34px;
+  }
+}
+
+@media print {
+  .btn-menu-floating {
+    display: none !important;
+  }
 }
 
 /* Overlay com Transparência Suave e Desfoque */

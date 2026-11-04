@@ -31,4 +31,12 @@ describe('SideDrawer & GitHub Integration Validation', () => {
     expect(css).toContain('.drawer-overlay');
     expect(css).toContain('.nav-item-clean');
   });
+
+  it('should verify floating menu button and persistent layout classes exist in index.css', async () => {
+    const fs = await import('fs');
+    const css = fs.readFileSync('src/index.css', 'utf8');
+    expect(css).toContain('.btn-menu-floating');
+    expect(css).toContain('.menu-button-spacer');
+    expect(css).toContain('overflow-x: clip');
+  });
 });
