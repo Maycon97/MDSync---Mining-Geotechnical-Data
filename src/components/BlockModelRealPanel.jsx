@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState, useRef } from 'react';
 import {
   AlertTriangle, Box, Database, FileCode, Grid, Layers, Loader2, Sliders, Table2
 } from 'lucide-react';
@@ -264,8 +264,8 @@ export const BlockModelRealPanel = ({ modelId }) => {
   const [fitKey, setFitKey] = useState(0);
 
   // camadas geoespaciais, seções e teor de corte
-  const [satMode, setSatMode] = useState('off'); // 'off' | 'flat' | 'dem'
-  const [satOpacity, setSatOpacity] = useState(0.9);
+  const [satMode, setSatMode] = useState('flat'); // Padrão: base com imagem de satélite com os blocos geológicos montados em cima
+  const [satOpacity, setSatOpacity] = useState(0.95);
   const [showInstr, setShowInstr] = useState(false);
   const [showStruct, setShowStruct] = useState(false);
   const [showAxes, setShowAxes] = useState(true);
@@ -278,6 +278,10 @@ export const BlockModelRealPanel = ({ modelId }) => {
   const [secN, setSecN] = useState(null);
   const [valMin, setValMin] = useState('');
   const [valMax, setValMax] = useState('');
+
+  // Animação da montagem progressiva dos blocos sobre o satélite
+  const [isAssembling, setIsAssembling] = useState(false);
+  const assemblyTimerRef = useRef(null);
 
   const [planZ, setPlanZ] = useState(null);
   const [planData, setPlanData] = useState(null);
@@ -346,6 +350,9 @@ export const BlockModelRealPanel = ({ modelId }) => {
     let alive = true;
     setSatMsg('Carregando imagem de satélite...');
     loadSatelliteMosaic(satBounds, {
+      onStart: (canvas) => {
+        if (alive) setMosaic({ canvas, ok: 1, failed: 0, total: 1 });
+      },
       onProgress: (d, t) => alive && setSatMsg(`Carregando imagem de satélite ${d}/${t}...`)
     }).then((r) => {
       if (!alive) return;
@@ -425,10 +432,10 @@ export const BlockModelRealPanel = ({ modelId }) => {
   const surface = useMemo(() => {
     if (!meta || satMode === 'off' || !satBounds) return null;
     if (satMode === 'dem') {
-      if (!terrain) return null;
+      if (!terrain) return { ...buildSurface(meta, null, satBounds, { mode: 'flat', flatZ: meta.extensao.zmin }), offset: -2 };
       return { ...buildSurface(meta, terrain, satBounds, { mode: 'dem', stride: 2 }), offset: 1.2 };
     }
-    return { ...buildSurface(meta, null, satBounds, { mode: 'flat', flatZ: meta.extensao.zmin }), offset: -1 };
+    return { ...buildSurface(meta, null, satBounds, { mode: 'flat', flatZ: meta.extensao.zmin }), offset: -2 };
   }, [meta, satMode, satBounds, terrain]);
   const markers = useMemo(() => (meta && showInstr && geoAssets ? buildInstrumentMarkers(geoAssets, meta, { colorBy: 'status' }) : null), [meta, showInstr, geoAssets]);
   const structs = useMemo(() => (meta && showStruct && geoAssets ? buildStructureLabels(geoAssets, meta, terrain) : null), [meta, showStruct, geoAssets, terrain]);
@@ -490,6 +497,53 @@ export const BlockModelRealPanel = ({ modelId }) => {
     }
     setFitKey((k) => k + 1);
   };
+
+  // Funções de montagem sequencial dos blocos 3D sobre a base de satélite
+  const startAssembly = () => {
+    if (!meta) return;
+    const zs = meta.bancadas.map((b) => b.z0).sort((a, b) => a - b);
+    const minZ = zs[0];
+    const maxZ = zs[zs.length - 1];
+    setZFrom(minZ);
+    setZTo(minZ);
+    setIsAssembling(true);
+    let currentZ = minZ;
+
+    if (assemblyTimerRef.current) clearInterval(assemblyTimerRef.current);
+    assemblyTimerRef.current = setInterval(() => {
+      currentZ += 10;
+      if (currentZ >= maxZ) {
+        setZTo(maxZ);
+        clearInterval(assemblyTimerRef.current);
+        assemblyTimerRef.current = null;
+        setIsAssembling(false);
+      } else {
+        setZTo(currentZ);
+      }
+    }, 60);
+  };
+
+  const stopAssembly = () => {
+    if (assemblyTimerRef.current) {
+      clearInterval(assemblyTimerRef.current);
+      assemblyTimerRef.current = null;
+    }
+    setIsAssembling(false);
+  };
+
+  const resetAssembly = () => {
+    stopAssembly();
+    if (!meta) return;
+    const zs = meta.bancadas.map((b) => b.z0);
+    setZFrom(Math.min(...zs));
+    setZTo(Math.max(...zs));
+  };
+
+  useEffect(() => {
+    return () => {
+      if (assemblyTimerRef.current) clearInterval(assemblyTimerRef.current);
+    };
+  }, []);
 
   if (error) {
     return (
@@ -629,20 +683,120 @@ export const BlockModelRealPanel = ({ modelId }) => {
             {loadingMsg && <span style={{ ...labelStyle, display: 'inline-flex', alignItems: 'center', gap: 5 }}><Loader2 size={13} className="spin-animation" /> {loadingMsg}</span>}
           </div>
 
-          {/* Camadas geoespaciais */}
-          <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '0.5rem 0.9rem', padding: '0.45rem 0.7rem', borderRadius: 8, backgroundColor: 'var(--bg-secondary)', border: '1px solid var(--border-subtle)' }}>
-            <span style={{ ...labelStyle, color: 'var(--text-main)' }}>🌎 Camadas geoespaciais</span>
-            <div style={group}>
-              <button style={pill(satMode === 'off', '#475569')} onClick={() => setSatMode('off')}>Sem imagem</button>
-              <button style={pill(satMode === 'flat', '#0d9488')} onClick={() => { setSatMode('flat'); setSatOpacity(0.9); }} title="Imagem de satélite como base plana sob o modelo">Satélite (base)</button>
-              {meta.terreno && <button style={pill(satMode === 'dem', '#0d9488')} onClick={() => { setSatMode('dem'); setSatOpacity(0.6); }} title="Imagem de satélite sobre a superfície do terreno derivada do modelo de blocos">Satélite sobre o terreno</button>}
+          {/* Camadas geoespaciais e superfície com imagem de satélite */}
+          <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: '0.6rem 1rem', padding: '0.55rem 0.8rem', borderRadius: 8, backgroundColor: 'var(--bg-secondary)', border: '1px solid var(--border-subtle)' }}>
+            <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '0.5rem 0.8rem' }}>
+              <span style={{ ...labelStyle, color: 'var(--text-main)', display: 'inline-flex', alignItems: 'center', gap: 5 }}>
+                🌎 <b>Camadas geoespaciais & Satélite:</b>
+              </span>
+              <div style={group}>
+                <button
+                  style={pill(satMode === 'flat', '#0284c7')}
+                  onClick={() => { setSatMode('flat'); setSatOpacity(0.95); }}
+                  title="Superfície com imagem de satélite como base sob o modelo — os blocos geológicos 3D são montados em cima"
+                >
+                  🛰️ Satélite na Base (Blocos em Cima)
+                </button>
+                {meta.terreno && (
+                  <button
+                    style={pill(satMode === 'dem', '#0d9488')}
+                    onClick={() => { setSatMode('dem'); setSatOpacity(0.65); }}
+                    title="Superfície topográfica 3D da mina com imagem de satélite sobre o terreno"
+                  >
+                    ⛰️ Satélite sobre o Terreno 3D
+                  </button>
+                )}
+                <button
+                  style={pill(satMode === 'off', '#475569')}
+                  onClick={() => setSatMode('off')}
+                  title="Desativar imagem de satélite e exibir grade 3D neutra"
+                >
+                  Sem imagem
+                </button>
+              </div>
+
+              {satMode !== 'off' && (
+                <label style={{ ...labelStyle, display: 'inline-flex', alignItems: 'center', gap: 5 }}>
+                  Opacidade
+                  <input
+                    type="range"
+                    min="0.1"
+                    max="1"
+                    step="0.05"
+                    value={satOpacity}
+                    onChange={(e) => setSatOpacity(Number(e.target.value))}
+                    style={{ width: '70px', accentColor: '#0ea5e9' }}
+                  />
+                  <span>{Math.round(satOpacity * 100)}%</span>
+                </label>
+              )}
             </div>
-            {satMode !== 'off' && (
-              <label style={{ ...labelStyle, display: 'inline-flex', alignItems: 'center', gap: 5 }}>
-                Opacidade
-                <input type="range" min="0.1" max="1" step="0.05" value={satOpacity} onChange={(e) => setSatOpacity(Number(e.target.value))} />
-              </label>
-            )}
+
+            {/* Controles de Montagem dos Blocos 3D sobre o Satélite */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem' }}>
+              {isAssembling ? (
+                <button
+                  onClick={stopAssembly}
+                  style={{
+                    padding: '0.32rem 0.75rem',
+                    fontSize: '0.73rem',
+                    fontWeight: 700,
+                    borderRadius: '6px',
+                    backgroundColor: 'rgba(239, 68, 68, 0.22)',
+                    color: '#f87171',
+                    border: '1px solid rgba(239, 68, 68, 0.45)',
+                    cursor: 'pointer',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: 5
+                  }}
+                >
+                  ⏸ Pausar Montagem ({zTo}m)
+                </button>
+              ) : (
+                <button
+                  onClick={startAssembly}
+                  style={{
+                    padding: '0.32rem 0.75rem',
+                    fontSize: '0.73rem',
+                    fontWeight: 700,
+                    borderRadius: '6px',
+                    background: 'linear-gradient(135deg, #0284c7 0%, #0369a1 100%)',
+                    color: '#ffffff',
+                    border: '1px solid rgba(255, 255, 255, 0.22)',
+                    cursor: 'pointer',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: 5,
+                    boxShadow: '0 2px 8px rgba(2, 132, 199, 0.35)'
+                  }}
+                  title="Monta os blocos geológicos 3D progressivamente camada por camada sobre a imagem de satélite"
+                >
+                  ▶ Animar Montagem dos Blocos
+                </button>
+              )}
+              {zTo != null && zFrom != null && (
+                <button
+                  onClick={resetAssembly}
+                  style={{
+                    padding: '0.32rem 0.6rem',
+                    fontSize: '0.72rem',
+                    fontWeight: 600,
+                    borderRadius: '6px',
+                    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+                    color: 'var(--text-muted)',
+                    border: '1px solid var(--border-subtle)',
+                    cursor: 'pointer'
+                  }}
+                  title="Exibir todas as bancadas do modelo completo montado"
+                >
+                  Todos os Blocos
+                </button>
+              )}
+            </div>
+          </div>
+
+          <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '0.5rem 0.9rem', padding: '0.35rem 0.7rem', fontSize: '0.74rem' }}>
             <label style={{ ...labelStyle, display: 'inline-flex', alignItems: 'center', gap: 4, cursor: 'pointer' }}>
               <input type="checkbox" checked={showInstr} onChange={(e) => { setShowInstr(e.target.checked); if (!e.target.checked) setSelMarker(-1); }} />
               Instrumentos MDSync{markers ? ` (${markers.n} na área)` : ''}
@@ -730,6 +884,15 @@ export const BlockModelRealPanel = ({ modelId }) => {
                   </>
                 )}
               </div>
+              {satMode !== 'off' && (
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.35rem 0.75rem', borderRadius: '6px', background: 'rgba(2, 132, 199, 0.08)', border: '1px solid rgba(2, 132, 199, 0.22)', fontSize: '0.72rem', color: '#7dd3fc' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <span>🛰️</span>
+                    <span><b>Superfície com Imagens via Satélite Ativa:</b> {satMode === 'flat' ? 'Base plana no pé da mina com blocos geológicos 3D montados em cima.' : 'Relevo topográfico com projeção de satélite 3D.'}</span>
+                  </div>
+                  <span style={{ fontSize: '0.68rem', color: 'var(--text-muted)' }}>Cota Base: {meta.extensao.zmin} m</span>
+                </div>
+              )}
               <BlockModel3D
                 cells={geom3d}
                 colors={colors3d}

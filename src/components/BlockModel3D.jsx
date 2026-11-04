@@ -100,6 +100,7 @@ export const BlockModel3D = forwardRef(function BlockModel3D(
     requestAnimationFrame(() => {
       st.pending = false;
       if (!st.renderer) return;
+      if (st.texture) st.texture.needsUpdate = true;
       st.renderer.render(st.scene, st.camera);
       if (compassRef.current) {
         const t = st.controls.target.clone();
