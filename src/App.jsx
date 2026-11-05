@@ -93,19 +93,29 @@ export function App() {
   const [checklistModalOpen, setChecklistModalOpen] = useState(false);
   const [legalModalOpen, setLegalModalOpen] = useState(false);
   const [legalModalTab, setLegalModalTab] = useState('privacidade');
+  const [mapNavigationContext, setMapNavigationContext] = useState(null);
 
   const handleOpenLegalCenter = (tab = 'privacidade') => {
     setLegalModalTab(tab);
     setLegalModalOpen(true);
   };
 
-  const handleNavigateTab = (tabId, subTab = null) => {
-    if (subTab) {
-      setColetaInitialSubTab(subTab);
-    } else if (tabId === 'coletas') {
+  const handleNavigateTab = (tabId, contextOrSubTab = null) => {
+    const targetTab = tabId === 'map' ? 'mapa' : tabId;
+    if (targetTab === 'mapa') {
+      if (contextOrSubTab && typeof contextOrSubTab === 'object') {
+        setMapNavigationContext(contextOrSubTab);
+      } else if (typeof contextOrSubTab === 'string') {
+        setMapNavigationContext({ structureId: contextOrSubTab });
+      } else {
+        setMapNavigationContext(null);
+      }
+    } else if (contextOrSubTab && typeof contextOrSubTab === 'string') {
+      setColetaInitialSubTab(contextOrSubTab);
+    } else if (targetTab === 'coletas') {
       setColetaInitialSubTab('concluidas');
     }
-    setActiveTab(tabId);
+    setActiveTab(targetTab);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
@@ -329,6 +339,8 @@ export function App() {
           <MapTab 
             onNavigateTab={handleNavigateTab}
             onSelectInstrumentForReading={handleSelectInstrumentForReading}
+            navigationContext={mapNavigationContext}
+            onClearNavigationContext={() => setMapNavigationContext(null)}
           />
         )}
 

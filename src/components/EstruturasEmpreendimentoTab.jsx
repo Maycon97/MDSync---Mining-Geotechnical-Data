@@ -175,11 +175,15 @@ export const EstruturasEmpreendimentoTab = ({ onNavigateTab }) => {
   };
 
   const handleGoToMap = (est) => {
-    if (selectStructure) {
-      selectStructure(est.sigla);
+    if (selectStructure && est) {
+      selectStructure(est.sigla || est.id);
     }
-    if (onNavigateTab) {
-      onNavigateTab('mapa');
+    if (onNavigateTab && est) {
+      onNavigateTab('mapa', {
+        structureId: est.id || est.sigla,
+        coords: est.lat && est.lon ? [est.lat, est.lon] : undefined,
+        zoom: 16
+      });
     }
   };
 
@@ -473,7 +477,7 @@ export const EstruturasEmpreendimentoTab = ({ onNavigateTab }) => {
                   }}
                 >
                   <MapPin size={13} />
-                  <span>Ver no Mapa GIS</span>
+                  <span>Ver no Georeferenciamento</span>
                 </button>
               </div>
             </div>

@@ -2575,8 +2575,15 @@ export const CronogramaSection = ({ onNavigateTab }) => {
                     <button
                       type="button"
                       onClick={() => {
+                        const coords = (selectedItemDetail.lat && selectedItemDetail.lon) 
+                          ? [selectedItemDetail.lat, selectedItemDetail.lon] 
+                          : undefined;
                         setSelectedItemDetail(null);
-                        onNavigateTab('map');
+                        onNavigateTab('mapa', {
+                          coords,
+                          zoom: 17,
+                          structureId: selectedItemDetail.estruturaId || 'TODAS'
+                        });
                       }}
                       style={{
                         background: '#0284c7',
@@ -2593,7 +2600,7 @@ export const CronogramaSection = ({ onNavigateTab }) => {
                       }}
                     >
                       <MapPin size={12} />
-                      Ver no Mapa GIS
+                      Ver no Georeferenciamento
                     </button>
                   )}
                 </div>

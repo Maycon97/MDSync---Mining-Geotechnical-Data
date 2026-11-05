@@ -19,7 +19,8 @@ import {
   Activity, 
   TrendingUp, 
   Info,
-  Calendar
+  Calendar,
+  MapPin
 } from 'lucide-react';
 
 ChartJS.register(
@@ -175,27 +176,56 @@ export const FlowRateTab = ({ onNavigateTab }) => {
 
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
             {onNavigateTab && (
-              <button
-                type="button"
-                onClick={() => onNavigateTab('pluviometria')}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '0.4rem',
-                  padding: '0.45rem 0.85rem',
-                  borderRadius: '6px',
-                  backgroundColor: 'rgba(56, 189, 248, 0.15)',
-                  border: '1px solid rgba(56, 189, 248, 0.4)',
-                  color: 'var(--geo-info)',
-                  fontSize: '0.8rem',
-                  fontWeight: 700,
-                  cursor: 'pointer'
-                }}
-                title="Abrir o Painel Executivo de Pluviometria Itaminas"
-              >
-                <CloudRain size={15} />
-                <span>Painel de Pluviometria</span>
-              </button>
+              <>
+                <button
+                  type="button"
+                  onClick={() => onNavigateTab('mapa', {
+                    filterType: currentInst?.tipo || 'VERTEDOURO',
+                    instrumentId: currentInst?.id,
+                    coords: currentInst?.lat && currentInst?.lon ? [currentInst.lat, currentInst.lon] : undefined,
+                    zoom: 17
+                  })}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.4rem',
+                    padding: '0.45rem 0.85rem',
+                    borderRadius: '6px',
+                    backgroundColor: 'rgba(56, 189, 248, 0.15)',
+                    border: '1px solid rgba(56, 189, 248, 0.4)',
+                    color: 'var(--geo-info)',
+                    fontSize: '0.8rem',
+                    fontWeight: 700,
+                    cursor: 'pointer'
+                  }}
+                  title="Ver medidores de vazão no Georreferenciamento"
+                >
+                  <MapPin size={15} />
+                  <span>Ver no Georeferenciamento</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => onNavigateTab('pluviometria')}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.4rem',
+                    padding: '0.45rem 0.85rem',
+                    borderRadius: '6px',
+                    backgroundColor: 'rgba(56, 189, 248, 0.08)',
+                    border: '1px solid rgba(56, 189, 248, 0.25)',
+                    color: '#94a3b8',
+                    fontSize: '0.8rem',
+                    fontWeight: 700,
+                    cursor: 'pointer'
+                  }}
+                  title="Abrir o Painel Executivo de Pluviometria Itaminas"
+                >
+                  <CloudRain size={15} />
+                  <span>Painel de Pluviometria</span>
+                </button>
+              </>
             )}
 
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>

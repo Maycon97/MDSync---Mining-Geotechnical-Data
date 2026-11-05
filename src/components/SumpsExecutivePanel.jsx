@@ -931,7 +931,7 @@ export const SumpsExecutivePanel = ({
                         title="Centralizar e visualizar no mapa"
                       >
                         <Crosshair size={12} />
-                        Ver no Mapa
+                        Ver no Georeferenciamento
                       </button>
                     )}
                   </div>

@@ -735,13 +735,17 @@ export const DashboardTab = ({ onNavigateTab }) => {
               <span>Sincronizar Túnel ITAMINAS</span>
             </button>
             <button
-              onClick={() => onNavigateTab('mapa')}
+              onClick={() => onNavigateTab('mapa', {
+                structureId: selectedStructure,
+                filterType: selectedType,
+                filterStatus: selectedStatus
+              })}
               className="btn-secondary"
               style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.75rem', padding: '0.4rem 0.75rem' }}
-              title="Abrir vista cartográfica de georreferenciamento"
+              title="Abrir vista cartográfica de georreferenciamento com os filtros atuais"
             >
               <MapPin size={14} />
-              <span>Georreferenciamento</span>
+              <span>Ver no Georeferenciamento</span>
             </button>
             <button
               onClick={() => onNavigateTab('laudo')}

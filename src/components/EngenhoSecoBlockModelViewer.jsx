@@ -234,7 +234,20 @@ export const EngenhoSecoBlockModelViewer = ({ onClose, onNavigateToMap }) => {
 
           {onNavigateToMap && (
             <button
-              onClick={() => onNavigateToMap('ENGENHO_SECO')}
+              onClick={() => {
+                const targetSector = (selectedSectorId && selectedSectorId !== 'ALL')
+                  ? (activeSector || ENGENHO_SECO_SECTORS.find(s => s.id === selectedSectorId))
+                  : null;
+                onNavigateToMap({
+                  structureId: 'ENGENHO_SECO',
+                  focus: 'block_model',
+                  coords: targetSector?.centroideWgs84 
+                    ? [targetSector.centroideWgs84.lat, targetSector.centroideWgs84.lon] 
+                    : [-20.095810, -44.111803],
+                  zoom: targetSector ? 17 : 16,
+                  sector: targetSector
+                });
+              }}
               className="btn-subtle"
               style={{
                 display: 'flex',
@@ -248,10 +261,10 @@ export const EngenhoSecoBlockModelViewer = ({ onClose, onNavigateToMap }) => {
                 border: '1px solid rgba(0, 148, 234, 0.4)',
                 fontWeight: 600
               }}
-              title="Visualizar Mina Engenho Seco no mapa GIS georreferenciado"
+              title="Visualizar Mina Engenho Seco no Georreferenciamento GIS"
             >
               <Compass size={14} />
-              <span>Ver no Mapa GIS</span>
+              <span>Ver no Georeferenciamento</span>
             </button>
           )}
 

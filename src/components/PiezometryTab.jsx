@@ -26,7 +26,8 @@ import {
   Building2,
   RotateCcw,
   Info,
-  CalendarRange
+  CalendarRange,
+  MapPin
 } from 'lucide-react';
 
 ChartJS.register(
@@ -319,16 +320,45 @@ export const PiezometryTab = ({ onNavigateTab }) => {
             </p>
           </div>
 
-          {currentInst && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <span className={`badge-status ${currentInst.statusCalculado === 'EMERGÊNCIA' ? 'badge-emergencia' : currentInst.statusCalculado === 'ATENÇÃO' ? 'badge-atencao' : 'badge-normal'}`} style={{ fontSize: '0.72rem' }}>
-                {currentInst.statusCalculado}
-              </span>
-              <span className="font-mono" style={{ fontSize: '0.78rem', fontWeight: 700, color: 'var(--primary-accent)', backgroundColor: 'var(--primary-accent-bg)', padding: '0.2rem 0.6rem', borderRadius: '6px' }}>
-                {currentInst.tipo} {currentInst.id}
-              </span>
-            </div>
-          )}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', flexWrap: 'wrap' }}>
+            {currentInst && (
+              <>
+                <span className={`badge-status ${currentInst.statusCalculado === 'EMERGÊNCIA' ? 'badge-emergencia' : currentInst.statusCalculado === 'ATENÇÃO' ? 'badge-atencao' : 'badge-normal'}`} style={{ fontSize: '0.72rem' }}>
+                  {currentInst.statusCalculado}
+                </span>
+                <span className="font-mono" style={{ fontSize: '0.78rem', fontWeight: 700, color: 'var(--primary-accent)', backgroundColor: 'var(--primary-accent-bg)', padding: '0.2rem 0.6rem', borderRadius: '6px' }}>
+                  {currentInst.tipo} {currentInst.id}
+                </span>
+              </>
+            )}
+
+            {onNavigateTab && (
+              <button
+                type="button"
+                onClick={() => onNavigateTab('mapa', {
+                  structureId: selectedStructure !== 'TODAS' ? selectedStructure : undefined,
+                  filterType: currentInst?.tipo || 'PIEZOMETRO',
+                  instrumentId: currentInst?.id,
+                  coords: currentInst?.lat && currentInst?.lon ? [currentInst.lat, currentInst.lon] : undefined,
+                  zoom: 17
+                })}
+                className="btn-secondary"
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.4rem',
+                  fontSize: '0.75rem',
+                  padding: '0.35rem 0.75rem',
+                  borderRadius: '6px',
+                  fontWeight: 600
+                }}
+                title="Ver instrumentos piezométricos no Georreferenciamento"
+              >
+                <MapPin size={13} style={{ color: 'var(--primary-accent)' }} />
+                <span>Ver no Georeferenciamento</span>
+              </button>
+            )}
+          </div>
         </div>
 
         {/* Grade de Filtros: ESTRUTURA, SEÇÃO, INSTRUMENTO, DATA INÍCIO E DATA FINAL */}

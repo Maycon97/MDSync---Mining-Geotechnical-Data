@@ -661,7 +661,17 @@ export const PluviometriaTab = ({ onNavigateTab }) => {
             {onNavigateTab && (
               <button
                 type="button"
-                onClick={() => onNavigateTab('mapa')}
+                onClick={() => {
+                  const targetLoc = (selectedStation !== 'Todas') 
+                    ? pluvData.locs.find(l => l.loc === selectedStation) 
+                    : null;
+                  onNavigateTab('mapa', {
+                    focus: 'pluviometria',
+                    station: selectedStation,
+                    coords: targetLoc ? [targetLoc.lat, targetLoc.lon] : [-20.074009, -44.107628],
+                    zoom: targetLoc ? 16 : 14
+                  });
+                }}
                 style={{
                   display: 'flex',
                   alignItems: 'center',
@@ -676,10 +686,10 @@ export const PluviometriaTab = ({ onNavigateTab }) => {
                   cursor: 'pointer',
                   transition: 'all 0.15s ease'
                 }}
-                title="Ver estações no Mapa Geral GIS"
+                title="Ver estações no Georreferenciamento GIS"
               >
                 <MapIcon size={14} style={{ color: '#38bdf8' }} />
-                <span>Ver no Mapa GIS</span>
+                <span>Ver no Georeferenciamento</span>
               </button>
             )}
 

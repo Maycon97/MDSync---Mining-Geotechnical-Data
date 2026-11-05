@@ -39,8 +39,10 @@ import {
   Save,
   Copy,
   Check,
-  TrendingUp
+  TrendingUp,
+  CloudRain
 } from 'lucide-react';
+import { PLUVIOMETRIA_DATA } from '../data/pluviometriaData';
 import { MapInspectionRecordDrawer } from './MapInspectionRecordDrawer';
 import { MapInspectionDetailPanel } from './MapInspectionDetailPanel';
 import { MapFloatingWidget } from './MapFloatingWidget';
@@ -85,7 +87,12 @@ function latLonToUtm23S(lat, lon) {
   return { easting: Math.round(easting), northing: Math.round(northing) };
 }
 
-export const MapTab = ({ onNavigateTab, onSelectInstrumentForReading }) => {
+export const MapTab = ({ 
+  onNavigateTab, 
+  onSelectInstrumentForReading, 
+  navigationContext, 
+  onClearNavigationContext 
+}) => {
   const { 
     structures, 
     instruments, 
@@ -101,6 +108,7 @@ export const MapTab = ({ onNavigateTab, onSelectInstrumentForReading }) => {
   const markersLayerRef = useRef(null);
   const polygonsLayerRef = useRef(null);
   const sumpsLayerRef = useRef(null);
+  const pluviometriaLayerRef = useRef(null);
 
   // Estados dos SUMPs (Painel Executivo e Camada GIS)
   const [showSumps, setShowSumps] = useState(true);
@@ -110,6 +118,9 @@ export const MapTab = ({ onNavigateTab, onSelectInstrumentForReading }) => {
   const [filterSumpMina, setFilterSumpMina] = useState('Todas');
   const [filterSumpCrits, setFilterSumpCrits] = useState([]);
   const [filterSumpAnom, setFilterSumpAnom] = useState('Todas');
+
+  // Camada de Estações Pluviométricas
+  const [showPluviometria, setShowPluviometria] = useState(() => navigationContext?.focus === 'pluviometria');
 
   // Estados de Configuração da Planta GIS
   const [mapType, setMapType] = useState('satellite_google'); // 'satellite_google' | 'satellite_esri' | 'topo' | 'streets' | 'dark'
@@ -252,25 +263,48 @@ export const MapTab = ({ onNavigateTab, onSelectInstrumentForReading }) => {
       container.removeChild(container.firstChild);
     }
 
-    // Coordenadas Centrais do Complexo Minerário Itaminas (com restauração de preset salvo SysDam)
+    // Coordenadas Centrais do Complexo Minerário Itaminas (com suporte a navegação contextual e restauração de preset)
     let initialLat = -20.063818;
     let initialLon = -44.114360;
     let initialZoom = 15;
 
-    try {
-      const savedPresetRaw = localStorage.getItem('mdsync_map_preset');
-      if (savedPresetRaw) {
-        const preset = JSON.parse(savedPresetRaw);
-        if (preset.center && Array.isArray(preset.center) && preset.center.length === 2) {
-          initialLat = preset.center[0];
-          initialLon = preset.center[1];
-        }
-        if (preset.zoom && typeof preset.zoom === 'number') {
-          initialZoom = preset.zoom;
-        }
+    if (navigationContext?.coords) {
+      initialLat = navigationContext.coords[0];
+      initialLon = navigationContext.coords[1];
+      initialZoom = navigationContext.zoom || 17;
+    } else if (navigationContext?.focus === 'pluviometria') {
+      initialLat = -20.082;
+      initialLon = -44.105;
+      initialZoom = navigationContext.zoom || 15;
+    } else if (navigationContext?.focus === 'block_model' || navigationContext?.structureId === 'ENGENHO_SECO') {
+      initialLat = -20.095810;
+      initialLon = -44.111803;
+      initialZoom = navigationContext.zoom || 16;
+    } else if (navigationContext?.structureId && navigationContext.structureId !== 'TODAS') {
+      const bound = STRUCTURE_BOUNDARIES.find(b => b.id === navigationContext.structureId);
+      const st = structures.find(s => s.id === navigationContext.structureId);
+      const center = bound?.center || (st?.lat && st?.lon ? [st.lat, st.lon] : null);
+      if (center) {
+        initialLat = center[0];
+        initialLon = center[1];
+        initialZoom = navigationContext.zoom || 16;
       }
-    } catch (e) {
-      console.warn('Erro ao restaurar preset do mapa:', e);
+    } else {
+      try {
+        const savedPresetRaw = localStorage.getItem('mdsync_map_preset');
+        if (savedPresetRaw) {
+          const preset = JSON.parse(savedPresetRaw);
+          if (preset.center && Array.isArray(preset.center) && preset.center.length === 2) {
+            initialLat = preset.center[0];
+            initialLon = preset.center[1];
+          }
+          if (preset.zoom && typeof preset.zoom === 'number') {
+            initialZoom = preset.zoom;
+          }
+        }
+      } catch (e) {
+        console.warn('Erro ao restaurar preset do mapa:', e);
+      }
     }
 
     let map;
@@ -401,6 +435,7 @@ export const MapTab = ({ onNavigateTab, onSelectInstrumentForReading }) => {
     }
 
     const sumpsLayer = new LayerGroup().addTo(map);
+    const pluviometriaLayer = new LayerGroup().addTo(map);
 
     // Registro das instâncias
     mapInstanceRef.current = {
@@ -412,6 +447,7 @@ export const MapTab = ({ onNavigateTab, onSelectInstrumentForReading }) => {
     markersLayerRef.current = markersGroup;
     polygonsLayerRef.current = polygonsLayer;
     sumpsLayerRef.current = sumpsLayer;
+    pluviometriaLayerRef.current = pluviometriaLayer;
 
     // Rastreamento de coordenadas do cursor (WGS-84 e SIRGAS 2000 UTM 23S) e nível de zoom em tempo real
     map.on('mousemove', (e) => {
@@ -487,6 +523,8 @@ export const MapTab = ({ onNavigateTab, onSelectInstrumentForReading }) => {
       markersLayerRef.current = null;
       polygonsLayerRef.current = null;
       sumpsLayerRef.current = null;
+      if (pluviometriaLayerRef.current) pluviometriaLayerRef.current.clearLayers();
+      pluviometriaLayerRef.current = null;
     };
   }, []);
 
@@ -1079,6 +1117,153 @@ export const MapTab = ({ onNavigateTab, onSelectInstrumentForReading }) => {
     setShowSumps(true);
   }, []);
 
+  // Função para renderizar marcadores das Estações Pluviométricas
+  const renderPluviometriaStations = useCallback(() => {
+    if (!mapInstanceRef.current || !pluviometriaLayerRef.current) return;
+    try {
+      const layer = pluviometriaLayerRef.current;
+      layer.clearLayers();
+      if (!showPluviometria) return;
+
+      const locs = PLUVIOMETRIA_DATA?.locs || [];
+      locs.forEach(st => {
+        if (!st.lat || !st.lon) return;
+
+        // Custom DivIcon com design executivo meteorológico
+        const rainIcon = new DivIcon({
+          className: 'pluviometria-map-marker',
+          html: `
+            <div style="
+              background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);
+              border: 2px solid #38bdf8;
+              border-radius: 50%;
+              width: 32px;
+              height: 32px;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              box-shadow: 0 0 16px rgba(56, 189, 248, 0.7);
+              cursor: pointer;
+              transform: translate(-50%, -50%);
+              color: #ffffff;
+              font-size: 16px;
+            ">
+              🌧️
+            </div>
+          `,
+          iconSize: [0, 0]
+        });
+
+        const marker = new Marker([st.lat, st.lon], { icon: rainIcon });
+
+        marker.bindTooltip(`
+          <div style="font-family: 'Inter', sans-serif; font-size: 11px; padding: 2px 4px; min-width: 150px;">
+            <div style="display: flex; align-items: center; gap: 4px; color: #38bdf8; font-weight: 700;">
+              <span>🌧️ Estação Pluviométrica</span>
+            </div>
+            <strong style="color: #ffffff; font-size: 12px; display: block; margin-top: 2px;">${st.loc}</strong>
+            <span style="color: #94a3b8; font-size: 10px;">Complexo Minerário Itaminas</span>
+          </div>
+        `, { sticky: true, opacity: 0.96 });
+
+        marker.bindPopup(`
+          <div style="font-family: 'Inter', sans-serif; font-size: 12px; padding: 6px; min-width: 200px; color: #0f172a;">
+            <div style="display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px; margin-bottom: 6px;">
+              <strong style="color: #0284c7; font-size: 13px;">🌧️ ${st.loc}</strong>
+            </div>
+            <div style="font-size: 11px; color: #475569; margin-bottom: 4px;"><strong>Tipo:</strong> Pluviômetro Automático Full-Time</div>
+            <div style="font-size: 11px; color: #475569; margin-bottom: 6px;"><strong>Coordenadas:</strong> ${st.lat.toFixed(6)}, ${st.lon.toFixed(6)}</div>
+            <button 
+              id="btn-open-pluvio-${st.loc.replace(/[^a-zA-Z0-9]/g, '_')}"
+              style="width: 100%; background: #0284c7; color: white; border: none; border-radius: 6px; padding: 6px 10px; font-weight: 700; font-size: 11px; cursor: pointer;"
+            >
+              Abrir Painel de Pluviometria
+            </button>
+          </div>
+        `);
+
+        marker.on('popupopen', () => {
+          const btn = document.getElementById(`btn-open-pluvio-${st.loc.replace(/[^a-zA-Z0-9]/g, '_')}`);
+          if (btn && onNavigateTab) {
+            btn.onclick = () => onNavigateTab('pluviometria');
+          }
+        });
+
+        layer.addLayer(marker);
+      });
+    } catch (err) {
+      console.warn('[MapTab] Falha ao renderizar estações pluviométricas:', err);
+    }
+  }, [showPluviometria, onNavigateTab]);
+
+  // Atualizar marcadores pluviométricos quando visibilidade mudar
+  useEffect(() => {
+    renderPluviometriaStations();
+  }, [renderPluviometriaStations]);
+
+  // Aplicação da Navegação Contextual vinda de outras sessões (Pluviometria, Modelo de Blocos, Dashboards, Estruturas, SUMPs)
+  useEffect(() => {
+    if (!navigationContext || !mapInstanceRef.current?.map) return;
+    const { map } = mapInstanceRef.current;
+    const ctx = navigationContext;
+
+    // 1. Contexto de Pluviometria
+    if (ctx.focus === 'pluviometria') {
+      setShowPluviometria(true);
+      const targetCoords = ctx.coords || [-20.082, -44.105];
+      map.flyTo(targetCoords, ctx.zoom || 15, { duration: 1.2 });
+    }
+    // 2. Contexto de Modelo de Blocos / Engenho Seco
+    else if (ctx.focus === 'block_model' || ctx.structureId === 'ENGENHO_SECO') {
+      setShowPerimeters(true);
+      setActiveStructureId('ENGENHO_SECO');
+      const targetCoords = ctx.coords || [-20.095810, -44.111803];
+      map.flyTo(targetCoords, ctx.zoom || 16, { duration: 1.2 });
+    }
+    // 3. Contexto de SUMPs
+    else if (ctx.focus === 'sumps') {
+      setShowSumps(true);
+      if (ctx.sump?.tag) {
+        setSelectedSumpTag(ctx.sump.tag);
+      }
+      if (ctx.coords) {
+        map.flyTo(ctx.coords, ctx.zoom || 17, { duration: 1.2 });
+      }
+    }
+    // 4. Contexto de Estrutura / Dashboards / Piezometria / Vazão
+    else {
+      if (ctx.structureId && ctx.structureId !== 'TODAS') {
+        setActiveStructureId(ctx.structureId);
+      }
+      if (ctx.filterType) {
+        setFilterType(ctx.filterType);
+      }
+      if (ctx.filterStatus) {
+        setFilterStatus(ctx.filterStatus);
+      }
+      if (ctx.coords) {
+        map.flyTo(ctx.coords, ctx.zoom || 17, { duration: 1.2 });
+      } else if (ctx.structureId && ctx.structureId !== 'TODAS') {
+        const bound = STRUCTURE_BOUNDARIES.find(b => b.id === ctx.structureId);
+        const st = structures.find(s => s.id === ctx.structureId);
+        const center = bound?.center || (st?.lat && st?.lon ? [st.lat, st.lon] : null);
+        if (center) {
+          map.flyTo(center, ctx.zoom || 16, { duration: 1.2 });
+        }
+      }
+      if (ctx.instrumentId) {
+        const matchInst = instruments.find(i => i.id === ctx.instrumentId);
+        if (matchInst) {
+          setSelectedInstrument(matchInst);
+        }
+      }
+    }
+
+    if (onClearNavigationContext) {
+      onClearNavigationContext();
+    }
+  }, [navigationContext, structures, instruments, onClearNavigationContext]);
+
   // Tipos únicos de instrumentos para filtro
   const availableTypes = ['TODOS', 'INA', 'PZ', 'MV', 'VT', 'TILT', 'REF', 'ETR'];
 
@@ -1649,7 +1834,7 @@ export const MapTab = ({ onNavigateTab, onSelectInstrumentForReading }) => {
               fontSize: '0.62rem',
               fontWeight: 800
             }}>
-              {(useClustering ? 1 : 0) + (showPerimeters ? 1 : 0) + (showTickets ? 1 : 0) + (showAnomalies ? 1 : 0) + (showSumps ? 1 : 0)}
+              {(useClustering ? 1 : 0) + (showPerimeters ? 1 : 0) + (showTickets ? 1 : 0) + (showAnomalies ? 1 : 0) + (showSumps ? 1 : 0) + (showPluviometria ? 1 : 0)}
             </span>
           </button>
 
@@ -1780,6 +1965,25 @@ export const MapTab = ({ onNavigateTab, onSelectInstrumentForReading }) => {
                     }}
                   >
                     {showSumps ? `Visíveis (${(sumps && sumps.length > 0) ? sumps.length : SUMPS_DATA.length})` : 'Ocultos'}
+                  </button>
+                </div>
+
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <span style={{ fontSize: '0.74rem', color: '#cbd5e1' }}>Estações Pluviométricas:</span>
+                  <button
+                    onClick={() => setShowPluviometria(!showPluviometria)}
+                    style={{
+                      fontSize: '0.68rem',
+                      fontWeight: 700,
+                      padding: '2px 8px',
+                      borderRadius: '6px',
+                      backgroundColor: showPluviometria ? 'rgba(2, 132, 199, 0.25)' : 'rgba(255,255,255,0.06)',
+                      color: showPluviometria ? '#38bdf8' : '#94a3b8',
+                      border: showPluviometria ? '1px solid #38bdf8' : '1px solid rgba(255,255,255,0.1)',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    {showPluviometria ? `Visíveis (${PLUVIOMETRIA_DATA?.locs?.length || 5})` : 'Ocultas'}
                   </button>
                 </div>
               </div>
@@ -2388,12 +2592,18 @@ export const MapTab = ({ onNavigateTab, onSelectInstrumentForReading }) => {
           }}>
             <EngenhoSecoBlockModelViewer 
               onClose={() => setBlockModelModalOpen(false)}
-              onNavigateToMap={(sector) => {
+              onNavigateToMap={(target) => {
                 setBlockModelModalOpen(false);
-                if (mapInstanceRef.current?.map && sector?.centroideWgs84) {
-                  mapInstanceRef.current.map.flyTo([sector.centroideWgs84.lat, sector.centroideWgs84.lon], 17, {
-                    duration: 1.2
-                  });
+                if (mapInstanceRef.current?.map) {
+                  if (target?.coords) {
+                    mapInstanceRef.current.map.flyTo(target.coords, target.zoom || 16, { duration: 1.2 });
+                  } else if (target?.centroideWgs84) {
+                    mapInstanceRef.current.map.flyTo([target.centroideWgs84.lat, target.centroideWgs84.lon], 17, {
+                      duration: 1.2
+                    });
+                  } else {
+                    mapInstanceRef.current.map.flyTo([-20.095810, -44.111803], 16, { duration: 1.2 });
+                  }
                 }
               }}
             />
