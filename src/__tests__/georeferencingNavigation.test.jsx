@@ -6,6 +6,7 @@ import { EngenhoSecoBlockModelViewer } from '../components/EngenhoSecoBlockModel
 import { PluviometriaTab } from '../components/PluviometriaTab';
 import { DashboardTab } from '../components/DashboardTab';
 import { EstruturasEmpreendimentoTab } from '../components/EstruturasEmpreendimentoTab';
+import { MapTab } from '../components/MapTab';
 import { GeotechDataProvider } from '../context/GeotechDataContext';
 
 vi.mock('../components/BlockModelRealPanel', () => ({
@@ -122,5 +123,39 @@ describe('Ver no Georeferenciamento - Contextual Navigation Verification', () =>
     expect(mockNavigateTab).toHaveBeenCalledWith('mapa', expect.objectContaining({
       structureId: expect.any(String)
     }));
+  });
+
+  it('mounts MapTab with structureId navigationContext without ReferenceError', async () => {
+    const mockClear = vi.fn();
+    await act(async () => {
+      root.render(
+        <GeotechDataProvider>
+          <MapTab 
+            navigationContext={{ structureId: 'ENGENHO_SECO', focus: 'block_model' }}
+            onClearNavigationContext={mockClear}
+          />
+        </GeotechDataProvider>
+      );
+    });
+
+    expect(container).toBeDefined();
+    expect(mockClear).toHaveBeenCalled();
+  });
+
+  it('mounts MapTab with pluviometria navigationContext without ReferenceError', async () => {
+    const mockClear = vi.fn();
+    await act(async () => {
+      root.render(
+        <GeotechDataProvider>
+          <MapTab 
+            navigationContext={{ focus: 'pluviometria' }}
+            onClearNavigationContext={mockClear}
+          />
+        </GeotechDataProvider>
+      );
+    });
+
+    expect(container).toBeDefined();
+    expect(mockClear).toHaveBeenCalled();
   });
 });

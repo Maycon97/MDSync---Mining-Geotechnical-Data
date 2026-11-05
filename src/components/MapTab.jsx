@@ -94,8 +94,8 @@ export const MapTab = ({
   onClearNavigationContext 
 }) => {
   const { 
-    structures, 
-    instruments, 
+    structures = [], 
+    instruments = [], 
     fluigTickets = [], 
     activeStructureId, 
     selectStructure,
@@ -282,7 +282,7 @@ export const MapTab = ({
       initialZoom = navigationContext.zoom || 16;
     } else if (navigationContext?.structureId && navigationContext.structureId !== 'TODAS') {
       const bound = STRUCTURE_BOUNDARIES.find(b => b.id === navigationContext.structureId);
-      const st = structures.find(s => s.id === navigationContext.structureId);
+      const st = (structures || []).find(s => s.id === navigationContext.structureId);
       const center = bound?.center || (st?.lat && st?.lon ? [st.lat, st.lon] : null);
       if (center) {
         initialLat = center[0];
@@ -1216,7 +1216,11 @@ export const MapTab = ({
     // 2. Contexto de Modelo de Blocos / Engenho Seco
     else if (ctx.focus === 'block_model' || ctx.structureId === 'ENGENHO_SECO') {
       setShowPerimeters(true);
-      setActiveStructureId('ENGENHO_SECO');
+      if (typeof handleSelectStructure === 'function') {
+        handleSelectStructure('ENGENHO_SECO');
+      } else if (typeof selectStructure === 'function') {
+        selectStructure('ENGENHO_SECO');
+      }
       const targetCoords = ctx.coords || [-20.095810, -44.111803];
       map.flyTo(targetCoords, ctx.zoom || 16, { duration: 1.2 });
     }
@@ -1233,7 +1237,11 @@ export const MapTab = ({
     // 4. Contexto de Estrutura / Dashboards / Piezometria / Vazão
     else {
       if (ctx.structureId && ctx.structureId !== 'TODAS') {
-        setActiveStructureId(ctx.structureId);
+        if (typeof handleSelectStructure === 'function') {
+          handleSelectStructure(ctx.structureId);
+        } else if (typeof selectStructure === 'function') {
+          selectStructure(ctx.structureId);
+        }
       }
       if (ctx.filterType) {
         setFilterType(ctx.filterType);
@@ -1245,14 +1253,14 @@ export const MapTab = ({
         map.flyTo(ctx.coords, ctx.zoom || 17, { duration: 1.2 });
       } else if (ctx.structureId && ctx.structureId !== 'TODAS') {
         const bound = STRUCTURE_BOUNDARIES.find(b => b.id === ctx.structureId);
-        const st = structures.find(s => s.id === ctx.structureId);
+        const st = (structures || []).find(s => s.id === ctx.structureId);
         const center = bound?.center || (st?.lat && st?.lon ? [st.lat, st.lon] : null);
         if (center) {
           map.flyTo(center, ctx.zoom || 16, { duration: 1.2 });
         }
       }
       if (ctx.instrumentId) {
-        const matchInst = instruments.find(i => i.id === ctx.instrumentId);
+        const matchInst = (instruments || []).find(i => i.id === ctx.instrumentId);
         if (matchInst) {
           setSelectedInstrument(matchInst);
         }

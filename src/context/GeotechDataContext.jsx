@@ -725,6 +725,7 @@ export const GeotechDataProvider = ({ children }) => {
       filteredInstruments,
       activeStructureId,
       selectStructure,
+      setActiveStructureId: selectStructure,
       readingsPiezometria,
       readingsVazao,
       readingsVertedouro,
