@@ -2,6 +2,45 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import { storageService } from '../services/storageService';
 import { aiGeotechService } from '../services/aiGeotechService';
 
+export const STRUCTURE_KEY_MAP = {
+  'B1': 'BARRAGEM_B1',
+  'BARRAGEM B1': 'BARRAGEM_B1',
+  'BARRAGEM_B1': 'BARRAGEM_B1',
+  'B4': 'BARRAGEM_B4',
+  'BARRAGEM B4': 'BARRAGEM_B4',
+  'BARRAGEM_B4': 'BARRAGEM_B4',
+  'B2': 'PILHA_B2',
+  'PILHA B2': 'PILHA_B2',
+  'PILHA_B2': 'PILHA_B2',
+  'ES1': 'PDE_ES1',
+  'PDE ES1': 'PDE_ES1',
+  'PDE_ES1': 'PDE_ES1',
+  'JC': 'PDE_JACÓ',
+  'JACO': 'PDE_JACÓ',
+  'PDE JACÓ': 'PDE_JACÓ',
+  'PDE JACO': 'PDE_JACÓ',
+  'PDE_JACÓ': 'PDE_JACÓ',
+  'MG': 'PDE_MANGABA',
+  'MANGABA': 'PDE_MANGABA',
+  'PDE MANGABA': 'PDE_MANGABA',
+  'PDE_MANGABA': 'PDE_MANGABA',
+  'ENGENHO': 'ENGENHO_SECO',
+  'ENGENHO SECO': 'ENGENHO_SECO',
+  'ENGENHO_SECO': 'ENGENHO_SECO',
+  'ENGENHO_SECO_MODELO': 'ENGENHO_SECO',
+  'JANGADA': 'JANGADA',
+  'CAVA JANGADA': 'JANGADA'
+};
+
+export const normalizeStructureKey = (rawId) => {
+  if (!rawId || rawId === 'TODAS' || rawId === 'todas') return 'TODAS';
+  const clean = String(rawId).trim().toUpperCase();
+  if (STRUCTURE_KEY_MAP[clean]) return STRUCTURE_KEY_MAP[clean];
+  const slug = clean.replace(/\s+/g, '_');
+  if (STRUCTURE_KEY_MAP[slug]) return STRUCTURE_KEY_MAP[slug];
+  return slug;
+};
+
 const GeotechDataContext = createContext(null);
 
 export const GeotechDataProvider = ({ children }) => {
@@ -33,7 +72,19 @@ export const GeotechDataProvider = ({ children }) => {
   const [documentosEstruturas, setDocumentosEstruturas] = useState(() => storageService.getDocumentosEstruturas());
   const [comunicadosOperacionais, setComunicadosOperacionais] = useState(() => storageService.getComunicadosOperacionais());
 
-  const [activeStructureId, setActiveStructureId] = useState(() => storageService.getActiveStructure());
+  // Novos Datasets Consolidados de Serviços de Geotecnia (Demandas, Rotina, PSB, FoS, Radar, Cronograma)
+  const [demandasRegulatorias, setDemandasRegulatorias] = useState([]);
+  const [rotinaGeotecnia, setRotinaGeotecnia] = useState([]);
+  const [exigenciasExtraordinarias, setExigenciasExtraordinarias] = useState([]);
+  const [planoSegurancaBarragens, setPlanoSegurancaBarragens] = useState([]);
+  const [reportDiarioGeotecnia, setReportDiarioGeotecnia] = useState([]);
+  const [indicadoresProcessos, setIndicadoresProcessos] = useState([]);
+  const [fatoresSeguranca, setFatoresSeguranca] = useState([]);
+  const [radarEventos, setRadarEventos] = useState([]);
+  const [pendenciasContratuais, setPendenciasContratuais] = useState([]);
+  const [cronogramaPcmi, setCronogramaPcmi] = useState([]);
+
+  const [activeStructureId, setActiveStructureId] = useState(() => normalizeStructureKey(storageService.getActiveStructure()));
   
   // Status de Rede & Simulação Offline
   const [realOnline, setRealOnline] = useState(navigator.onLine);
@@ -237,6 +288,18 @@ export const GeotechDataProvider = ({ children }) => {
 
         setImportacoesPcmi(data.importacoesPcmi || []);
         setSumps(data.sumps || []);
+
+        // Novos Datasets Consolidados de Serviços de Geotecnia (Demandas, Rotina, PSB, FoS, Radar, Cronograma)
+        setDemandasRegulatorias(data.demandasRegulatorias || []);
+        setRotinaGeotecnia(data.rotinaGeotecnia || []);
+        setExigenciasExtraordinarias(data.exigenciasExtraordinarias || []);
+        setPlanoSegurancaBarragens(data.planoSegurancaBarragens || []);
+        setReportDiarioGeotecnia(data.reportDiarioGeotecnia || []);
+        setIndicadoresProcessos(data.indicadoresProcessos || []);
+        setFatoresSeguranca(data.fatoresSeguranca || []);
+        setRadarEventos(data.radarEventos || []);
+        setPendenciasContratuais(data.pendenciasContratuais || []);
+        setCronogramaPcmi(data.cronogramaPcmi || []);
       } catch (err) {
         console.error('Erro carregando dados mestres:', err);
         setError(err.message);
@@ -249,10 +312,11 @@ export const GeotechDataProvider = ({ children }) => {
       loadMasterDatabase();
     }, []);
 
-  // Salvar estrutura ativa
+  // Salvar estrutura ativa com normalização automática
   const selectStructure = (structId) => {
-    setActiveStructureId(structId);
-    storageService.setActiveStructure(structId);
+    const norm = normalizeStructureKey(structId);
+    setActiveStructureId(norm);
+    storageService.setActiveStructure(norm);
   };
 
   // Adicionar Leitura de Campo (suporta online e offline)
@@ -617,10 +681,16 @@ export const GeotechDataProvider = ({ children }) => {
     return null;
   };
 
-  // Instrumentos filtrados pela estrutura ativa
+  // Instrumentos filtrados pela estrutura ativa com normalização robusta
   const filteredInstruments = activeStructureId === 'TODAS'
     ? instruments
-    : instruments.filter(i => i.estrutura.replace(/\s+/g, '_') === activeStructureId || i.estrutura === activeStructureId);
+    : instruments.filter(i => {
+        const normActive = normalizeStructureKey(activeStructureId);
+        const normInst = normalizeStructureKey(i.estrutura);
+        return normInst === normActive || 
+               i.estrutura.replace(/\s+/g, '_') === activeStructureId || 
+               i.estrutura.toUpperCase() === activeStructureId.toUpperCase();
+      });
 
   // Estatísticas calculadas dinamicamente
   const stats = {
@@ -633,7 +703,16 @@ export const GeotechDataProvider = ({ children }) => {
     anomaliasAbertas: anomaliasGeotecnicas.filter(a => a.status !== 'Mitigada / Fechada').length,
     inspecoesPendentes: inspecoesGeotecnicas.filter(i => i.status === 'Agendada').length,
     planosAcaoAtivos: planosAcao.filter(p => p.status !== 'Concluído').length,
-    chuva7Dias: pluviometria.length > 0 ? (pluviometria[pluviometria.length - 1].acumulado7Dias || 0) : 0
+    chuva7Dias: pluviometria.length > 0 ? (pluviometria[pluviometria.length - 1].acumulado7Dias || 0) : 0,
+    demandasRegulatoriasTotal: demandasRegulatorias.length,
+    rotinaTarefasTotal: rotinaGeotecnia.length,
+    exigenciasTotal: exigenciasExtraordinarias.length,
+    psbTotal: planoSegurancaBarragens.length,
+    reportDiarioTotal: reportDiarioGeotecnia.length,
+    fatoresSegurancaTotal: fatoresSeguranca.length,
+    radarEventosTotal: radarEventos.length,
+    pendenciasContratuaisTotal: pendenciasContratuais.length,
+    cronogramaPcmiTotal: cronogramaPcmi.length
   };
 
   return (
@@ -663,6 +742,16 @@ export const GeotechDataProvider = ({ children }) => {
       sumps,
       limites,
       stats,
+      demandasRegulatorias,
+      rotinaGeotecnia,
+      exigenciasExtraordinarias,
+      planoSegurancaBarragens,
+      reportDiarioGeotecnia,
+      indicadoresProcessos,
+      fatoresSeguranca,
+      radarEventos,
+      pendenciasContratuais,
+      cronogramaPcmi,
       anomaliasGeotecnicas,
       inspecoesGeotecnicas,
       planosAcao,
