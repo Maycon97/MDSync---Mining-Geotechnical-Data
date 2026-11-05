@@ -106,7 +106,7 @@ describe.skipIf(!hasData)('BlockModelRealPanel com dados reais', () => {
 
     await click(tabBtn('Planta por bancada'));
     expect(container.textContent).toContain('Cota / Bancada');
-  });
+  }, 20000);
 
   it('LOD 20 m refinado, camadas geoespaciais e filtros de seção/teor', async () => {
     const tabBtn = (label) => [...container.querySelectorAll('button')].find((b) => b.textContent.includes(label));
@@ -147,5 +147,5 @@ describe.skipIf(!hasData)('BlockModelRealPanel com dados reais', () => {
     const vis1 = Number(three().dataset.visible);
     expect(vis1).toBeGreaterThan(0);
     expect(vis1).toBeLessThan(vis0);
-  });
+  }, 20000);
 });

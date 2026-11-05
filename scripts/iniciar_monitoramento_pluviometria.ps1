@@ -11,3 +11,4 @@ $scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 Set-Location (Join-Path $scriptDir "..")
 
 python scripts\watch_pluviometria.py
+

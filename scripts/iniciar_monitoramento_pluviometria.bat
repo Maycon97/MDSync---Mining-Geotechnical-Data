@@ -11,3 +11,4 @@ echo.
 cd /d "%~dp0\.."
 python scripts\watch_pluviometria.py
 pause
+
