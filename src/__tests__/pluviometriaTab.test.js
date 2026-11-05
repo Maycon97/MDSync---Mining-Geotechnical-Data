@@ -56,14 +56,25 @@ describe('Pluviometria & Clima - Painel Executivo', () => {
   it('should properly calculate aggregations for year and month filters', () => {
     // Filtrar ano 2026
     const daily2026 = PLUVIOMETRIA_DATA.daily.filter(x => x.d.startsWith('2026'));
-    expect(daily2026.length).toBeGreaterThan(200);
+    expect(daily2026.length).toBeGreaterThan(300);
 
     const soma2026 = daily2026.reduce((acc, curr) => acc + curr.v, 0);
     expect(soma2026).toBeGreaterThan(500); // Pluviometria de 2026 acumulada
 
-    // Verificar estações agregadas
+    // Verificar dados dos meses recentes (Setembro, Outubro, Novembro 2026)
     const stagg2026 = PLUVIOMETRIA_DATA.stagg.filter(s => s.ano === 2026);
     expect(stagg2026.length).toBeGreaterThan(0);
+
+    const staggSetembro = stagg2026.filter(s => s.mes === 9);
+    const staggOutubro = stagg2026.filter(s => s.mes === 10);
+    const staggNovembro = stagg2026.filter(s => s.mes === 11);
+
+    expect(staggSetembro.length).toBeGreaterThanOrEqual(4);
+    expect(staggOutubro.length).toBeGreaterThanOrEqual(4);
+    expect(staggNovembro.length).toBeGreaterThanOrEqual(4);
+
+    expect(PLUVIOMETRIA_DATA.datamax).toBe('2026-11-02');
+    expect(PLUVIOMETRIA_DATA.totalLeituras).toBeGreaterThanOrEqual(14371);
   });
 
   it('should have 12 month labels in correct sequence', () => {

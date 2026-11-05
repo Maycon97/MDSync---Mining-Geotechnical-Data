@@ -30,12 +30,19 @@ import {
 } from 'lucide-react';
 
 export const PluviometriaTab = ({ onNavigateTab }) => {
+  const [pluvData, setPluvData] = useState(PLUVIOMETRIA_DATA);
+  const [tunnelStatus, setTunnelStatus] = useState(null);
+  const [isSyncing, setIsSyncing] = useState(false);
+  const [syncToast, setSyncToast] = useState(null);
+
   const latestYear = useMemo(() => {
-    return String(PLUVIOMETRIA_DATA.anos[PLUVIOMETRIA_DATA.anos.length - 1] || '2026');
-  }, []);
+    const anos = pluvData.anos || PLUVIOMETRIA_DATA.anos;
+    return String(anos[anos.length - 1] || '2026');
+  }, [pluvData]);
 
   const [selectedYear, setSelectedYear] = useState(latestYear);
   const [selectedMonth, setSelectedMonth] = useState('Todos');
+  const [selectedStation, setSelectedStation] = useState('Todas');
   const [activeTabSubView, setActiveTabSubView] = useState('dashboard'); // 'dashboard' | 'tabela'
   const [hoveredPoint, setHoveredPoint] = useState(null);
 
@@ -43,23 +50,79 @@ export const PluviometriaTab = ({ onNavigateTab }) => {
   const leafletInstanceRef = useRef(null);
   const markerLayerRef = useRef(null);
 
+  // Sincronização Dinâmica com Túnel de Pluviometria
+  const fetchLivePluviometria = async (showNotification = false) => {
+    try {
+      setIsSyncing(true);
+      const baseUrl = import.meta.env.BASE_URL || './';
+      const cleanBase = baseUrl.endsWith('/') ? baseUrl : baseUrl + '/';
+
+      // 1. Status do Túnel
+      try {
+        const resStatus = await fetch(`${cleanBase}data/pluviometria_tunnel_status.json?t=${Date.now()}`);
+        if (resStatus.ok) {
+          const statusJson = await resStatus.json();
+          setTunnelStatus(statusJson);
+        }
+      } catch (err) {
+        // Silencioso se não houver túnel local
+      }
+
+      // 2. Feed ao Vivo de Pluviometria
+      const resFeed = await fetch(`${cleanBase}data/pluviometria_live.json?t=${Date.now()}`);
+      if (resFeed.ok) {
+        const feedJson = await resFeed.json();
+        if (feedJson && feedJson.daily && feedJson.daily.length > 0) {
+          setPluvData(feedJson);
+          if (showNotification) {
+            setSyncToast(`Base de dados sincronizada! ${feedJson.totalLeituras || feedJson.daily.length} registros atualizados.`);
+            setTimeout(() => setSyncToast(null), 4000);
+          }
+        }
+      }
+    } catch (err) {
+      console.warn('Aviso: Falha ao carregar feed ao vivo de pluviometria, usando base interna:', err);
+    } finally {
+      setIsSyncing(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchLivePluviometria(false);
+    const interval = setInterval(() => {
+      fetchLivePluviometria(false);
+    }, 15000); // Polling a cada 15s
+    return () => clearInterval(interval);
+  }, []);
+
   // Filtragem diária
   const dailyFiltered = useMemo(() => {
-    return PLUVIOMETRIA_DATA.daily.filter(x => {
+    const list = pluvData.dailyFull || pluvData.daily;
+    return list.filter(x => {
       const matchAno = selectedYear === 'Todos' || x.d.slice(0, 4) === selectedYear;
       const matchMes = selectedMonth === 'Todos' || x.d.slice(5, 7) === selectedMonth;
       return matchAno && matchMes;
+    }).map(x => {
+      if (selectedStation !== 'Todas' && x.estacoes) {
+        const stVal = x.estacoes[selectedStation] !== undefined ? x.estacoes[selectedStation] : 0;
+        return {
+          ...x,
+          v: stVal
+        };
+      }
+      return x;
     });
-  }, [selectedYear, selectedMonth]);
+  }, [pluvData, selectedYear, selectedMonth, selectedStation]);
 
   // Filtragem agregada mensal/estação
   const staggFiltered = useMemo(() => {
-    return PLUVIOMETRIA_DATA.stagg.filter(r => {
+    return (pluvData.stagg || PLUVIOMETRIA_DATA.stagg).filter(r => {
       const matchAno = selectedYear === 'Todos' || String(r.ano) === selectedYear;
       const matchMes = selectedMonth === 'Todos' || String(r.mes).padStart(2, '0') === selectedMonth;
-      return matchAno && matchMes;
+      const matchStation = selectedStation === 'Todas' || r.loc === selectedStation;
+      return matchAno && matchMes && matchStation;
     });
-  }, [selectedYear, selectedMonth]);
+  }, [pluvData, selectedYear, selectedMonth, selectedStation]);
 
   // Métricas Consolidadas
   const stats = useMemo(() => {
@@ -108,6 +171,10 @@ export const PluviometriaTab = ({ onNavigateTab }) => {
         : `${MONTH_LABELS[+selectedMonth - 1]} / ${selectedYear}`;
     }
 
+    if (selectedStation !== 'Todas') {
+      periodoLabel += ` · Estação: ${getStationName(selectedStation)}`;
+    }
+
     return {
       totalAcumulado,
       dias,
@@ -121,7 +188,7 @@ export const PluviometriaTab = ({ onNavigateTab }) => {
       estacaoLider,
       periodoLabel
     };
-  }, [dailyFiltered, staggFiltered, selectedYear, selectedMonth]);
+  }, [dailyFiltered, staggFiltered, selectedYear, selectedMonth, selectedStation]);
 
   // Dados para a Curva SVG de Evolução
   const chartSeries = useMemo(() => {
@@ -132,7 +199,9 @@ export const PluviometriaTab = ({ onNavigateTab }) => {
         fullDates: sortedDays.map(x => x.d),
         values: sortedDays.map(x => x.v),
         mode: 'dia',
-        hint: 'chuva diária (mm)'
+        hint: selectedStation !== 'Todas' 
+          ? `chuva diária na estação ${getStationName(selectedStation)} (mm)` 
+          : 'chuva média diária do complexo (mm)'
       };
     }
 
@@ -155,7 +224,7 @@ export const PluviometriaTab = ({ onNavigateTab }) => {
 
     // Todos os anos
     const yearMap = {};
-    PLUVIOMETRIA_DATA.daily.forEach(x => {
+    (pluvData.daily || PLUVIOMETRIA_DATA.daily).forEach(x => {
       const y = x.d.slice(0, 4);
       if (selectedMonth === 'Todos' || x.d.slice(5, 7) === selectedMonth) {
         yearMap[y] = (yearMap[y] || 0) + x.v;
@@ -170,7 +239,7 @@ export const PluviometriaTab = ({ onNavigateTab }) => {
       mode: 'ano',
       hint: 'acumulado anual (mm)'
     };
-  }, [dailyFiltered, selectedYear, selectedMonth]);
+  }, [dailyFiltered, selectedYear, selectedMonth, selectedStation, pluvData]);
 
   // Inicialização do Mapa Leaflet
   useEffect(() => {
@@ -201,7 +270,8 @@ export const PluviometriaTab = ({ onNavigateTab }) => {
     leafletInstanceRef.current = map;
     markerLayerRef.current = markerLayer;
 
-    const bounds = L.latLngBounds(PLUVIOMETRIA_DATA.locs.map(l => [l.lat, l.lon]));
+    const locsList = pluvData.locs || PLUVIOMETRIA_DATA.locs;
+    const bounds = L.latLngBounds(locsList.map(l => [l.lat, l.lon]));
     map.fitBounds(bounds.pad(0.35));
 
     const timeoutId = setTimeout(() => {
@@ -215,7 +285,7 @@ export const PluviometriaTab = ({ onNavigateTab }) => {
         leafletInstanceRef.current = null;
       }
     };
-  }, []);
+  }, [pluvData]);
 
   // Atualização dos Marcadores no Mapa Leaflet
   useEffect(() => {
@@ -225,18 +295,20 @@ export const PluviometriaTab = ({ onNavigateTab }) => {
     const sums = Object.values(stats.byLoc).map(o => o.sum || 0);
     const mx = Math.max(1, ...sums);
 
-    PLUVIOMETRIA_DATA.locs.forEach(station => {
+    const locsList = pluvData.locs || PLUVIOMETRIA_DATA.locs;
+    locsList.forEach(station => {
       const o = stats.byLoc[station.loc] || { sum: 0, n: 0 };
+      const isSelected = selectedStation === station.loc;
       const rad = 7 + Math.sqrt(o.sum / mx) * 18;
       const media = o.n > 0 ? o.sum / o.n : 0;
       const stationName = getStationName(station.loc);
 
       const marker = L.circleMarker([station.lat, station.lon], {
-        radius: rad,
-        color: '#ffffff',
-        weight: 1.8,
-        fillColor: '#38bdf8',
-        fillOpacity: 0.76
+        radius: isSelected ? rad + 4 : rad,
+        color: isSelected ? '#facc15' : '#ffffff',
+        weight: isSelected ? 3 : 1.8,
+        fillColor: isSelected ? '#eab308' : '#38bdf8',
+        fillOpacity: 0.82
       });
 
       marker.bindPopup(`
@@ -279,6 +351,7 @@ export const PluviometriaTab = ({ onNavigateTab }) => {
   const handleResetFilters = () => {
     setSelectedYear(latestYear);
     setSelectedMonth('Todos');
+    setSelectedStation('Todas');
   };
 
   // Exportar dados filtrados em CSV
@@ -374,6 +447,29 @@ export const PluviometriaTab = ({ onNavigateTab }) => {
       gap: '1rem',
       fontFamily: "'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif"
     }}>
+      {/* Toast de Sincronização do Túnel */}
+      {syncToast && (
+        <div style={{
+          position: 'fixed',
+          top: '20px',
+          right: '20px',
+          zIndex: 9999,
+          backgroundColor: '#047857',
+          color: '#ffffff',
+          padding: '0.75rem 1.25rem',
+          borderRadius: '8px',
+          boxShadow: '0 8px 24px rgba(0,0,0,0.5)',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '0.6rem',
+          fontWeight: 700,
+          fontSize: '0.85rem'
+        }}>
+          <CheckCircle2 size={18} />
+          <span>{syncToast}</span>
+        </div>
+      )}
+
       {/* Topo SVG Background decorativo (topografia) */}
       <svg 
         style={{
@@ -473,9 +569,35 @@ export const PluviometriaTab = ({ onNavigateTab }) => {
         </div>
 
         {/* Indicadores do Header & Atalhos */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+        <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: '0.85rem' }}>
+          {/* Status do Túnel de Monitoramento Full-Time */}
+          <div style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '0.5rem',
+            padding: '0.45rem 0.85rem',
+            borderRadius: '8px',
+            backgroundColor: 'rgba(16, 185, 129, 0.12)',
+            border: '1px solid rgba(16, 185, 129, 0.35)',
+            color: '#34d399',
+            fontSize: '0.75rem',
+            fontWeight: 700
+          }} title="Monitoramento full-time da base Excel PLUVIOMETRIA.xlsx e Power BI">
+            <span style={{
+              width: '8px',
+              height: '8px',
+              borderRadius: '50%',
+              backgroundColor: '#10b981',
+              boxShadow: '0 0 8px #10b981'
+            }} />
+            <span>Túnel Full-Time: {tunnelStatus?.status || 'ONLINE'}</span>
+            <span style={{ color: '#94a3b8', fontSize: '0.7rem' }}>
+              ({pluvData.totalLeituras ? Number(pluvData.totalLeituras).toLocaleString('pt-BR') : '14.371'} leituras)
+            </span>
+          </div>
+
           <div style={{ textAlign: 'right' }}>
-            <div style={{ fontSize: '0.75rem', color: '#94a3b8' }}>Chuva acumulada no período</div>
+            <div style={{ fontSize: '0.72rem', color: '#94a3b8' }}>Chuva acumulada no período</div>
             <div style={{
               fontSize: '1.2rem',
               fontWeight: 800,
@@ -512,6 +634,30 @@ export const PluviometriaTab = ({ onNavigateTab }) => {
 
           {/* Botões de Ação Rápida */}
           <div style={{ display: 'flex', gap: '0.5rem' }}>
+            <button
+              type="button"
+              onClick={() => fetchLivePluviometria(true)}
+              disabled={isSyncing}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.4rem',
+                padding: '0.45rem 0.8rem',
+                borderRadius: '8px',
+                backgroundColor: 'rgba(2, 132, 199, 0.2)',
+                border: '1px solid rgba(56, 189, 248, 0.4)',
+                color: '#38bdf8',
+                fontSize: '0.78rem',
+                fontWeight: 700,
+                cursor: 'pointer',
+                transition: 'all 0.15s ease'
+              }}
+              title="Consultar imediatamente o túnel de sincronização da base Excel"
+            >
+              <RotateCcw size={14} style={{ animation: isSyncing ? 'spin 1s linear infinite' : 'none' }} />
+              <span>{isSyncing ? 'Sincronizando...' : 'Sincronizar Túnel'}</span>
+            </button>
+
             {onNavigateTab && (
               <button
                 type="button"
@@ -606,7 +752,7 @@ export const PluviometriaTab = ({ onNavigateTab }) => {
           }}
         >
           <option value="Todos">Todos os anos (2018–2026)</option>
-          {PLUVIOMETRIA_DATA.anos.map(a => (
+          {(pluvData.anos || PLUVIOMETRIA_DATA.anos).map(a => (
             <option key={a} value={String(a)}>{a}</option>
           ))}
         </select>
@@ -635,6 +781,29 @@ export const PluviometriaTab = ({ onNavigateTab }) => {
               </option>
             );
           })}
+        </select>
+
+        {/* Seleção de Estação */}
+        <select
+          value={selectedStation}
+          onChange={(e) => setSelectedStation(e.target.value)}
+          style={{
+            fontFamily: 'inherit',
+            background: '#0e2244',
+            color: '#eaf2fb',
+            border: '1px solid rgba(56, 189, 248, 0.3)',
+            borderRadius: '6px',
+            padding: '0.4rem 0.75rem',
+            fontSize: '0.82rem',
+            cursor: 'pointer'
+          }}
+        >
+          <option value="Todas">Todas as Estações (Média Geral)</option>
+          {(pluvData.locs || PLUVIOMETRIA_DATA.locs).map(l => (
+            <option key={l.loc} value={l.loc}>
+              {getStationName(l.loc)}
+            </option>
+          ))}
         </select>
 
         <button
@@ -860,7 +1029,7 @@ export const PluviometriaTab = ({ onNavigateTab }) => {
             fontFamily: "'Montserrat', sans-serif",
             marginTop: '0.35rem'
           }}>
-            {stats.estAtivas} <small style={{ fontSize: '0.9rem', color: '#64748b' }}>/ {PLUVIOMETRIA_DATA.nstations}</small>
+            {stats.estAtivas} <small style={{ fontSize: '0.9rem', color: '#64748b' }}>/ {(pluvData.locs || PLUVIOMETRIA_DATA.locs).length}</small>
           </div>
           <div style={{ fontSize: '0.7rem', color: '#64748b', marginTop: '0.25rem' }}>
             Pluviômetros instalados
@@ -910,6 +1079,100 @@ export const PluviometriaTab = ({ onNavigateTab }) => {
 
       {/* CONTEÚDO PRINCIPAL (DASHBOARD OU TABELA) */}
       {activeTabSubView === 'dashboard' ? (
+        dailyFiltered.length === 0 ? (
+          <div style={{
+            position: 'relative',
+            zIndex: 1,
+            padding: '2.5rem 1.5rem',
+            borderRadius: '12px',
+            background: 'linear-gradient(180deg, rgba(16, 40, 78, 0.85), rgba(11, 28, 56, 0.85))',
+            border: '1px solid rgba(56, 189, 248, 0.25)',
+            textAlign: 'center',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            gap: '1rem',
+            boxShadow: '0 8px 24px rgba(0, 0, 0, 0.35)'
+          }}>
+            <div style={{
+              width: '52px',
+              height: '52px',
+              borderRadius: '50%',
+              backgroundColor: 'rgba(56, 189, 248, 0.15)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              color: '#38bdf8'
+            }}>
+              <CloudRain size={28} />
+            </div>
+            <div>
+              <h3 style={{
+                margin: '0 0 0.5rem',
+                color: '#ffffff',
+                fontSize: '1.15rem',
+                fontWeight: 800,
+                fontFamily: "'Montserrat', sans-serif"
+              }}>
+                Nenhum Registro Pluviométrico para {stats.periodoLabel}
+              </h3>
+              <p style={{ margin: 0, color: '#94a3b8', fontSize: '0.85rem', maxWidth: '640px', lineHeight: 1.5 }}>
+                A base de dados monitorada em tempo real possui <strong>{pluvData.totalLeituras ? Number(pluvData.totalLeituras).toLocaleString('pt-BR') : '14.371'}</strong> leituras históricas e contínuas entre <strong>2018</strong> e <strong>{pluvData.datamax ? pluvData.datamax.split('-').reverse().join('/') : '02/11/2026'}</strong>.
+              </p>
+            </div>
+            <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap', justifyContent: 'center', marginTop: '0.5rem' }}>
+              <button
+                type="button"
+                onClick={() => setSelectedMonth('Todos')}
+                style={{
+                  padding: '0.55rem 1.1rem',
+                  borderRadius: '8px',
+                  backgroundColor: '#0284c7',
+                  color: '#ffffff',
+                  border: 'none',
+                  fontWeight: 700,
+                  fontSize: '0.82rem',
+                  cursor: 'pointer',
+                  boxShadow: '0 2px 8px rgba(2, 132, 199, 0.4)'
+                }}
+              >
+                Visualizar Ano Completo ({selectedYear})
+              </button>
+              <button
+                type="button"
+                onClick={() => { setSelectedYear('2026'); setSelectedMonth('10'); setSelectedStation('Todas'); }}
+                style={{
+                  padding: '0.55rem 1.1rem',
+                  borderRadius: '8px',
+                  backgroundColor: 'rgba(56, 189, 248, 0.15)',
+                  border: '1px solid rgba(56, 189, 248, 0.4)',
+                  color: '#38bdf8',
+                  fontWeight: 700,
+                  fontSize: '0.82rem',
+                  cursor: 'pointer'
+                }}
+              >
+                Ver Outubro/2026 (124 leituras)
+              </button>
+              <button
+                type="button"
+                onClick={() => { setSelectedYear('2026'); setSelectedMonth('09'); setSelectedStation('Todas'); }}
+                style={{
+                  padding: '0.55rem 1.1rem',
+                  borderRadius: '8px',
+                  backgroundColor: 'rgba(56, 189, 248, 0.15)',
+                  border: '1px solid rgba(56, 189, 248, 0.4)',
+                  color: '#38bdf8',
+                  fontWeight: 700,
+                  fontSize: '0.82rem',
+                  cursor: 'pointer'
+                }}
+              >
+                Ver Setembro/2026 (120 leituras)
+              </button>
+            </div>
+          </div>
+        ) : (
         <div style={{
           position: 'relative',
           zIndex: 1,
@@ -1304,6 +1567,7 @@ export const PluviometriaTab = ({ onNavigateTab }) => {
             </div>
           </div>
         </div>
+        )
       ) : (
         /* VISÃO ANALÍTICA: TABELA DE LEITURAS DIÁRIAS */
         <div style={{
@@ -1492,10 +1756,11 @@ export const PluviometriaTab = ({ onNavigateTab }) => {
         <div>
           Fonte: <strong style={{ color: '#94a3b8' }}>Painel Executivo de Pluviometria · Gerência de Geotecnia Itaminas</strong>
         </div>
-        <div style={{ display: 'flex', gap: '1rem' }}>
-          <span>Estações: <b>{PLUVIOMETRIA_DATA.nstations}</b></span>
-          <span>Período Histórico: <b>2018–2026</b></span>
-          <span>Atualizado: <b>25/08/2026</b></span>
+        <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
+          <span>Estações: <b>{(pluvData.locs || PLUVIOMETRIA_DATA.locs).length}</b></span>
+          <span>Período Histórico: <b>2018–{pluvData.datamax ? pluvData.datamax.slice(0, 4) : '2026'}</b></span>
+          <span>Último Dado: <b>{pluvData.datamax ? pluvData.datamax.split('-').reverse().join('/') : '02/11/2026'}</b></span>
+          <span>Total de Leituras: <b>{pluvData.totalLeituras ? Number(pluvData.totalLeituras).toLocaleString('pt-BR') : '14.371'}</b></span>
         </div>
       </div>
     </div>

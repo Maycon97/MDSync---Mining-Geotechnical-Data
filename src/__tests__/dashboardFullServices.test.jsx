@@ -53,3 +53,4 @@ describe('Geotechnical Services & Full Dashboard Data Verification', () => {
     expect(masterData.pendenciasContratuais.length).toBeGreaterThanOrEqual(70);
   });
 });
+

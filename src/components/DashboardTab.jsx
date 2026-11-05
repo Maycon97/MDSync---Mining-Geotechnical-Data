@@ -260,7 +260,7 @@ export const DashboardTab = ({ onNavigateTab }) => {
     }
 
     // Chuva acumulada no período
-    const somaChuva = filteredPluviometria.reduce((acc, p) => acc + (p.precipitacaoMm || 0), 0);
+    const somaChuva = filteredPluviometria.reduce((acc, p) => acc + (p.precipitacaoMm || p.mm || 0), 0);
 
     return {
       total,
