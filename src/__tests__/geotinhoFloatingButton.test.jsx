@@ -72,3 +72,4 @@ describe('GeotinhoFloatingButton Component & Navigation Suite', () => {
     expect(tooltip.textContent).toContain('Você já está no chat');
   });
 });
+

@@ -5,7 +5,6 @@ import {
   Wifi, 
   WifiOff, 
   Menu,
-  Smartphone,
   RefreshCw
 } from 'lucide-react';
 
@@ -15,7 +14,7 @@ const TAB_TITLES = {
   mapa: 'Georeferenciamento Espacial',
   anomalias_inspecoes: 'Anomalias & ISR',
   campo: 'Coleta de Campo (Inspect)',
-  mobile_inspecao: 'App de Campo (APK SYSDAM)',
+  mobile_inspecao: 'Inspeção de Campo',
   estruturas_empreendimento: 'Estruturas do Empreendimento',
   engenho_seco_modelo: 'Modelo 3D (Engenho Seco)',
   coletas: 'Coletas de Campo',
@@ -165,30 +164,6 @@ export const Header = ({ onToggleDrawer, onOpenProfile, onNavigateTab, activeTab
           {isOnline ? <Wifi size={13} /> : <WifiOff size={13} />}
           <span>{isOnline ? 'ONLINE' : 'OFFLINE'}</span>
         </div>
-
-        {/* Botão Rápido para Alternar ao Modo de Campo Mobile (APK) */}
-        <button
-          onClick={() => onNavigateTab && onNavigateTab('mobile_inspecao')}
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '0.35rem',
-            fontSize: '0.72rem',
-            fontWeight: 800,
-            color: activeTab === 'mobile_inspecao' ? '#ffffff' : '#0284c7',
-            padding: '0.35rem 0.65rem',
-            backgroundColor: activeTab === 'mobile_inspecao' ? '#0284c7' : 'rgba(2, 132, 199, 0.12)',
-            borderRadius: '8px',
-            border: '1.5px solid rgba(2, 132, 199, 0.35)',
-            boxShadow: '0 2px 4px rgba(0,0,0,0.06)',
-            cursor: 'pointer',
-            transition: 'all 0.15s ease'
-          }}
-          title="Abrir interface de inspeção de campo para smartphone/tablet (Padrão SYSDAM APK)"
-        >
-          <Smartphone size={13} />
-          <span>APP CAMPO (APK)</span>
-        </button>
 
         {/* Card Rápido de Perfil 3D que abre Configurações de Perfil */}
         <button

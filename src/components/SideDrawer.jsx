@@ -210,15 +210,6 @@ export const SideDrawer = ({
       category: 'Operação de Campo & Anomalias',
       items: [
         {
-          id: 'mobile_inspecao',
-          title: 'App de Campo (APK SYSDAM)',
-          icon: Smartphone,
-          type: 'tab',
-          tabId: 'mobile_inspecao',
-          badge: 'APK',
-          badgeColor: '#10b981'
-        },
-        {
           id: 'anomalias_inspecoes',
           title: 'Anomalias & Inspeções (ISR/ISE)',
           icon: ShieldAlert,
