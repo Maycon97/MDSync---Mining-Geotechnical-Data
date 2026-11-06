@@ -1320,29 +1320,32 @@ export const MapTab = ({
       />
 
       {/* ========================================================
-          1. TOP-LEFT HUD: Botões Estratégicos de Abertura de Conteúdos
+          BARRA SUPERIOR DO MAPA (HUD TOPBAR INTEGRADA ANTI-COLISÃO)
          ======================================================== */}
-      <div className="map-hud-top-left">
-        {/* Botão 1: Empreendimentos & Estruturas (Abre painel lateral 3D) */}
-        <button
-          onClick={() => setIsSiderCollapsed(prev => !prev)}
-          className={`btn-subtle map-hud-trigger ${!isSiderCollapsed ? 'active-glow' : ''}`}
-          style={{
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: '6px',
-            padding: '0.35rem 0.75rem',
-            borderRadius: '10px',
-            backgroundColor: !isSiderCollapsed ? 'rgba(56, 189, 248, 0.24)' : 'rgba(15, 23, 42, 0.85)',
-            color: !isSiderCollapsed ? '#38bdf8' : '#e2e8f0',
-            border: !isSiderCollapsed ? '1px solid #38bdf8' : '1px solid rgba(255, 255, 255, 0.12)',
-            fontSize: '0.74rem',
-            fontWeight: 700,
-            cursor: 'pointer',
-            boxShadow: '0 4px 14px rgba(0, 0, 0, 0.4)',
-            backdropFilter: 'blur(16px)',
-            transition: 'all 0.2s ease'
-          }}
+      <div className="map-hud-topbar">
+        {/* 1. TOP-LEFT HUD: Botões Estratégicos de Abertura de Conteúdos */}
+        <div className="map-hud-top-left">
+          {/* Botão 1: Empreendimentos & Estruturas (Abre painel lateral 3D) */}
+          <button
+            onClick={() => setIsSiderCollapsed(prev => !prev)}
+            className={`btn-subtle map-hud-trigger ${!isSiderCollapsed ? 'active-glow' : ''}`}
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '5px',
+              padding: '0.3rem 0.65rem',
+              borderRadius: '10px',
+              backgroundColor: !isSiderCollapsed ? 'rgba(56, 189, 248, 0.24)' : 'rgba(15, 23, 42, 0.85)',
+              color: !isSiderCollapsed ? '#38bdf8' : '#e2e8f0',
+              border: !isSiderCollapsed ? '1px solid #38bdf8' : '1px solid rgba(255, 255, 255, 0.12)',
+              fontSize: '0.74rem',
+              fontWeight: 700,
+              cursor: 'pointer',
+              boxShadow: '0 4px 14px rgba(0, 0, 0, 0.4)',
+              backdropFilter: 'blur(16px)',
+              transition: 'all 0.2s ease',
+              whiteSpace: 'nowrap'
+            }}
           title="Abrir Painel de Empreendimentos e Estruturas (SysDam)"
         >
           <Building2 size={15} style={{ color: '#38bdf8' }} />
@@ -1366,8 +1369,8 @@ export const MapTab = ({
           style={{
             display: 'inline-flex',
             alignItems: 'center',
-            gap: '6px',
-            padding: '0.35rem 0.75rem',
+            gap: '5px',
+            padding: '0.3rem 0.65rem',
             borderRadius: '10px',
             backgroundColor: showSumpsPanel ? 'rgba(2, 132, 199, 0.35)' : 'rgba(15, 23, 42, 0.85)',
             color: showSumpsPanel ? '#ffffff' : '#71d1f8',
@@ -1377,7 +1380,8 @@ export const MapTab = ({
             cursor: 'pointer',
             boxShadow: '0 4px 14px rgba(0, 0, 0, 0.4)',
             backdropFilter: 'blur(16px)',
-            transition: 'all 0.2s ease'
+            transition: 'all 0.2s ease',
+            whiteSpace: 'nowrap'
           }}
           title="Abrir Painel Executivo Oficial de SUMPs de Drenagem"
         >
@@ -1402,8 +1406,8 @@ export const MapTab = ({
           style={{
             display: 'inline-flex',
             alignItems: 'center',
-            gap: '6px',
-            padding: '0.35rem 0.75rem',
+            gap: '5px',
+            padding: '0.3rem 0.65rem',
             borderRadius: '10px',
             backgroundColor: 'rgba(16, 185, 129, 0.18)',
             color: '#10b981',
@@ -1413,7 +1417,8 @@ export const MapTab = ({
             cursor: 'pointer',
             boxShadow: '0 4px 14px rgba(0, 0, 0, 0.4)',
             backdropFilter: 'blur(16px)',
-            transition: 'all 0.2s ease'
+            transition: 'all 0.2s ease',
+            whiteSpace: 'nowrap'
           }}
           title="Abrir Modelo de Blocos Curto Prazo (CP) Engenho Seco 3D (Datamine)"
         >
@@ -1438,8 +1443,8 @@ export const MapTab = ({
           style={{
             display: 'inline-flex',
             alignItems: 'center',
-            gap: '6px',
-            padding: '0.35rem 0.75rem',
+            gap: '5px',
+            padding: '0.3rem 0.65rem',
             borderRadius: '10px',
             backgroundColor: isRecordDrawerOpen ? '#7c3aed' : 'rgba(15, 23, 42, 0.85)',
             color: isRecordDrawerOpen ? '#ffffff' : '#c084fc',
@@ -1449,7 +1454,8 @@ export const MapTab = ({
             cursor: 'pointer',
             boxShadow: '0 4px 14px rgba(0, 0, 0, 0.4)',
             backdropFilter: 'blur(16px)',
-            transition: 'all 0.2s ease'
+            transition: 'all 0.2s ease',
+            whiteSpace: 'nowrap'
           }}
           title="Abrir Gaveta Lateral de Registros e Ocorrências Geotécnicas (SYSDAM)"
         >
@@ -1476,7 +1482,7 @@ export const MapTab = ({
               display: 'inline-flex',
               alignItems: 'center',
               gap: '4px',
-              padding: '0.35rem 0.65rem',
+              padding: '0.3rem 0.65rem',
               borderRadius: '10px',
               backgroundColor: showToolsMenu ? 'rgba(255, 255, 255, 0.18)' : 'rgba(15, 23, 42, 0.85)',
               color: '#e2e8f0',
@@ -1485,7 +1491,8 @@ export const MapTab = ({
               fontWeight: 600,
               cursor: 'pointer',
               boxShadow: '0 4px 14px rgba(0, 0, 0, 0.4)',
-              backdropFilter: 'blur(16px)'
+              backdropFilter: 'blur(16px)',
+              whiteSpace: 'nowrap'
             }}
             title="Mais Ferramentas, Configurações de Template e Regras"
           >
@@ -1584,7 +1591,7 @@ export const MapTab = ({
                 border: activeStructureId !== 'TODAS' ? '1px solid #38bdf8' : '1px solid rgba(255, 255, 255, 0.08)',
                 color: '#f8fafc',
                 fontWeight: activeStructureId !== 'TODAS' ? 700 : 500,
-                maxWidth: '160px',
+                maxWidth: '145px',
                 cursor: 'pointer'
               }}
             >
@@ -1615,7 +1622,7 @@ export const MapTab = ({
               padding: '0.2rem 0.5rem',
               border: '1px solid rgba(255, 255, 255, 0.08)',
               gap: '6px',
-              width: '180px'
+              width: '155px'
             }}>
               <Search size={13} style={{ color: '#94a3b8' }} />
               <input
@@ -2033,6 +2040,7 @@ export const MapTab = ({
           )}
         </div>
       </div>
+    </div>
 
       {/* ========================================================
           4. BOTTOM-LEFT HUD: Coordenadas em Tempo Real & Legenda Minimalista

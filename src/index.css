@@ -2358,39 +2358,54 @@ textarea:focus-visible,
   box-shadow: none;
 }
 
-/* HUD Estratégico Georeferenciamento Espacial */
+/* HUD Estratégico Georeferenciamento Espacial (Topbar Unificada Anti-Colisão) */
+.map-hud-topbar {
+  position: absolute;
+  top: 10px;
+  left: 12px;
+  right: 12px;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  pointer-events: none;
+  max-width: calc(100vw - 24px);
+}
+
 .map-hud-top-left,
 .map-hud-top-center,
-.map-hud-top-right,
+.map-hud-top-right {
+  position: relative !important;
+  top: auto !important;
+  left: auto !important;
+  right: auto !important;
+  transform: none !important;
+  pointer-events: auto;
+  display: flex;
+  align-items: center;
+}
+
+.map-hud-top-left {
+  gap: 4px;
+  flex-shrink: 1;
+}
+
+.map-hud-top-center {
+  flex-shrink: 0;
+  margin: 0 auto;
+}
+
+.map-hud-top-right {
+  gap: 4px;
+  flex-shrink: 0;
+}
+
 .map-hud-bottom-left,
 .map-hud-bottom-right {
   position: absolute;
   z-index: 1000;
   pointer-events: auto;
-}
-
-.map-hud-top-left {
-  top: 12px;
-  left: 14px;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.map-hud-top-center {
-  top: 12px;
-  left: 50%;
-  transform: translateX(-50%);
-  display: flex;
-  align-items: center;
-}
-
-.map-hud-top-right {
-  top: 12px;
-  right: 14px;
-  display: flex;
-  align-items: center;
-  gap: 6px;
 }
 
 .map-hud-bottom-left {
@@ -2411,23 +2426,49 @@ textarea:focus-visible,
   border-color: #38bdf8 !important;
 }
 
-@media (max-width: 1024px) {
-  .map-hud-top-center {
+@media (max-width: 1440px) {
+  .map-hud-topbar {
+    gap: 6px;
+  }
+  .map-hud-top-left {
+    gap: 3px;
+  }
+}
+
+@media (max-width: 1200px) {
+  .map-hud-topbar {
+    overflow-x: auto;
+    overflow-y: visible;
+    scrollbar-width: none;
+    pointer-events: auto;
+    padding-bottom: 2px;
+  }
+  .map-hud-topbar::-webkit-scrollbar {
     display: none;
   }
 }
 
 @media (max-width: 768px) {
+  .map-hud-topbar {
+    top: 6px;
+    left: 6px;
+    right: 6px;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
   .map-hud-top-left {
-    top: 8px;
-    left: 8px;
-    max-width: calc(100vw - 16px);
+    max-width: 100%;
     overflow-x: auto;
-    padding-bottom: 4px;
+    padding-bottom: 2px;
+  }
+  .map-hud-top-center {
+    width: 100%;
+    justify-content: center;
+    margin: 2px 0;
   }
   .map-hud-top-right {
-    top: 50px;
-    right: 8px;
+    width: 100%;
+    justify-content: flex-end;
   }
   .map-hud-bottom-left {
     bottom: 8px;
