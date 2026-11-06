@@ -114,10 +114,11 @@ export const argonChatService = {
         429: 'O limite temporário de perguntas foi atingido. Aguarde um pouco e tente novamente.',
         503: 'O serviço do Geotinho está sem configuração ou temporariamente indisponível.'
       };
-      throw new Error(safeMessages[response.status] || result.error || 'Não foi possível consultar o Gemini 4 Argon.');
+      throw new Error(safeMessages[response.status] || result.error || 'Não foi possível consultar o Gemini 3.6 Flash.');
     }
 
-    if (!result.text) throw new Error('O Gemini 4 Argon retornou uma resposta vazia. Tente novamente.');
-    return { text: result.text, source: 'google', model: result.model || 'gemini-4-argon' };
+    if (!result.text) throw new Error('O Gemini 3.6 Flash retornou uma resposta vazia. Tente novamente.');
+    return { text: result.text, source: 'google', model: result.model || 'gemini-3.6-flash' };
   }
 };
+
