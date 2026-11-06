@@ -2,6 +2,14 @@ name = "mdsync---mining-geotechnical-data"
 main = "backend/argon-chat/worker.js"
 compatibility_date = "2026-11-01"
 
+[observability]
+enabled = true
+
+  [observability.logs]
+  enabled = true
+  invocation_logs = false
+  persist = true
+
 [assets]
 directory = "./dist"
 binding = "ASSETS"
