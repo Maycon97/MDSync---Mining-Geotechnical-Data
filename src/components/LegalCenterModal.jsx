@@ -1,3 +1,6 @@
+Warning: truncated output (original token count: 13076)
+Total output lines: 984
+
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { cookieConsentService } from '../services/cookieConsentService';
@@ -483,87 +486,7 @@ export const LegalCenterModal = ({ isOpen, onClose, initialTab = 'privacidade' }
                         Utilizados para armazenar a sessão de login, permissões de perfil (RBAC), fila de sincronização de campo offline 
                         e hashes de integridade das medições. Não podem ser desativados sem inviabilizar o funcionamento do aplicativo.
                       </p>
-                    </div>
-                    <span style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-muted)' }}>Ativo</span>
-                  </div>
-
-                  {/* Preferências */}
-                  <div style={{
-                    padding: '1rem',
-                    borderRadius: '10px',
-                    backgroundColor: 'var(--bg-secondary)',
-                    border: '1px solid var(--border-subtle)',
-                    display: 'flex',
-                    alignItems: 'flex-start',
-                    justifyContent: 'space-between',
-                    gap: '1rem'
-                  }}>
-                    <div>
-                      <strong style={{ display: 'block', fontSize: '0.9rem', color: 'var(--text-main)', marginBottom: '0.25rem' }}>
-                        Cookies de Preferências e Ergonomia
-                      </strong>
-                      <p style={{ margin: 0, fontSize: '0.78rem', color: 'var(--text-muted)' }}>
-                        Memorizam a escolha de tema visual (Modo Escuro / Claro de alta legibilidade ao sol), idioma da interface e a última estrutura selecionada.
-                      </p>
-                    </div>
-                    <label style={{ display: 'flex', alignItems: 'center', cursor: 'pointer', gap: '0.4rem' }}>
-                      <input
-                        type="checkbox"
-                        checked={cookiePrefs.preferences}
-                        onChange={(e) => {
-                          const updated = cookieConsentService.savePreferences({
-                            ...cookiePrefs,
-                            preferences: e.target.checked
-                          });
-                          setCookiePrefs(updated);
-                          showToast('Preferências de cookies atualizadas!');
-                        }}
-                        style={{ accentColor: 'var(--primary-accent)', width: '18px', height: '18px', cursor: 'pointer' }}
-                      />
-                    </label>
-                  </div>
-
-                  {/* Analíticos */}
-                  <div style={{
-                    padding: '1rem',
-                    borderRadius: '10px',
-                    backgroundColor: 'var(--bg-secondary)',
-                    border: '1px solid var(--border-subtle)',
-                    display: 'flex',
-                    alignItems: 'flex-start',
-                    justifyContent: 'space-between',
-                    gap: '1rem'
-                  }}>
-                    <div>
-                      <strong style={{ display: 'block', fontSize: '0.9rem', color: 'var(--text-main)', marginBottom: '0.25rem' }}>
-                        Telemetria Técnica e Diagnóstico de Desempenho
-                      </strong>
-                      <p style={{ margin: 0, fontSize: '0.78rem', color: 'var(--text-muted)' }}>
-                        Métricas puramente técnicas de tempo de renderização do mapa e estabilidade da conexão offline. 
-                        Nenhuma informação identificável de localização fora do empreendimento ou IP pessoal é exportada.
-                      </p>
-                    </div>
-                    <label style={{ display: 'flex', alignItems: 'center', cursor: 'pointer', gap: '0.4rem' }}>
-                      <input
-                        type="checkbox"
-                        checked={cookiePrefs.analytics}
-                        onChange={(e) => {
-                          const updated = cookieConsentService.savePreferences({
-                            ...cookiePrefs,
-                            analytics: e.target.checked
-                          });
-                          setCookiePrefs(updated);
-                          showToast('Preferências de telemetria atualizadas!');
-                        }}
-                        style={{ accentColor: 'var(--primary-accent)', width: '18px', height: '18px', cursor: 'pointer' }}
-                      />
-                    </label>
-                  </div>
-                </div>
-
-                <div style={{ marginTop: '1.25rem', display: 'flex', gap: '0.75rem', justifyContent: 'flex-end' }}>
-                  <button
-                    type="button"
+    …1076 tokens truncated…tton"
                     onClick={() => {
                       const updated = cookieConsentService.acceptAll();
                       setCookiePrefs(updated);
@@ -813,7 +736,7 @@ export const LegalCenterModal = ({ isOpen, onClose, initialTab = 'privacidade' }
                       2. Dados usados pelo Geotinho
                     </h4>
                     <p style={{ margin: 0, color: 'var(--text-muted)' }}>
-                      Ao enviar uma pergunta ao Geotinho, o texto e o histórico da conversa, junto com um resumo dos dados geotécnicos da sessão — estruturas, instrumentos, anomalias e pluviometria — são encaminhados pelo backend do MDSync à API Google Gemini 4 Argon para produzir a resposta. O resumo automático não inclui os cadastros de clientes e contratos nem a chave de API. Evite incluir informações pessoais ou confidenciais nas mensagens.
+                      Ao enviar uma pergunta ao Geotinho, o texto e o histórico da conversa, junto com um resumo dos dados geotécnicos da sessão — estruturas, instrumentos, anomalias e pluviometria — são encaminhados pelo backend do MDSync à API Google Gemini 3.6 Flash para produzir a resposta. O resumo automático não inclui os cadastros de clientes e contratos nem a chave de API. Evite incluir informações pessoais ou confidenciais nas mensagens.
                     </p>
                   </section>
 
@@ -980,4 +903,5 @@ export const LegalCenterModal = ({ isOpen, onClose, initialTab = 'privacidade' }
     </div>
   );
 };
+
 
