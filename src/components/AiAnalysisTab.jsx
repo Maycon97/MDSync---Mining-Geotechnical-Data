@@ -57,12 +57,12 @@ export const AiAnalysisTab = ({ onNavigateTab }) => {
   // Estados do Parecer Técnico
   const [selectedStruct, setSelectedStruct] = useState(activeStructureId || 'TODAS');
 
-  // Estados do Agente Geotinho (Gemini 4 Argon via backend)
+  // Estados do Agente Geotinho (Gemini 3.6 Flash via backend)
   const [messages, setMessages] = useState(() => [
     {
       id: 'welcome',
       sender: 'assistant',
-      text: `Olá! Sou o **Geotinho**, assistente do MDSync especializado em mineração e geotecnia, com respostas geradas pelo **Gemini 4 Argon**.
+      text: `Olá! Sou o **Geotinho**, assistente do MDSync especializado em mineração e geotecnia, com respostas geradas pelo **Gemini 3.6 Flash**.
 
 Posso ajudar a navegar pelo aplicativo e responder sobre mineração, geotecnia, hidrogeologia e instrumentação. Quando o serviço estiver configurado, também posso usar o resumo de dados geotécnicos disponível nesta sessão.
 
@@ -457,7 +457,7 @@ Como posso te ajudar hoje?
               <span style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', color: argonChatService.hasEndpoint() ? 'var(--geo-normal)' : 'var(--text-muted)' }}>
                 <span style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: argonChatService.hasEndpoint() ? 'var(--geo-normal)' : '#94a3b8' }} />
                 Motor: <strong style={{ color: 'var(--text-main)' }}>
-                  {argonChatService.hasEndpoint() ? 'Google Gemini 4 Argon' : 'Argon aguardando configuração do backend'}
+                  {argonChatService.hasEndpoint() ? 'Google Gemini 3.6 Flash' : 'Gemini aguardando configuração do backend'}
                 </strong>
               </span>
               <span style={{ color: 'var(--text-faint)' }}>|</span>
@@ -566,7 +566,7 @@ Como posso te ajudar hoje?
                   }}>
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.4rem', fontSize: '0.68rem', opacity: 0.8 }}>
                       <span style={{ fontWeight: 700 }}>
-                        {isUser ? (currentUser?.nome || 'Você') : 'Geotinho · Gemini 4 Argon'}
+                        {isUser ? (currentUser?.nome || 'Você') : 'Geotinho · Gemini 3.6 Flash'}
                       </span>
                       <span>{msg.timestamp}</span>
                     </div>
@@ -696,7 +696,7 @@ Como posso te ajudar hoje?
           }}>
             <Info size={15} style={{ color: 'var(--primary-accent)', flexShrink: 0 }} />
             <span>
-              Ao enviar uma pergunta, o texto e o histórico da conversa, junto com um resumo geotécnico desta sessão (estruturas, instrumentos, anomalias e chuva), são enviados ao backend do MDSync e ao Google Gemini 4 Argon. O resumo automático exclui os cadastros de clientes e contratos; evite incluir informações pessoais ou confidenciais nas mensagens.
+              Ao enviar uma pergunta, o texto e o histórico da conversa, junto com um resumo geotécnico desta sessão (estruturas, instrumentos, anomalias e chuva), são enviados ao backend do MDSync e ao Google Gemini 3.6 Flash. O resumo automático exclui os cadastros de clientes e contratos; evite incluir informações pessoais ou confidenciais nas mensagens.
             </span>
           </div>
 
@@ -1060,3 +1060,4 @@ Como posso te ajudar hoje?
     </div>
   );
 };
+
