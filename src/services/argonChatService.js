@@ -18,7 +18,9 @@ const pick = (value, max = 180) => {
   return text ? text.slice(0, max) : undefined;
 };
 
-const DATA_QUESTION = /\\b(n[ií]vel|leitura|medi[cç][aã]o|medida|instrumento|piez[oô]metro|piezometria|vaz[aã]o|vertedouro|chuva|pluviometria|anomalia|alerta|emerg[eê]ncia|estabilidade|barragem|pilha|cava|estrutura|limite|cota|press[aã]o|percola[cç][aã]o|dreno|jangada|mangaba|engenho|jac[oó]|\\bB[1-9]\\b|\\bPDE\\b)/i;\n\nconst pickNumber = (value) => {
+const DATA_QUESTION = /\b(n[ií]vel|leitura|medi[cç][aã]o|medida|instrumento|piez[oô]metro|piezometria|vaz[aã]o|vertedouro|chuva|pluviometria|anomalia|alerta|emerg[eê]ncia|estabilidade|barragem|pilha|cava|estrutura|limite|cota|press[aã]o|percola[cç][aã]o|dreno|jangada|mangaba|engenho|jac[oó]|\bB[1-9]\b|\bPDE\b)/i;
+
+const pickNumber = (value) => {
   const number = Number(value);
   return Number.isFinite(number) ? number : undefined;
 };
