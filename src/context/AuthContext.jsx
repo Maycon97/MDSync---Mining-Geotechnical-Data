@@ -195,7 +195,15 @@ export const AuthProvider = ({ children }) => {
   // Salvar usuário ativo quando alterado
   useEffect(() => {
     if (currentUser) {
-      localStorage.setItem(ACTIVE_USER_KEY, JSON.stringify(currentUser));
+      try {
+        localStorage.setItem(ACTIVE_USER_KEY, JSON.stringify(currentUser));
+      } catch (e) {
+        console.warn('[AuthContext] Falha ao persistir ACTIVE_USER_KEY (quota):', e);
+        try {
+          const lean = { ...currentUser, foto: '' };
+          localStorage.setItem(ACTIVE_USER_KEY, JSON.stringify(lean));
+        } catch {}
+      }
       if (ROLES[currentUser.roleKey]) {
         storageService.setUserRole(ROLES[currentUser.roleKey].title);
       }
@@ -239,7 +247,11 @@ export const AuthProvider = ({ children }) => {
 
     const updatedUser = { ...foundUser, ultimoAcesso: new Date().toISOString() };
     setCurrentUser(updatedUser);
-    localStorage.setItem(ACTIVE_USER_KEY, JSON.stringify(updatedUser));
+    try {
+      localStorage.setItem(ACTIVE_USER_KEY, JSON.stringify(updatedUser));
+    } catch (err) {
+      console.warn('[AuthContext] Falha ao gravar ACTIVE_USER_KEY no login:', err);
+    }
     storageService.savePersistentProfile(updatedUser);
     return updatedUser;
   };
@@ -273,12 +285,20 @@ export const AuthProvider = ({ children }) => {
 
     const updatedUsers = [...users, newUser];
     setUsers(updatedUsers);
-    localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify(updatedUsers));
+    try {
+      localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify(updatedUsers));
+    } catch (e) {
+      console.warn('[AuthContext] Falha ao persistir USERS_STORAGE_KEY no cadastro:', e);
+    }
     setCurrentUser(newUser);
+    try {
+      localStorage.setItem(ACTIVE_USER_KEY, JSON.stringify(newUser));
+    } catch {}
+    storageService.savePersistentProfile(newUser);
     return newUser;
   };
 
-  // Atualização de Perfil de Usuário com Persistência Imediata
+  // Atualização de Perfil de Usuário com Persistência Imediata & Blindagem de Cota
   const updateProfile = (updates) => {
     if (!currentUser) return null;
     const updatedUser = { 
@@ -288,9 +308,33 @@ export const AuthProvider = ({ children }) => {
     };
     const updatedUsers = users.map(u => u.id === currentUser.id ? updatedUser : u);
     setUsers(updatedUsers);
-    localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify(updatedUsers));
+
+    // Gravação segura no USERS_STORAGE_KEY com proteção contra estouro de cota
+    try {
+      localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify(updatedUsers));
+    } catch (quotaErr) {
+      console.warn('[AuthContext] Quota excedida em USERS_STORAGE_KEY, higienizando lista:', quotaErr);
+      try {
+        const leanUsers = updatedUsers.map(u => u.id === currentUser.id ? u : { ...u, foto: null });
+        localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify(leanUsers));
+      } catch (e2) {
+        console.warn('[AuthContext] Falha irrecuperável de storage para lista de usuários:', e2);
+      }
+    }
+
     setCurrentUser(updatedUser);
-    localStorage.setItem(ACTIVE_USER_KEY, JSON.stringify(updatedUser));
+
+    // Gravação segura no ACTIVE_USER_KEY
+    try {
+      localStorage.setItem(ACTIVE_USER_KEY, JSON.stringify(updatedUser));
+    } catch (quotaErr) {
+      console.warn('[AuthContext] Quota excedida em ACTIVE_USER_KEY:', quotaErr);
+      try {
+        const leanUser = { ...updatedUser, foto: '' };
+        localStorage.setItem(ACTIVE_USER_KEY, JSON.stringify(leanUser));
+      } catch {}
+    }
+
     storageService.savePersistentProfile(updatedUser);
     return updatedUser;
   };
@@ -306,7 +350,9 @@ export const AuthProvider = ({ children }) => {
       const match = users.find(u => u.roleKey === newRoleKey);
       if (match) {
         setCurrentUser(match);
-        localStorage.setItem(ACTIVE_USER_KEY, JSON.stringify(match));
+        try {
+          localStorage.setItem(ACTIVE_USER_KEY, JSON.stringify(match));
+        } catch {}
         storageService.savePersistentProfile(match);
       } else {
         // Atualizar papel do usuário atual
@@ -315,7 +361,9 @@ export const AuthProvider = ({ children }) => {
           roleKey: newRoleKey
         };
         setCurrentUser(updated);
-        localStorage.setItem(ACTIVE_USER_KEY, JSON.stringify(updated));
+        try {
+          localStorage.setItem(ACTIVE_USER_KEY, JSON.stringify(updated));
+        } catch {}
         storageService.savePersistentProfile(updated);
       }
     }

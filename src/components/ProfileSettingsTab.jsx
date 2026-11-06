@@ -4,6 +4,7 @@ import { useGeotechData } from '../context/GeotechDataContext';
 import { storageService } from '../services/storageService';
 import { TRANSLATIONS, getTranslation } from '../i18n/translations';
 import { recordIdTemplateService, AVAILABLE_VARIABLES } from '../services/recordIdTemplateService';
+import { compressImage } from '../utils/imageOptimizer';
 import { 
   ShieldCheck, 
   Camera, 
@@ -130,6 +131,8 @@ export const ProfileSettingsTab = ({ onNavigateTab }) => {
   // Estados de feedback e loading geral
   const [feedback, setFeedback] = useState({ type: '', message: '' });
   const [isSaving, setIsSaving] = useState(false);
+  const [isProcessingAvatar, setIsProcessingAvatar] = useState(false);
+  const [saveSuccess, setSaveSuccess] = useState(false);
 
   // Obter dicionário de tradução corrente
   const t = useMemo(() => getTranslation(currentLang), [currentLang]);
@@ -152,30 +155,49 @@ export const ProfileSettingsTab = ({ onNavigateTab }) => {
     setStorageStats(storageService.getStorageUsage());
   };
 
-  // Upload e preview da foto de perfil
-  const handleAvatarChange = (e) => {
+  // Upload, compressão e preview da foto de perfil
+  const handleAvatarChange = async (e) => {
     const file = e.target.files?.[0];
     if (file) {
-      if (file.size > 2 * 1024 * 1024) {
-        setFeedback({ type: 'error', message: 'A imagem deve ter no máximo 2MB.' });
+      if (file.size > 5 * 1024 * 1024) {
+        setFeedback({ type: 'error', message: 'A imagem deve ter no máximo 5MB.' });
         return;
       }
-      const reader = new FileReader();
-      reader.onload = () => {
-        setFoto(reader.result);
-        setFeedback({ type: 'success', message: 'Foto carregada com sucesso! Clique em "Salvar Alterações" para fixar.' });
-      };
-      reader.readAsDataURL(file);
+      setIsProcessingAvatar(true);
+      setSaveSuccess(false);
+      try {
+        const compressedBase64 = await compressImage(file, { maxWidth: 320, maxHeight: 320, quality: 0.82 });
+        setFoto(compressedBase64);
+        setFeedback({ 
+          type: 'success', 
+          message: 'Foto carregada e otimizada com sucesso! Clique em "Salvar Alterações do Perfil" para fixar no banco de dados.' 
+        });
+      } catch (err) {
+        console.error('Erro ao comprimir imagem:', err);
+        setFeedback({ type: 'error', message: 'Falha ao processar e comprimir a imagem selecionada.' });
+      } finally {
+        setIsProcessingAvatar(false);
+      }
     }
   };
 
-  // Submissão do perfil cadastral
-  const handleSaveProfile = (e) => {
+  // Submissão do perfil cadastral com blindagem de persistência
+  const handleSaveProfile = async (e) => {
     e.preventDefault();
     setFeedback({ type: '', message: '' });
+    setSaveSuccess(false);
     setIsSaving(true);
 
     try {
+      let finalFoto = foto;
+      // Garante otimização caso a imagem ainda não tenha sido comprimida
+      if (foto && typeof foto === 'string' && foto.length > 50000) {
+        try {
+          finalFoto = await compressImage(foto, { maxWidth: 320, maxHeight: 320, quality: 0.82 });
+          setFoto(finalFoto);
+        } catch {}
+      }
+
       const updated = updateProfile({
         nome: nome.trim(),
         email: email.trim(),
@@ -183,20 +205,29 @@ export const ProfileSettingsTab = ({ onNavigateTab }) => {
         usuario: usuario.trim(),
         registro: registro.trim(),
         empresa: empresa.trim(),
-        foto
+        foto: finalFoto
       });
 
       if (updated) {
         storageService.savePersistentProfile(updated);
       }
 
-      setFeedback({ type: 'success', message: 'Dados cadastrais e profissionais atualizados com sucesso!' });
+      refreshStorageStats();
+      setSaveSuccess(true);
+      setFeedback({ 
+        type: 'success', 
+        message: 'Dados cadastrais e foto de perfil salvos e sincronizados com sucesso no banco de dados do MDSync!' 
+      });
+
       if (setSystemToast) {
         setSystemToast({
           type: 'success',
-          message: 'Perfil atualizado com sucesso no MDSync!'
+          message: 'Perfil e foto atualizados com sucesso no banco de dados!'
         });
       }
+
+      // Auto-limpa o status após 4 segundos
+      setTimeout(() => setSaveSuccess(false), 4000);
     } catch (err) {
       setFeedback({ type: 'error', message: err.message || 'Erro ao atualizar dados do perfil.' });
     } finally {
@@ -851,6 +882,25 @@ Todas as alterações em cotas de alerta, limiares críticos e aprovações de l
                       {currentUser?.avatar || 'VA'}
                     </div>
                   )}
+
+                  {isProcessingAvatar && (
+                    <div style={{
+                      position: 'absolute',
+                      inset: 0,
+                      backgroundColor: 'rgba(0, 0, 0, 0.65)',
+                      borderRadius: '6px',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      color: '#ffffff',
+                      fontSize: '0.65rem',
+                      fontWeight: 700
+                    }}>
+                      <RefreshCw size={18} className="animate-spin" />
+                      <span style={{ marginTop: '2px' }}>Otimizando...</span>
+                    </div>
+                  )}
                   
                   <label 
                     htmlFor="profile-avatar-upload" 
@@ -1009,9 +1059,29 @@ Todas as alterações em cotas de alerta, limiares críticos e aprovações de l
                 </div>
               </div>
 
+              {saveSuccess && (
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.5rem',
+                  padding: '0.65rem 0.95rem',
+                  borderRadius: '6px',
+                  backgroundColor: 'var(--geo-normal-bg)',
+                  color: 'var(--geo-normal)',
+                  border: '1px solid var(--geo-normal-border)',
+                  fontSize: '0.82rem',
+                  fontWeight: 700,
+                  marginTop: '0.75rem',
+                  animation: 'fadeIn 0.25s ease-out'
+                }}>
+                  <CheckCircle2 size={17} />
+                  <span>Dados cadastrais e foto salvos com sucesso no banco de dados!</span>
+                </div>
+              )}
+
               <button
                 type="submit"
-                disabled={isSaving}
+                disabled={isSaving || isProcessingAvatar}
                 className="btn-primary"
                 style={{
                   display: 'flex',
@@ -1023,11 +1093,28 @@ Todas as alterações em cotas de alerta, limiares críticos e aprovações de l
                   fontWeight: 700,
                   fontSize: '0.9rem',
                   marginTop: '0.5rem',
-                  boxShadow: 'var(--shadow-md)'
+                  boxShadow: 'var(--shadow-md)',
+                  backgroundColor: saveSuccess ? 'var(--geo-normal)' : undefined,
+                  borderColor: saveSuccess ? 'var(--geo-normal)' : undefined,
+                  transition: 'all 0.3s ease'
                 }}
               >
-                {isSaving ? <RefreshCw size={18} className="animate-spin" /> : <Save size={18} />}
-                <span>{isSaving ? 'Salvando Dados...' : 'Salvar Alterações do Perfil'}</span>
+                {isSaving || isProcessingAvatar ? (
+                  <RefreshCw size={18} className="animate-spin" />
+                ) : saveSuccess ? (
+                  <CheckCircle2 size={18} />
+                ) : (
+                  <Save size={18} />
+                )}
+                <span>
+                  {isSaving
+                    ? 'Salvando Dados...'
+                    : isProcessingAvatar
+                    ? 'Otimizando Imagem...'
+                    : saveSuccess
+                    ? 'Salvo com Sucesso!'
+                    : 'Salvar Alterações do Perfil'}
+                </span>
               </button>
             </form>
           </div>

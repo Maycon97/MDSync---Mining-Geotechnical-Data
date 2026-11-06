@@ -79,5 +79,26 @@ describe('ProfileSettingsTab Navigation & Layout Suite', () => {
     expect(pills[7].classList.contains('active')).toBe(true);
     expect(pills[0].classList.contains('active')).toBe(false);
   });
+
+  it('renders the profile save button with persistent storage support', async () => {
+    await act(async () => {
+      root.render(
+        <AuthProvider>
+          <GeotechDataProvider>
+            <ProfileSettingsTab />
+          </GeotechDataProvider>
+        </AuthProvider>
+      );
+    });
+
+    const pills = container.querySelectorAll('.settings-nav-pill');
+    await act(async () => {
+      pills[0].click();
+    });
+
+    const submitBtn = container.querySelector('button[type="submit"]');
+    expect(submitBtn).not.toBeNull();
+    expect(submitBtn.textContent).toContain('Salvar Alterações do Perfil');
+  });
 });
 

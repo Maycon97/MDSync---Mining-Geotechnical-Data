@@ -14,6 +14,8 @@ globalThis.localStorage = localStorageMock;
 
 import { storageService } from '../services/storageService';
 import { ROLES } from '../context/AuthContext';
+import { compressImage } from '../utils/imageOptimizer';
+import { indexedDBStorage } from '../services/indexedDBStorage';
 
 describe('Auth & Profile Persistence Suite', () => {
   beforeEach(() => {
@@ -129,5 +131,45 @@ describe('Auth & Profile Persistence Suite', () => {
     const restored = storageService.getPersistentProfile();
     expect(restored).toEqual(activeProfile);
     expect(restored.registro).toBe('CREA 142.890/D-MG');
+  });
+
+  it('deve otimizar dados de imagem com compressImage sem quebrar em ambientes sem canvas', async () => {
+    const rawData = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==';
+    const result = await compressImage(rawData, { maxWidth: 320, maxHeight: 320, quality: 0.82 });
+    expect(result).toBeDefined();
+    expect(typeof result).toBe('string');
+  });
+
+  it('deve blindar savePersistentProfile contra QuotaExceededError em localStorage', () => {
+    const originalSetItem = localStorage.setItem;
+    // Simula quota excedida no LocalStorage
+    localStorage.setItem = (key, val) => {
+      if (key.includes('persistent_profile') && val.includes('fotoPesada')) {
+        const err = new Error('QuotaExceededError');
+        err.name = 'QuotaExceededError';
+        throw err;
+      }
+      originalSetItem(key, val);
+    };
+
+    const heavyProfile = {
+      id: 'USR-002',
+      nome: 'Maycon Douglas',
+      foto: 'data:image/jpeg;base64,fotoPesada_99999999999999999'
+    };
+
+    expect(() => {
+      storageService.savePersistentProfile(heavyProfile);
+    }).not.toThrow();
+
+    localStorage.setItem = originalSetItem;
+  });
+
+  it('deve disponibilizar a API de persistência de mídia e perfis no indexedDBStorage', async () => {
+    expect(indexedDBStorage).toBeDefined();
+    expect(typeof indexedDBStorage.saveUserProfile).toBe('function');
+    expect(typeof indexedDBStorage.getUserProfile).toBe('function');
+    expect(typeof indexedDBStorage.saveMedia).toBe('function');
+    expect(typeof indexedDBStorage.getMedia).toBe('function');
   });
 });

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useAuth, ROLES } from '../context/AuthContext';
 import { storageService } from '../services/storageService';
+import { compressImage } from '../utils/imageOptimizer';
 import { 
   X, 
   Lock, 
@@ -128,32 +129,43 @@ export const AuthModal = ({ isOpen, onClose, initialTab = 'login', onNavigateToP
     }
   };
 
-  const handleAvatarChange = (e) => {
+  const handleAvatarChange = async (e) => {
     const file = e.target.files?.[0];
     if (file) {
-      if (file.size > 2 * 1024 * 1024) {
-        setFeedback({ type: 'error', message: 'A imagem deve ter no máximo 2MB.' });
+      if (file.size > 5 * 1024 * 1024) {
+        setFeedback({ type: 'error', message: 'A imagem deve ter no máximo 5MB.' });
         return;
       }
-      const reader = new FileReader();
-      reader.onload = () => {
-        setProfileFoto(reader.result);
-      };
-      reader.readAsDataURL(file);
+      try {
+        const compressed = await compressImage(file, { maxWidth: 320, maxHeight: 320, quality: 0.82 });
+        setProfileFoto(compressed);
+        setFeedback({ type: 'success', message: 'Foto carregada e otimizada! Clique em salvar para persistir.' });
+      } catch (err) {
+        console.error('Erro ao comprimir imagem:', err);
+        setFeedback({ type: 'error', message: 'Erro ao processar imagem.' });
+      }
     }
   };
 
-  const handleProfileSubmit = (e) => {
+  const handleProfileSubmit = async (e) => {
     e.preventDefault();
     setFeedback({ type: '', message: '' });
     try {
+      let finalFoto = profileFoto;
+      if (profileFoto && typeof profileFoto === 'string' && profileFoto.length > 50000) {
+        try {
+          finalFoto = await compressImage(profileFoto, { maxWidth: 320, maxHeight: 320, quality: 0.82 });
+          setProfileFoto(finalFoto);
+        } catch {}
+      }
+
       const updated = updateProfile({
         nome: profileNome,
         email: profileEmail,
         setor: profileSetor,
         usuario: profileUsuario,
         senhaHash: profileSenha,
-        foto: profileFoto
+        foto: finalFoto
       });
       if (updated) {
         storageService.savePersistentProfile(updated);

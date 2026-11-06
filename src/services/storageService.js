@@ -4,6 +4,7 @@
 // ============================================================
 
 import { securityShield } from './securityShield';
+import { indexedDBStorage } from './indexedDBStorage';
 
 const STORAGE_KEYS = {
   THEME: 'mdsync_theme',
@@ -164,11 +165,27 @@ export const storageService = {
     }
   },
   savePersistentProfile(profile) {
+    if (!profile) return;
     try {
-      if (!profile) return;
       localStorage.setItem(STORAGE_KEYS.PERSISTENT_PROFILE, JSON.stringify(profile));
     } catch (e) {
-      console.error('Erro ao salvar perfil persistente:', e);
+      console.warn('[StorageService] Falha ao salvar perfil persistente no LocalStorage (quota). Salvando versão leve:', e);
+      try {
+        const lean = { ...profile, foto: '' };
+        localStorage.setItem(STORAGE_KEYS.PERSISTENT_PROFILE, JSON.stringify(lean));
+      } catch (e2) {
+        console.warn('[StorageService] LocalStorage esgotado para perfil persistente:', e2);
+      }
+    }
+
+    // Persistência robusta e durável em IndexedDB (capacidade >100MB)
+    try {
+      indexedDBStorage.saveUserProfile(profile);
+      if (profile.foto) {
+        indexedDBStorage.saveMedia(`avatar_${profile.id || 'current'}`, profile.foto);
+      }
+    } catch (idbErr) {
+      console.warn('[StorageService] Falha ao persistir perfil em IndexedDB:', idbErr);
     }
   },
   clearPersistentProfile() {
