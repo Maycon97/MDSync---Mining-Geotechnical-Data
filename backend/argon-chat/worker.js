@@ -145,8 +145,8 @@ export default {
           },
           contents,
           generationConfig: {
-            maxOutputTokens: 1200,
-            thinkingConfig: { thinkingLevel: 'MEDIUM' }
+            maxOutputTokens: 2048,
+            thinkingConfig: { thinkingLevel: 'LOW' }
           }
         }),
         signal: AbortSignal.timeout(60000)
@@ -161,7 +161,12 @@ export default {
       }
 
       const result = await upstream.json();
-      const text = (result.candidates?.[0]?.content?.parts || [])
+      const candidate = result.candidates?.[0];
+      if (candidate?.finishReason === 'MAX_TOKENS') {
+        return json({ error: 'Gemini atingiu o limite de geração antes de concluir a resposta. Tente uma pergunta mais específica.' }, 502, origin, allowed);
+      }
+
+      const text = (candidate?.content?.parts || [])
         .map((part) => part.text || '')
         .join('')
         .trim();
