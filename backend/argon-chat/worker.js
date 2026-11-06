@@ -1,4 +1,4 @@
-const MODEL = 'gemini-4-argon';
+const MODEL = 'gemini-3.6-flash';
 const MAX_BODY_BYTES = 96 * 1024;
 const MAX_PROMPT_CHARS = 4000;
 const MAX_CONTEXT_CHARS = 48 * 1024;
@@ -175,3 +175,4 @@ export default {
     }
   }
 };
+
