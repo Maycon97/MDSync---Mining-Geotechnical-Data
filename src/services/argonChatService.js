@@ -111,7 +111,7 @@ export const argonChatService = {
       const safeMessages = {
         400: 'A pergunta excede o limite permitido ou está vazia.',
         403: 'A origem do aplicativo não está autorizada no serviço do Geotinho.',
-        429: 'O limite temporário de perguntas foi atingido. Aguarde um pouco e tente novamente.',
+        429: 'O limite de uso do modelo Gemini ou do serviço do Geotinho foi atingido. Aguarde e tente novamente.',
         503: 'O serviço do Geotinho está sem configuração ou temporariamente indisponível.'
       };
       throw new Error(safeMessages[response.status] || result.error || 'Não foi possível consultar o Gemini 3.6 Flash.');
