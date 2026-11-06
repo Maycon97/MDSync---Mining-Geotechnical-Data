@@ -810,7 +810,16 @@ export const LegalCenterModal = ({ isOpen, onClose, initialTab = 'privacidade' }
 
                   <section>
                     <h4 style={{ fontSize: '0.95rem', fontWeight: 800, color: 'var(--primary-accent)', margin: '0 0 0.35rem 0' }}>
-                      2. Riscos Jurídicos e Acionamento de PAEBM (Item 17)
+                      2. Dados usados pelo Geotinho
+                    </h4>
+                    <p style={{ margin: 0, color: 'var(--text-muted)' }}>
+                      Ao enviar uma pergunta ao Geotinho, o texto e o histórico da conversa, junto com um resumo dos dados geotécnicos da sessão — estruturas, instrumentos, anomalias e pluviometria — são encaminhados pelo backend do MDSync à API Google Gemini 4 Argon para produzir a resposta. O resumo automático não inclui os cadastros de clientes e contratos nem a chave de API. Evite incluir informações pessoais ou confidenciais nas mensagens.
+                    </p>
+                  </section>
+
+                  <section>
+                    <h4 style={{ fontSize: '0.95rem', fontWeight: 800, color: 'var(--primary-accent)', margin: '0 0 0.35rem 0' }}>
+                      3. Riscos Jurídicos e Acionamento de PAEBM (Item 17)
                     </h4>
                     <p style={{ margin: 0, color: 'var(--text-muted)' }}>
                       O acionamento de níveis de alerta ou emergência do Plano de Ação de Emergência para Barragens de Mineração (PAEBM) 

@@ -2,8 +2,7 @@ import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { useGeotechData } from '../context/GeotechDataContext';
 import { useAuth } from '../context/AuthContext';
 import { aiGeotechService } from '../services/aiGeotechService';
-import { geminiService } from '../services/geminiService';
-import { cometApiService, AVAILABLE_MODELS } from '../services/cometApiService';
+import { argonChatService } from '../services/argonChatService';
 import { 
   Cpu, 
   FileText, 
@@ -58,14 +57,14 @@ export const AiAnalysisTab = ({ onNavigateTab }) => {
   // Estados do Parecer Técnico
   const [selectedStruct, setSelectedStruct] = useState(activeStructureId || 'TODAS');
 
-  // Estados do Agente Geotinho (CometAPI + Gemini + Motor Local)
+  // Estados do Agente Geotinho (Gemini 4 Argon via backend)
   const [messages, setMessages] = useState(() => [
     {
       id: 'welcome',
       sender: 'assistant',
-      text: `Olá, **${currentUser?.nome || 'Engenheiro(a)'}**! Sou o **Geotinho**, o Agente Especialista de Inteligência Artificial e Pesquisa Geotécnica do **MDSync**, operando com o motor **CometAPI (gpt-6-astra)**.
+      text: `Olá! Sou o **Geotinho**, assistente do MDSync especializado em mineração e geotecnia, com respostas geradas pelo **Gemini 4 Argon**.
 
-Estou conectado em tempo real aos dados das **8 estruturas** do Complexo Itaminas (**245 instrumentos ativos**, incluindo os **48 instrumentos** de **Jangada** com piezometria e vertedouros).
+Posso ajudar a navegar pelo aplicativo e responder sobre mineração, geotecnia, hidrogeologia e instrumentação. Quando o serviço estiver configurado, também posso usar o resumo de dados geotécnicos disponível nesta sessão.
 
 Como posso te ajudar hoje?
 - Consultar níveis de água, vazões ou anomalias de qualquer estrutura.
@@ -75,17 +74,14 @@ Como posso te ajudar hoje?
 
 *Escolha uma das sugestões rápidas abaixo ou digite sua pergunta:*`,
       timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-      source: 'cometapi'
+      source: 'google'
     }
   ]);
   const [inputText, setInputText] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [apiKeyModalOpen, setApiKeyModalOpen] = useState(false);
-  const [cometKeyInput, setCometKeyInput] = useState(() => cometApiService.getApiKey());
-  const [selectedModel, setSelectedModel] = useState(() => cometApiService.getModel());
-  const [baseUrlInput, setBaseUrlInput] = useState(() => cometApiService.getBaseUrl());
-  const [geminiKeyInput, setGeminiKeyInput] = useState(() => geminiService.getApiKey());
-  const [keySavedToast, setKeySavedToast] = useState(false);
+  const [argonEndpointInput, setArgonEndpointInput] = useState(() => argonChatService.getEndpoint());
+  const [argonEndpointError, setArgonEndpointError] = useState('');
 
   const messagesEndRef = useRef(null);
 
@@ -157,7 +153,7 @@ Como posso te ajudar hoje?
         coletas
       };
 
-      const result = await cometApiService.sendMessage({
+      const result = await argonChatService.sendMessage({
         prompt: textToSend,
         history: messages,
         context
@@ -351,15 +347,15 @@ Como posso te ajudar hoje?
     });
   };
 
-  // Salvar Configurações de IA (CometAPI e Gemini)
+  // Salvar a URL pública do backend. Nenhuma chave de API é armazenada no navegador.
   const handleSaveApiKey = () => {
-    cometApiService.setApiKey(cometKeyInput);
-    cometApiService.setModel(selectedModel);
-    cometApiService.setBaseUrl(baseUrlInput);
-    geminiService.setApiKey(geminiKeyInput);
-    setKeySavedToast(true);
-    setTimeout(() => setKeySavedToast(false), 3000);
-    setApiKeyModalOpen(false);
+    try {
+      argonChatService.setEndpoint(argonEndpointInput);
+      setArgonEndpointError('');
+      setApiKeyModalOpen(false);
+    } catch (error) {
+      setArgonEndpointError(error.message);
+    }
   };
 
   // Limpar Conversa
@@ -458,12 +454,10 @@ Como posso te ajudar hoje?
           {/* Faixa de Status do Modelo e Ferramentas */}
           <div className="card-panel" style={{ padding: '0.65rem 1rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.75rem', backgroundColor: 'var(--bg-secondary)' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', fontSize: '0.78rem' }}>
-              <span style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', color: (cometApiService.hasApiKey() || geminiService.hasApiKey()) ? 'var(--geo-normal)' : 'var(--text-muted)' }}>
-                <span style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: (cometApiService.hasApiKey() || geminiService.hasApiKey()) ? 'var(--geo-normal)' : '#94a3b8' }} />
+              <span style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', color: argonChatService.hasEndpoint() ? 'var(--geo-normal)' : 'var(--text-muted)' }}>
+                <span style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: argonChatService.hasEndpoint() ? 'var(--geo-normal)' : '#94a3b8' }} />
                 Motor: <strong style={{ color: 'var(--text-main)' }}>
-                  {cometApiService.hasApiKey() 
-                    ? `CometAPI (${cometApiService.getModel()})` 
-                    : (geminiService.hasApiKey() ? 'Google Gemini 2.5 Flash' : 'Motor Heurístico Local Offline')}
+                  {argonChatService.hasEndpoint() ? 'Google Gemini 4 Argon' : 'Argon aguardando configuração do backend'}
                 </strong>
               </span>
               <span style={{ color: 'var(--text-faint)' }}>|</span>
@@ -477,10 +471,10 @@ Como posso te ajudar hoje?
                 onClick={() => setApiKeyModalOpen(true)}
                 className="btn-secondary"
                 style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', fontSize: '0.72rem', padding: '0.35rem 0.65rem' }}
-                title="Configurar chave de token da CometAPI e Gemini"
+                title="Configurar a URL do serviço protegido do Geotinho"
               >
                 <Key size={13} style={{ color: 'var(--primary-accent)' }} />
-                <span>{cometApiService.hasApiKey() ? `Token CometAPI Ativo` : (geminiService.hasApiKey() ? 'Gemini Ativo' : 'Configurar CometAPI (Token)')}</span>
+                <span>{argonChatService.hasEndpoint() ? 'Backend configurado' : 'Configurar backend'}</span>
               </button>
               <button
                 onClick={handleClearChat}
@@ -572,7 +566,7 @@ Como posso te ajudar hoje?
                   }}>
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.4rem', fontSize: '0.68rem', opacity: 0.8 }}>
                       <span style={{ fontWeight: 700 }}>
-                        {isUser ? (currentUser?.nome || 'Você') : 'Gemini Geotecnia'}
+                        {isUser ? (currentUser?.nome || 'Você') : 'Geotinho · Gemini 4 Argon'}
                       </span>
                       <span>{msg.timestamp}</span>
                     </div>
@@ -633,7 +627,7 @@ Como posso te ajudar hoje?
                   fontSize: '0.82rem',
                   color: 'var(--text-muted)'
                 }}>
-                  <span>Gemini analisando telemetria e gerando resposta...</span>
+                  <span>Geotinho analisando sua pergunta...</span>
                 </div>
               </div>
             )}
@@ -654,7 +648,7 @@ Como posso te ajudar hoje?
               type="text"
               value={inputText}
               onChange={(e) => setInputText(e.target.value)}
-              placeholder="Digite sua dúvida sobre o complexo, laudos ANM, Jangada ou tarefas do app/apk..."
+              placeholder="Pergunte sobre mineração, geotecnia ou como usar o MDSync..."
               disabled={isLoading}
               style={{
                 flex: 1,
@@ -688,6 +682,24 @@ Como posso te ajudar hoje?
           </form>
 
           {/* Aviso Legal de IA & Responsabilidade Técnica (Itens 13 e 17 da Auditoria) */}
+          <div style={{
+            display: 'flex',
+            alignItems: 'flex-start',
+            gap: '0.5rem',
+            padding: '0.5rem 0.85rem',
+            borderRadius: '8px',
+            backgroundColor: 'var(--bg-secondary)',
+            border: '1px solid var(--border-subtle)',
+            fontSize: '0.7rem',
+            color: 'var(--text-faint)',
+            lineHeight: 1.4
+          }}>
+            <Info size={15} style={{ color: 'var(--primary-accent)', flexShrink: 0 }} />
+            <span>
+              Ao enviar uma pergunta, o texto e o histórico da conversa, junto com um resumo geotécnico desta sessão (estruturas, instrumentos, anomalias e chuva), são enviados ao backend do MDSync e ao Google Gemini 4 Argon. O resumo automático exclui os cadastros de clientes e contratos; evite incluir informações pessoais ou confidenciais nas mensagens.
+            </span>
+          </div>
+
           <div style={{
             display: 'flex',
             alignItems: 'center',
@@ -942,7 +954,7 @@ Como posso te ajudar hoje?
       )}
 
       {/* ============================================================ */}
-      {/* 4. MODAL DE CONFIGURAÇÃO DA COMETAPI & MOTOR GEOTINHO         */}
+      {/* 4. CONFIGURAÇÃO DO BACKEND SEGURO DO GEOTINHO                   */}
       {/* ============================================================ */}
       {apiKeyModalOpen && (
         <div className="modal-backdrop animate-fade-in" onClick={() => setApiKeyModalOpen(false)}>
@@ -970,115 +982,55 @@ Como posso te ajudar hoje?
                   Motor de Inteligência — Geotinho
                 </h3>
                 <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', margin: '0.15rem 0 0' }}>
-                  Conecte seu token da <strong>CometAPI</strong> (OpenAI-compatible) ou chave Gemini
+                  Configure o endereço público do serviço protegido do Argon
                 </p>
               </div>
             </div>
 
             <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', lineHeight: 1.5, marginBottom: '1.25rem' }}>
-              As credenciais são armazenadas de forma segura no armazenamento local (localStorage) do seu navegador ou dispositivo Android/iOS e enviadas diretamente aos servidores da API em tempo real.
+              A chave Gemini fica como segredo do Cloudflare Worker e não é solicitada nem armazenada neste navegador. Informe abaixo a URL pública do Worker.
             </p>
 
-            {/* 1. Campo Principal: Token da CometAPI */}
-            <div style={{ marginBottom: '1.15rem', padding: '1rem', backgroundColor: 'var(--bg-secondary)', borderRadius: '10px', border: '1px solid var(--border-subtle)' }}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.4rem' }}>
-                <label style={{ fontSize: '0.78rem', fontWeight: 700, color: 'var(--text-main)' }}>
-                  CometAPI Key / Token (Recomendado):
-                </label>
-                <a 
-                  href="https://www.cometapi.com/console/token" 
-                  target="_blank" 
-                  rel="noreferrer" 
-                  style={{ fontSize: '0.72rem', color: 'var(--primary-accent)', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.25rem' }}
-                >
-                  <span>Obter Token</span>
-                  <ExternalLink size={12} />
-                </a>
-              </div>
+            <div style={{ marginBottom: '1.25rem', padding: '1rem', backgroundColor: 'var(--bg-secondary)', borderRadius: '10px', border: '1px solid var(--border-subtle)' }}>
+              <label htmlFor="argon-backend-url" style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, color: 'var(--text-main)', marginBottom: '0.4rem' }}>
+                URL do backend Cloudflare Worker:
+              </label>
               <input
-                type="password"
-                value={cometKeyInput}
-                onChange={(e) => setCometKeyInput(e.target.value)}
-                placeholder="Cole seu token CometAPI aqui..."
+                id="argon-backend-url"
+                type="url"
+                value={argonEndpointInput}
+                onChange={(e) => {
+                  setArgonEndpointInput(e.target.value);
+                  setArgonEndpointError('');
+                }}
+                placeholder="https://mdsync-geotinho-argon.<sua-conta>.workers.dev"
                 className="form-input"
-                style={{ width: '100%', fontSize: '0.85rem' }}
+                style={{ width: '100%', fontSize: '0.85rem', marginBottom: '0.6rem' }}
               />
-
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem', marginTop: '0.75rem' }}>
-                <div>
-                  <label style={{ display: 'block', fontSize: '0.7rem', fontWeight: 600, color: 'var(--text-faint)', marginBottom: '0.25rem' }}>
-                    Modelo CometAPI:
-                  </label>
-                  <select
-                    value={selectedModel}
-                    onChange={(e) => setSelectedModel(e.target.value)}
-                    className="form-input"
-                    style={{ width: '100%', fontSize: '0.78rem', padding: '0.4rem 0.6rem' }}
-                  >
-                    {AVAILABLE_MODELS.map(m => (
-                      <option key={m.id} value={m.id}>{m.name}</option>
-                    ))}
-                  </select>
-                </div>
-
-                <div>
-                  <label style={{ display: 'block', fontSize: '0.7rem', fontWeight: 600, color: 'var(--text-faint)', marginBottom: '0.25rem' }}>
-                    Base URL:
-                  </label>
-                  <input
-                    type="text"
-                    value={baseUrlInput}
-                    onChange={(e) => setBaseUrlInput(e.target.value)}
-                    placeholder="https://api.cometapi.com/v1"
-                    className="form-input"
-                    style={{ width: '100%', fontSize: '0.78rem', padding: '0.4rem 0.6rem' }}
-                  />
-                </div>
-              </div>
-            </div>
-
-            {/* 2. Campo Secundário: Fallback Google Gemini */}
-            <div style={{ marginBottom: '1.25rem', padding: '0.85rem 1rem', backgroundColor: 'var(--bg-secondary)', borderRadius: '10px', border: '1px solid var(--border-subtle)' }}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.35rem' }}>
-                <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-main)' }}>
-                  Chave Gemini API (Fallback de Backup):
-                </label>
-                <a 
-                  href="https://aistudio.google.com/app/apikey" 
-                  target="_blank" 
-                  rel="noreferrer" 
-                  style={{ fontSize: '0.7rem', color: 'var(--primary-accent)', display: 'flex', alignItems: 'center', gap: '0.25rem' }}
-                >
-                  <span>Google AI Studio</span>
-                  <ExternalLink size={11} />
-                </a>
-              </div>
-              <input
-                type="password"
-                value={geminiKeyInput}
-                onChange={(e) => setGeminiKeyInput(e.target.value)}
-                placeholder="Opcional: AIzaSy..."
-                className="form-input"
-                style={{ width: '100%', fontSize: '0.8rem' }}
-              />
+              {argonEndpointError && (
+                <p role="alert" style={{ fontSize: '0.72rem', color: 'var(--geo-emergencia)', margin: '0 0 0.6rem' }}>
+                  {argonEndpointError}
+                </p>
+              )}
+              <p style={{ fontSize: '0.72rem', color: 'var(--text-faint)', margin: 0, lineHeight: 1.5 }}>
+                A URL é pública e pode ser salva neste dispositivo. Não cole uma chave de API neste campo.
+              </p>
             </div>
 
             {/* Botões de Ação */}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              {(cometApiService.hasApiKey() || geminiService.hasApiKey()) && (
+              {argonChatService.hasEndpoint() && (
                 <button
                   type="button"
                   onClick={() => {
-                    cometApiService.clearApiKey();
-                    geminiService.clearApiKey();
-                    setCometKeyInput('');
-                    setGeminiKeyInput('');
+                    argonChatService.setEndpoint('');
+                    setArgonEndpointInput('');
                     setApiKeyModalOpen(false);
                   }}
                   className="btn-ghost"
                   style={{ color: 'var(--geo-emergencia)', fontSize: '0.78rem' }}
                 >
-                  Limpar Todas
+                  Remover URL salva
                 </button>
               )}
               

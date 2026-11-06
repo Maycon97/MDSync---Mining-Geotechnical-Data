@@ -1,7 +1,21 @@
 name = "mdsync---mining-geotechnical-data"
+main = "backend/argon-chat/worker.js"
 compatibility_date = "2026-11-01"
 
 [assets]
 directory = "./dist"
+binding = "ASSETS"
+run_worker_first = ["/api/*", "/health"]
 html_handling = "auto-trailing-slash"
 not_found_handling = "single-page-application"
+
+[vars]
+ALLOWED_ORIGINS = "https://maycon97.github.io,https://mdsync---mining-geotechnical-data.maycondouglasreymont.workers.dev,capacitor://localhost"
+
+[[ratelimits]]
+name = "CHAT_LIMITER"
+namespace_id = "202611061"
+
+  [ratelimits.simple]
+  limit = 12
+  period = 60

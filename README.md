@@ -1,5 +1,11 @@
 # React + Vite
 
+## Geotinho com Gemini 4 Argon
+
+O chat do Geotinho envia as perguntas ao endpoint `/api/chat` do mesmo Cloudflare Worker que serve o site, ligado ao Gemini 4 Argon. A chave Gemini deve existir apenas como Worker Secret `GEMINI_API_KEY`, nunca no frontend ou no repositório. Instruções de publicação estão em [`backend/argon-chat/README.md`](backend/argon-chat/README.md).
+
+Se o segredo `GEMINI_API_KEY` ainda não estiver cadastrado no Worker, o chat informa que o serviço está sem configuração. A chave nunca é enviada ao navegador.
+
 This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
 
 Currently, two official plugins are available:

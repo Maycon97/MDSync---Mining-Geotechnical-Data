@@ -31,6 +31,9 @@ service-account*.json
 id_rsa*
 id_ed25519*
 
+# Local task scratch space
+/work/
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
