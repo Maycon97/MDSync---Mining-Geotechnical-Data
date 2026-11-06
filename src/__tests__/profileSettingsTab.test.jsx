@@ -80,3 +80,4 @@ describe('ProfileSettingsTab Navigation & Layout Suite', () => {
     expect(pills[0].classList.contains('active')).toBe(false);
   });
 });
+

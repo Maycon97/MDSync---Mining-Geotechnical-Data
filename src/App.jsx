@@ -7,6 +7,7 @@ import { InspectHeroCard } from './components/InspectHeroCard';
 import { SideDrawer } from './components/SideDrawer';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { MobileBottomBar } from './components/MobileBottomBar';
+import { GeotinhoFloatingButton } from './components/GeotinhoFloatingButton';
 import { AuthModal } from './components/AuthModal';
 import { CookieConsentBanner } from './components/CookieConsentBanner';
 import { NexusBackground } from './components/NexusBackground';
@@ -652,6 +653,12 @@ export function App() {
           </div>
         </div>
       </footer>
+
+      {/* Botão Flutuante no Canto Inferior Direito: Geotinho com EPIs (Acesso Instantâneo à IA) */}
+      <GeotinhoFloatingButton 
+        activeTab={activeTab}
+        onNavigateTab={handleNavigateTab}
+      />
 
       {/* Barra de Navegação Inferior Nativa (Padrão Mobile & APK) */}
       <MobileBottomBar 
