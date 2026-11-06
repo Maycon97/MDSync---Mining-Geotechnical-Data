@@ -116,23 +116,32 @@ export const MapInspectionRecordDrawer = ({
           <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
             {onOpenNewRecord && (
               <button
+                type="button"
                 onClick={onOpenNewRecord}
+                className="btn-georef-add"
                 style={{
                   width: '28px',
                   height: '28px',
+                  minWidth: '28px',
+                  minHeight: '28px',
+                  padding: 0,
+                  margin: 0,
                   borderRadius: '50%',
-                  backgroundColor: '#7c3aed',
+                  background: 'linear-gradient(135deg, #8b5cf6, #7c3aed)',
                   color: '#ffffff',
-                  border: 'none',
-                  display: 'flex',
+                  border: '1.5px solid rgba(255, 255, 255, 0.4)',
+                  display: 'inline-flex',
                   alignItems: 'center',
                   justifyContent: 'center',
                   cursor: 'pointer',
-                  boxShadow: '0 2px 8px rgba(124, 58, 237, 0.35)'
+                  flexShrink: 0
                 }}
-                title="Cadastrar novo registro avulso"
+                title="Inserir novo registro / dado georreferenciado (+)"
+                aria-label="Inserir novo registro georreferenciado (+)"
               >
-                <Plus size={16} />
+                <span className="icon-plus-animated">
+                  <Plus size={16} strokeWidth={2.8} style={{ color: '#ffffff', stroke: '#ffffff' }} />
+                </span>
               </button>
             )}
 

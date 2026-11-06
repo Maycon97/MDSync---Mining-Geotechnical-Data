@@ -388,6 +388,87 @@ textarea:focus-visible,
 }
 
 /* ============================================================
+   BOTÃO ANIMADO DE NOVO REGISTRO GEORREFERENCIADO (BOLINHA ROXA '+')
+   ============================================================ */
+.btn-georef-add {
+  width: 28px !important;
+  height: 28px !important;
+  min-width: 28px !important;
+  min-height: 28px !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  border-radius: 50% !important;
+  background: linear-gradient(135deg, #8b5cf6, #7c3aed) !important;
+  color: #ffffff !important;
+  border: 1.5px solid rgba(255, 255, 255, 0.4) !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  cursor: pointer !important;
+  box-shadow: 0 0 0 0 rgba(124, 58, 237, 0.7), 0 2px 8px rgba(124, 58, 237, 0.45) !important;
+  animation: georefAddPulse 2.2s cubic-bezier(0.4, 0, 0.6, 1) infinite !important;
+  transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.25s ease, background 0.25s ease !important;
+  position: relative !important;
+  overflow: visible !important;
+  flex-shrink: 0 !important;
+}
+
+.btn-georef-add:hover {
+  transform: scale(1.15) !important;
+  background: linear-gradient(135deg, #a78bfa, #8b5cf6) !important;
+  box-shadow: 0 0 16px rgba(139, 92, 246, 0.85), 0 4px 14px rgba(124, 58, 237, 0.65) !important;
+}
+
+.btn-georef-add:active {
+  transform: scale(0.92) !important;
+}
+
+.btn-georef-add .icon-plus-animated {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #ffffff !important;
+  line-height: 1;
+  transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+  animation: georefPlusBreath 2.2s ease-in-out infinite;
+}
+
+.btn-georef-add:hover .icon-plus-animated {
+  transform: rotate(90deg) scale(1.1);
+  animation: none;
+}
+
+.btn-georef-add svg {
+  display: block;
+  stroke: #ffffff !important;
+  color: #ffffff !important;
+}
+
+@keyframes georefAddPulse {
+  0% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 rgba(139, 92, 246, 0.75), 0 2px 8px rgba(124, 58, 237, 0.4);
+  }
+  50% {
+    transform: scale(1.08);
+    box-shadow: 0 0 0 6px rgba(139, 92, 246, 0), 0 4px 14px rgba(124, 58, 237, 0.65);
+  }
+  100% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 rgba(139, 92, 246, 0), 0 2px 8px rgba(124, 58, 237, 0.4);
+  }
+}
+
+@keyframes georefPlusBreath {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.12);
+  }
+}
+
+/* ============================================================
    ESTILOS DE CARDS & PAINÉIS (GLASSMORPHISM INDUSTRIAL)
    ============================================================ */
 .card-panel {

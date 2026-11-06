@@ -1,7 +1,7 @@
 // Dados Executivos Oficiais de Pluviometria - Complexo Minerário Itaminas (2018–2026)
 // Sincronização Automática via Túnel Full-Time de Monitoramento
 // Fonte: Gerência de Geotecnia · Estações Pluviométricas
-// Atualizado em: 2026-11-06 07:33:31 | Total de leituras: 14371
+// Atualizado em: 2026-11-06 08:06:18 | Total de leituras: 14371
 
 export const PLUVIOMETRIA_DATA = {
   "daily": [
@@ -17245,7 +17245,7 @@ export const PLUVIOMETRIA_DATA = {
   "datamax": "2026-11-02",
   "nstations": 5,
   "totalLeituras": 14371,
-  "ultimaAtualizacao": "2026-11-06 07:33:31"
+  "ultimaAtualizacao": "2026-11-06 08:06:18"
 };
 
 export const MONTH_LABELS = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];

@@ -26,7 +26,7 @@
       "pendenciasContratuais": 78,
       "cronogramaPcmi": 1742
     },
-    "ultimaAtualizacao": "2026-11-06 07:33:26",
+    "ultimaAtualizacao": "2026-11-06 08:06:15",
     "bancoDadosOrigem": "C:\\Users\\maycon.nascimento\\ITAMINAS\\SPLO - General\\03) Geotecnia\\01) PCMI\\02) Monitoramentos\\00) Leituras\\Banco_De_Dados.xlsx",
     "totalLeiturasGeotecnicas": 39959
   },
@@ -703592,7 +703592,7 @@
     }
   ],
   "pluviometriaMetadata": {
-    "ultimaAtualizacao": "2026-11-06 07:33:31",
+    "ultimaAtualizacao": "2026-11-06 08:06:18",
     "datamax": "2026-11-02",
     "totalLeituras": 14371,
     "totalDias": 3228,
