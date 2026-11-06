@@ -2962,47 +2962,83 @@ button:active:not(:disabled),
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 32px;
-  height: 32px;
+  width: 36px;
+  height: 36px;
   border-radius: 50%;
-  background: var(--bg-surface);
-  border: 1px solid var(--border-medium);
-  color: var(--text-muted);
+  background: var(--bg-surface, #ffffff);
+  border: 2px solid #8b5cf6;
+  color: #8b5cf6;
   cursor: pointer;
-  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 4px 14px rgba(139, 92, 246, 0.3), 0 2px 6px rgba(0, 0, 0, 0.1);
   flex-shrink: 0;
   transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
-  z-index: 5;
+  z-index: 10;
+  outline: none;
+}
+
+.settings-nav-scroll-btn svg {
+  color: #8b5cf6 !important;
+  stroke: #8b5cf6 !important;
+  display: block;
+  transition: all 0.2s ease;
 }
 
 .settings-nav-scroll-btn.left {
   position: absolute;
-  left: -8px;
+  left: -4px;
   top: 50%;
   transform: translateY(-50%);
 }
 
 .settings-nav-scroll-btn.right {
   position: absolute;
-  right: -8px;
+  right: -4px;
   top: 50%;
   transform: translateY(-50%);
 }
 
+.settings-nav-scroll-btn:hover {
+  background: #8b5cf6 !important;
+  color: #ffffff !important;
+  border-color: #7c3aed !important;
+  box-shadow: 0 6px 20px rgba(139, 92, 246, 0.5), 0 0 12px rgba(139, 92, 246, 0.4);
+}
+
+.settings-nav-scroll-btn:hover svg {
+  color: #ffffff !important;
+  stroke: #ffffff !important;
+}
+
 .settings-nav-scroll-btn.left:hover {
-  background: var(--bg-surface-hover);
-  color: #8b5cf6;
-  border-color: #8b5cf6;
-  transform: translateY(-50%) scale(1.1);
-  box-shadow: 0 4px 14px rgba(139, 92, 246, 0.25);
+  transform: translateY(-50%) scale(1.14);
 }
 
 .settings-nav-scroll-btn.right:hover {
-  background: var(--bg-surface-hover);
-  color: #8b5cf6;
-  border-color: #8b5cf6;
-  transform: translateY(-50%) scale(1.1);
-  box-shadow: 0 4px 14px rgba(139, 92, 246, 0.25);
+  transform: translateY(-50%) scale(1.14);
+}
+
+.settings-nav-scroll-btn:active {
+  transform: translateY(-50%) scale(0.94) !important;
+  transition-duration: 0.06s;
+}
+
+:root[data-theme='dark'] .settings-nav-scroll-btn {
+  background: #1e1b4b;
+  border-color: #a78bfa;
+}
+
+:root[data-theme='dark'] .settings-nav-scroll-btn svg {
+  color: #c084fc !important;
+  stroke: #c084fc !important;
+}
+
+:root[data-theme='dark'] .settings-nav-scroll-btn:hover {
+  background: #8b5cf6 !important;
+}
+
+:root[data-theme='dark'] .settings-nav-scroll-btn:hover svg {
+  color: #ffffff !important;
+  stroke: #ffffff !important;
 }
 
 /* Botão da Pill individual */

@@ -27,6 +27,7 @@ import {
   RefreshCw,
   LogOut,
   ArrowRight,
+  ArrowLeft,
   Globe,
   Sun,
   Moon,
@@ -688,7 +689,7 @@ Todas as alterações em cotas de alerta, limiares críticos e aprovações de l
             title="Rolar abas para a esquerda"
             aria-label="Rolar abas para a esquerda"
           >
-            <ChevronLeft size={16} />
+            <ArrowLeft size={18} strokeWidth={2.5} />
           </button>
         )}
 
@@ -735,7 +736,7 @@ Todas as alterações em cotas de alerta, limiares críticos e aprovações de l
             title="Rolar abas para a direita"
             aria-label="Rolar abas para a direita"
           >
-            <ChevronRight size={16} />
+            <ArrowRight size={18} strokeWidth={2.5} />
           </button>
         )}
       </div>
