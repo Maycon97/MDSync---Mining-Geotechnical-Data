@@ -1,6 +1,6 @@
-# Backend do Geotinho com Gemini 4 Argon (Cloudflare Workers)
+# Backend do Geotinho com Gemini 3.6 Flash (Cloudflare Workers)
 
-Este Worker recebe as perguntas do MDSync e encaminha ao Gemini 4 Argon um resumo geotécnico selecionado. Ele também serve os arquivos estáticos do MDSync pelo binding `ASSETS`. A chave Gemini é armazenada como Worker Secret e não entra no código, no frontend ou no repositório.
+Este Worker recebe as perguntas do MDSync e encaminha ao Gemini 3.6 Flash um resumo geotécnico selecionado. Este modelo foi escolhido porque o Gemini 4 Argon requer nível pago, enquanto o projeto do usuário está no nível gratuito. O Worker também serve os arquivos estáticos do MDSync pelo binding `ASSETS`. A chave Gemini é armazenada como Worker Secret e não entra no código, no frontend ou no repositório.
 
 ## Publicar e cadastrar a chave
 
@@ -21,4 +21,5 @@ O arquivo `wrangler.toml` define as origens web do MDSync e o binding de rate li
 - `GET /health`: estado básico e modelo configurado.
 - `POST /api/chat`: recebe `{ prompt, history, context }` e devolve `{ text, model }`.
 
-O resumo automático enviado ao modelo inclui dados geotécnicos selecionados, mas exclui cadastros de clientes, contratos e chaves. O texto e o histórico digitados pelo usuário também são enviados ao Google Gemini 4 Argon para responder à conversa.
+O resumo automático enviado ao modelo inclui dados geotécnicos selecionados, mas exclui cadastros de clientes, contratos e chaves. O texto e o histórico digitados pelo usuário também são enviados ao Google Gemini 3.6 Flash para responder à conversa.
+
