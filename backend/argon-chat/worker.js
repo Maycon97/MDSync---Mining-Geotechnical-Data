@@ -132,7 +132,7 @@ export default {
       const contextText = JSON.stringify(context).slice(0, MAX_CONTEXT_CHARS);
       const contents = cleanHistory(body.history);
       contents.push({ role: 'user', parts: [{ text: prompt }] });
-      const needsDeeperReasoning = /\\b(risco|emerg[eê]ncia|estabilidade|ruptura|colapso|evacua[cç][aã]o|opera[cç][aã]o|seguran[cç]a|alerta|limite|norma|resolu[cç][aã]o|laudo|parecer)\\b/i.test(prompt);
+      const needsDeeperReasoning = /\b(risco|emerg[eê]ncia|estabilidade|ruptura|colapso|evacua[cç][aã]o|opera[cç][aã]o|seguran[cç]a|alerta|limite|norma|resolu[cç][aã]o|laudo|parecer)\b/i.test(prompt);
 
       const upstream = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent`, {
         method: 'POST',
