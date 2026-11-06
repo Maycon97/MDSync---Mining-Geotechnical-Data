@@ -2417,8 +2417,8 @@ textarea:focus-visible,
 }
 
 .map-hud-bottom-right {
-  bottom: 14px;
-  right: 92px;
+  bottom: 12px;
+  right: 78px;
 }
 
 .active-glow {
@@ -3149,13 +3149,13 @@ button:active:not(:disabled),
 
 .geotinho-floating-fab-container {
   position: fixed;
-  bottom: 24px;
-  right: 24px;
+  bottom: 12px;
+  right: 12px;
   z-index: 1100;
   display: flex;
   align-items: center;
   flex-direction: row-reverse;
-  gap: 12px;
+  gap: 8px;
   pointer-events: auto;
 }
 
@@ -3278,12 +3278,12 @@ button:active:not(:disabled),
 /* Responsividade Mobile e Conflito com Navegação Inferior */
 @media (max-width: 768px) {
   .geotinho-floating-fab-container {
-    bottom: calc(72px + var(--safe-bottom, 0px));
-    right: 14px;
+    bottom: calc(64px + var(--safe-bottom, 0px));
+    right: 8px;
   }
   .geotinho-floating-btn {
-    width: 52px;
-    height: 52px;
+    width: 50px;
+    height: 50px;
   }
   .geotinho-floating-tooltip {
     display: none;
