@@ -1,6 +1,3 @@
-Warning: truncated output (original token count: 13076)
-Total output lines: 984
-
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { cookieConsentService } from '../services/cookieConsentService';
@@ -206,7 +203,8 @@ export const LegalCenterModal = ({ isOpen, onClose, initialTab = 'privacidade' }
               flexDirection: 'column',
               gap: '0.4rem',
               overflowY: 'auto',
-              flexShrink: 0
+              flexShrink: 
+0
             }}
           >
             {tabs.map((t) => {
@@ -341,7 +339,8 @@ export const LegalCenterModal = ({ isOpen, onClose, initialTab = 'privacidade' }
                     <ul style={{ margin: '0.5rem 0 0 1.25rem', color: 'var(--text-muted)' }}>
                       <li><strong>Cumprimento de Obrigação Legal e Regulatória (Art. 7º, II):</strong> Exigências da Lei Federal nº 12.334/2010 (PNSB) e Resolução ANM nº 95/2022 sobre rastreabilidade de inspeções de segurança de barragens.</li>
                       <li><strong>Execução de Contrato (Art. 7º, V):</strong> Prestação de serviços de telemetria geotécnica e gerenciamento de ativos.</li>
-                      <li><strong>Consentimento do Titular (Art. 7º, I):</strong> Coletado formalmente no momento do cadastro de usuário e na concordância com os termos de cookies.</li>
+                      <li><strong>Consentimento do Titular (Art. 7º, I):</strong> Coletado formalmente no momento do cadastro 
+de usuário e na concordância com os termos de cookies.</li>
                     </ul>
                   </section>
 
@@ -468,7 +467,8 @@ export const LegalCenterModal = ({ isOpen, onClose, initialTab = 'privacidade' }
                     padding: '1rem',
                     borderRadius: '10px',
                     backgroundColor: 'var(--bg-secondary)',
-                    border: '1px solid var(--border-subtle)',
+               
+     border: '1px solid var(--border-subtle)',
                     display: 'flex',
                     alignItems: 'flex-start',
                     justifyContent: 'space-between',
@@ -486,7 +486,87 @@ export const LegalCenterModal = ({ isOpen, onClose, initialTab = 'privacidade' }
                         Utilizados para armazenar a sessão de login, permissões de perfil (RBAC), fila de sincronização de campo offline 
                         e hashes de integridade das medições. Não podem ser desativados sem inviabilizar o funcionamento do aplicativo.
                       </p>
-    …1076 tokens truncated…tton"
+                    </div>
+                    <span style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-muted)' }}>Ativo</span>
+                  </div>
+
+                  {/* Preferências */}
+                  <div style={{
+                    padding: '1rem',
+                    borderRadius: '10px',
+                    backgroundColor: 'var(--bg-secondary)',
+                    border: '1px solid var(--border-subtle)',
+                    display: 'flex',
+                    alignItems: 'flex-start',
+                    justifyContent: 'space-between',
+                    gap: '1rem'
+                  }}>
+                    <div>
+                      <strong style={{ display: 'block', fontSize: '0.9rem', color: 'var(--text-main)', marginBottom: '0.25rem' }}>
+                        Cookies de Preferências e Ergonomia
+                      </strong>
+                      <p style={{ margin: 0, fontSize: '0.78rem', color: 'var(--text-muted)' }}>
+                        Memorizam a escolha de tema visual (Modo Escuro / Claro de alta legibilidade ao sol), idioma da interface e a última estrutura selecionada.
+                      </p>
+                    </div>
+                    <label style={{ display: 'flex', alignItems: 'center', cursor: 'pointer', gap: '0.4rem' }}>
+                      <input
+                        type="checkbox"
+                        checked={cookiePrefs.preferences}
+                        onChange={(e) => {
+                          const updated = cookieConsentService.savePreferences({
+                            ...cookiePrefs,
+                            preferences: e.target.checked
+                          });
+                          setCookiePrefs(updated);
+                          showToast('Preferências de cookies atualizadas!');
+                        }}
+                        style={{ accentColor: 'var(--primary-accent)', width: '18px', height: '18px', cursor: 'pointer' }}
+                      />
+                    </label>
+                  </div>
+
+                  {/* Analíticos */}
+                  <div style={{
+                    padding: '1rem',
+                    borderRadius: '10px',
+                    backgroundColor: 'var(--bg-secondary)',
+                    border: '1px solid var(--border-subtle)',
+                    display: 'flex',
+                    alignItems: 'flex-start',
+                    justifyContent: 'space-between',
+                    gap: '1rem'
+                  }}>
+                    <div>
+                      <strong style={{ display: 'block', fontSize: '0.9rem', color: 'var(--text-main)', marginBottom: '0.25rem' }}>
+                        Telemetria Técnica e Diagnóstico de Desempenho
+                      </strong>
+                      <p style={{ margin: 0, fontSize: '0.78rem', color: 'var(--text-muted)' }}>
+                        Métricas puramente técnicas de tempo de renderização do mapa e estabilidade da conexão offline. 
+                        Nenhuma informação identificável de localização fora do empreendimento ou IP pessoal é exportada.
+                      </p>
+                    </div>
+                    <label style={{ display: 'flex', alignItems: 'center', cursor: 'pointer', gap: '0.4rem' }}>
+                      <input
+                        type="checkbox"
+                        checked={cookiePrefs.analytics}
+                        onChange={(e) => {
+                          const updated = cookieConsentService.savePreferences({
+                            ...cookiePrefs,
+                            analytics: e.target.checked
+                          });
+                          setCookiePrefs(updated);
+                          showToast('Preferências de telemetria atualizadas!');
+                        }}
+                        style={{ accentColor: 'var(--primary-accent)', width: '18px', height: '18px', cursor: 'pointer' }}
+                      />
+                    </label>
+                  </div>
+                </div>
+
+                <div style={{ marginTop: '1.25rem', display: 'flex', gap: '0.75rem', justifyContent: 'flex-end' }}>
+                  <button
+                    type="button"
                     onClick={() => {
                       const updated = cookieConsentService.acceptAll();
                       setCookiePrefs(updated);
@@ -522,7 +602,8 @@ export const LegalCenterModal = ({ isOpen, onClose, initialTab = 'privacidade' }
                       1. Direito de Arrependimento (CDC Art. 49)
                     </h4>
                     <p style={{ margin: 0, color: 'var(--text-muted)' }}>
-                      Para contratações online de planos individuais ou licenças de demonstração técnica, o cliente consumidor 
+                      Para contratações online de planos individuais ou licenças de demonstração técnica, o cliente consumidor 
+
                       poderá exercer o direito de arrependimento no prazo improrrogável de até <strong>7 (sete) dias corridos</strong> a contar da assinatura 
                       ou disponibilização do acesso à plataforma, recebendo estorno integral de 100% dos valores pagos, 
                       sem retenção de multas ou taxas adicionais.
@@ -662,7 +743,8 @@ export const LegalCenterModal = ({ isOpen, onClose, initialTab = 'privacidade' }
                     >
                       <Trash2 size={15} />
                       <span>Limpar Dados Locais</span>
-                    </button>
+     
+               </button>
                   </div>
                 </div>
 
@@ -782,7 +864,8 @@ export const LegalCenterModal = ({ isOpen, onClose, initialTab = 'privacidade' }
                       1. Identificação Corporativa e Responsabilidade Técnica (Item 15)
                     </h4>
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '0.75rem', fontSize: '0.78rem' }}>
-                      <div>
+ 
+                     <div>
                         <span style={{ color: 'var(--text-muted)' }}>Plataforma:</span><br />
                         <strong style={{ color: 'var(--text-main)' }}>MDSync — Centralizador de Dados Geotécnicos</strong>
                       </div>
