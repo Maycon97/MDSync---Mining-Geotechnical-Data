@@ -2886,3 +2886,223 @@ button:active:not(:disabled),
     display: none !important;
   }
 }
+
+/* ============================================================
+   HUB DE CONFIGURAÇÕES & PERFIL - NAVEGAÇÃO REFINADA
+   ============================================================ */
+
+.settings-header-card {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1.25rem;
+  padding: 1.25rem 1.6rem;
+  border-radius: 14px;
+  background: linear-gradient(135deg, var(--bg-surface) 0%, var(--bg-card, var(--bg-secondary)) 100%);
+  border: 1px solid var(--border-medium);
+  box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.06);
+  position: relative;
+  overflow: hidden;
+  transition: all 0.25s ease;
+}
+
+.settings-header-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2.5px;
+  background: linear-gradient(90deg, #8b5cf6, var(--primary-accent, #38bdf8), #10b981);
+}
+
+.settings-nav-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 100%;
+  margin-top: 0.25rem;
+  padding-bottom: 0.35rem;
+}
+
+.settings-nav-track {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scroll-behavior: smooth;
+  padding: 0.5rem 0.3rem 0.65rem 0.3rem;
+  width: 100%;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Custom scrollbar para navegadores desktop */
+.settings-nav-track::-webkit-scrollbar {
+  height: 6px;
+}
+
+.settings-nav-track::-webkit-scrollbar-track {
+  background: rgba(148, 163, 184, 0.08);
+  border-radius: 999px;
+}
+
+.settings-nav-track::-webkit-scrollbar-thumb {
+  background: rgba(148, 163, 184, 0.25);
+  border-radius: 999px;
+  transition: background 0.2s ease;
+}
+
+.settings-nav-track::-webkit-scrollbar-thumb:hover {
+  background: #8b5cf6;
+}
+
+.settings-nav-scroll-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-medium);
+  color: var(--text-muted);
+  cursor: pointer;
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.15);
+  flex-shrink: 0;
+  transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+  z-index: 5;
+}
+
+.settings-nav-scroll-btn.left {
+  position: absolute;
+  left: -8px;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.settings-nav-scroll-btn.right {
+  position: absolute;
+  right: -8px;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.settings-nav-scroll-btn.left:hover {
+  background: var(--bg-surface-hover);
+  color: #8b5cf6;
+  border-color: #8b5cf6;
+  transform: translateY(-50%) scale(1.1);
+  box-shadow: 0 4px 14px rgba(139, 92, 246, 0.25);
+}
+
+.settings-nav-scroll-btn.right:hover {
+  background: var(--bg-surface-hover);
+  color: #8b5cf6;
+  border-color: #8b5cf6;
+  transform: translateY(-50%) scale(1.1);
+  box-shadow: 0 4px 14px rgba(139, 92, 246, 0.25);
+}
+
+/* Botão da Pill individual */
+.settings-nav-pill {
+  flex-shrink: 0 !important;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.65rem;
+  padding: 0.62rem 1.05rem;
+  border-radius: 12px;
+  border: 1px solid var(--border-subtle);
+  background: var(--bg-surface);
+  color: var(--text-main);
+  font-size: 0.81rem;
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+  position: relative;
+  outline: none;
+  transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+
+.settings-nav-pill:hover {
+  transform: translateY(-2px);
+  border-color: var(--border-highlight);
+  background: var(--bg-surface-hover);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08), 0 0 12px var(--primary-glow);
+}
+
+.settings-nav-pill:active {
+  transform: translateY(0px) scale(0.98);
+  transition-duration: 0.06s;
+}
+
+.settings-nav-pill.active {
+  background: linear-gradient(135deg, rgba(124, 58, 237, 0.12), rgba(56, 189, 248, 0.1));
+  color: var(--text-main);
+  border: 1.5px solid #8b5cf6;
+  font-weight: 700;
+  box-shadow: 0 4px 16px rgba(139, 92, 246, 0.2), 0 1px 4px rgba(0, 0, 0, 0.05);
+}
+
+:root[data-theme='dark'] .settings-nav-pill.active {
+  background: linear-gradient(135deg, rgba(139, 92, 246, 0.22), rgba(56, 189, 248, 0.14));
+  border-color: #a78bfa;
+  box-shadow: 0 4px 18px rgba(139, 92, 246, 0.35);
+}
+
+.settings-nav-pill-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-muted);
+  transition: transform 0.22s cubic-bezier(0.16, 1, 0.3, 1), color 0.2s ease;
+}
+
+.settings-nav-pill:hover .settings-nav-pill-icon {
+  transform: scale(1.15);
+  color: #8b5cf6;
+}
+
+.settings-nav-pill.active .settings-nav-pill-icon {
+  color: #8b5cf6;
+}
+
+:root[data-theme='dark'] .settings-nav-pill.active .settings-nav-pill-icon {
+  color: #c084fc;
+}
+
+.settings-nav-pill-label {
+  display: inline-block;
+  font-size: 0.81rem;
+  letter-spacing: -0.01em;
+}
+
+.settings-nav-pill-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.68rem;
+  font-weight: 700;
+  padding: 0.2rem 0.55rem;
+  border-radius: 999px;
+  background: var(--bg-secondary);
+  color: var(--text-muted);
+  border: 1px solid var(--border-subtle);
+  transition: all 0.22s ease;
+  line-height: 1;
+  letter-spacing: 0.02em;
+}
+
+.settings-nav-pill:hover .settings-nav-pill-badge {
+  border-color: var(--border-highlight);
+  color: var(--text-main);
+}
+
+.settings-nav-pill.active .settings-nav-pill-badge {
+  background: #8b5cf6;
+  color: #ffffff;
+  border-color: #8b5cf6;
+  box-shadow: 0 2px 6px rgba(139, 92, 246, 0.4);
+}

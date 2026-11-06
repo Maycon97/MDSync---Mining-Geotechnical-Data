@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { useAuth, ROLES } from '../context/AuthContext';
 import { useGeotechData } from '../context/GeotechDataContext';
 import { storageService } from '../services/storageService';
@@ -48,6 +48,7 @@ import {
   HelpCircle,
   ExternalLink,
   ChevronRight,
+  ChevronLeft,
   Fingerprint
 } from 'lucide-react';
 
@@ -540,162 +541,203 @@ Todas as alterações em cotas de alerta, limiares críticos e aprovações de l
     { id: 'regras_inspecao', label: '9. Regras de Inspeção', icon: Sliders, badge: 'SYSDAM' }
   ];
 
+  const trackRef = useRef(null);
+  const [canScrollLeft, setCanScrollLeft] = useState(false);
+  const [canScrollRight, setCanScrollRight] = useState(false);
+
+  const checkScroll = useCallback(() => {
+    if (!trackRef.current) return;
+    const { scrollLeft, scrollWidth, clientWidth } = trackRef.current;
+    setCanScrollLeft(scrollLeft > 6);
+    setCanScrollRight(scrollLeft < scrollWidth - clientWidth - 6);
+  }, []);
+
+  useEffect(() => {
+    const el = trackRef.current;
+    if (!el) return;
+    checkScroll();
+    el.addEventListener('scroll', checkScroll, { passive: true });
+    window.addEventListener('resize', checkScroll);
+    return () => {
+      el.removeEventListener('scroll', checkScroll);
+      window.removeEventListener('resize', checkScroll);
+    };
+  }, [checkScroll]);
+
+  // Centralizar suavemente o botão ativo
+  useEffect(() => {
+    if (!trackRef.current) return;
+    const activeBtn = trackRef.current.querySelector('.settings-nav-pill.active');
+    if (activeBtn && typeof activeBtn.scrollIntoView === 'function') {
+      activeBtn.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+    }
+  }, [activeSection]);
+
+  const scrollByAmount = (amount) => {
+    if (trackRef.current && typeof trackRef.current.scrollBy === 'function') {
+      trackRef.current.scrollBy({ left: amount, behavior: 'smooth' });
+    }
+  };
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem', animation: 'fadeIn 0.2s ease-out' }}>
       
       {/* ============================================================
           CABEÇALHO DO HUB DE CONFIGURAÇÕES UNIFICADAS
           ============================================================ */}
-      <div style={{
-        display: 'flex',
-        flexWrap: 'wrap',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        gap: '1rem',
-        padding: '1.25rem 1.5rem',
-        borderRadius: '8px',
-        background: 'linear-gradient(145deg, var(--bg-surface), var(--bg-card))',
-        border: '1px solid var(--border-medium)',
-        boxShadow: 'var(--shadow-sm)'
-      }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+      <div className="settings-header-card">
+        <div style={{ display: 'flex', alignItems: 'center', gap: '1.1rem' }}>
           <div style={{
-            width: '48px',
-            height: '48px',
-            borderRadius: '8px',
-            backgroundColor: 'var(--primary-accent-bg)',
-            color: 'var(--primary-accent)',
+            width: '52px',
+            height: '52px',
+            borderRadius: '12px',
+            background: 'linear-gradient(135deg, rgba(124, 58, 237, 0.16), rgba(56, 189, 248, 0.16))',
+            color: '#8b5cf6',
+            border: '1px solid rgba(139, 92, 246, 0.28)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            boxShadow: 'inset 0 1px 0 rgba(255, 255, 255, 0.2)'
+            boxShadow: '0 4px 14px rgba(139, 92, 246, 0.15)',
+            flexShrink: 0
           }}>
             <Sliders size={26} />
           </div>
           <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', flexWrap: 'wrap' }}>
-              <h1 style={{ fontSize: '1.35rem', fontWeight: 800, color: 'var(--text-main)', margin: 0 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem', flexWrap: 'wrap' }}>
+              <h1 style={{ fontSize: '1.4rem', fontWeight: 800, color: 'var(--text-main)', margin: 0, letterSpacing: '-0.02em' }}>
                 {t.nav.settings}
               </h1>
               <span style={{
                 fontSize: '0.68rem',
                 fontWeight: 800,
-                padding: '0.2rem 0.6rem',
-                borderRadius: '4px',
-                backgroundColor: 'rgba(56, 189, 248, 0.15)',
-                color: 'var(--primary-accent)',
-                border: '1px solid var(--border-highlight)'
+                padding: '0.22rem 0.65rem',
+                borderRadius: '999px',
+                backgroundColor: 'rgba(124, 58, 237, 0.12)',
+                color: '#8b5cf6',
+                border: '1px solid rgba(139, 92, 246, 0.3)',
+                letterSpacing: '0.04em'
               }}>
                 MINING ENTERPRISE SUITE
               </span>
               <span style={{
                 fontSize: '0.68rem',
                 fontWeight: 700,
-                padding: '0.2rem 0.5rem',
-                borderRadius: '4px',
-                backgroundColor: 'rgba(16, 185, 129, 0.15)',
+                padding: '0.22rem 0.65rem',
+                borderRadius: '999px',
+                backgroundColor: 'rgba(16, 185, 129, 0.12)',
                 color: '#10b981',
-                border: '1px solid rgba(16, 185, 129, 0.3)'
+                border: '1px solid rgba(16, 185, 129, 0.3)',
+                letterSpacing: '0.04em'
               }}>
                 PORTARIA ANM 95/2022
               </span>
             </div>
-            <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', margin: '4px 0 0 0' }}>
+            <p style={{ fontSize: '0.82rem', color: 'var(--text-muted)', margin: '4px 0 0 0' }}>
               {t.nav.settingsDesc} • Padrão Itaminas Mineração & Sentnel
             </p>
           </div>
         </div>
 
         {/* Badges de Identificação da Sessão Ativa */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', flexWrap: 'wrap' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem', flexWrap: 'wrap' }}>
           <div style={{
             display: 'flex',
             alignItems: 'center',
-            gap: '0.4rem',
-            padding: '0.4rem 0.75rem',
-            borderRadius: '6px',
+            gap: '0.45rem',
+            padding: '0.45rem 0.85rem',
+            borderRadius: '8px',
             backgroundColor: 'var(--bg-secondary)',
             border: '1px solid var(--border-subtle)',
-            fontSize: '0.75rem',
+            fontSize: '0.78rem',
             fontWeight: 600,
-            color: 'var(--text-main)'
+            color: 'var(--text-main)',
+            boxShadow: '0 1px 3px rgba(0, 0, 0, 0.04)'
           }}>
-            <Key size={14} style={{ color: 'var(--primary-accent)' }} />
-            <span>ID: <strong>{currentUser?.id || 'USR-002'}</strong></span>
+            <Key size={14} style={{ color: '#8b5cf6' }} />
+            <span>ID: <strong style={{ color: 'var(--text-main)' }}>{currentUser?.id || 'USR-002'}</strong></span>
           </div>
 
           <div style={{
             display: 'flex',
             alignItems: 'center',
-            gap: '0.4rem',
-            padding: '0.4rem 0.75rem',
-            borderRadius: '6px',
+            gap: '0.45rem',
+            padding: '0.45rem 0.85rem',
+            borderRadius: '8px',
             backgroundColor: 'var(--bg-secondary)',
             border: '1px solid var(--border-subtle)',
-            fontSize: '0.75rem',
+            fontSize: '0.78rem',
             fontWeight: 600,
-            color: 'var(--text-main)'
+            color: 'var(--text-main)',
+            boxShadow: '0 1px 3px rgba(0, 0, 0, 0.04)'
           }}>
             <Award size={14} style={{ color: '#10b981' }} />
-            <span>Papel: <strong>{currentRole?.title || 'Engenheiro Geotécnico'}</strong></span>
+            <span>Papel: <strong style={{ color: 'var(--text-main)' }}>{currentRole?.title || 'Engenheiro Geotécnico'}</strong></span>
           </div>
         </div>
       </div>
 
       {/* ============================================================
-          BARRA DE NAVEGAÇÃO POR PILLS / SUB-TABS (SCROLL HORIZONTAL)
+          BARRA DE NAVEGAÇÃO POR PILLS / SUB-TABS (COM CONTROLE SUAVE E ANTI-COMPRESSÃO)
           ============================================================ */}
-      <div style={{
-        display: 'flex',
-        alignItems: 'center',
-        gap: '0.5rem',
-        overflowX: 'auto',
-        padding: '0.4rem 0.2rem',
-        borderBottom: '1px solid var(--border-subtle)'
-      }}>
-        {navigationPills.map(pill => {
-          const Icon = pill.icon;
-          const isActive = activeSection === pill.id;
+      <div className="settings-nav-wrapper">
+        {canScrollLeft && (
+          <button 
+            type="button"
+            className="settings-nav-scroll-btn left"
+            onClick={() => scrollByAmount(-240)}
+            title="Rolar abas para a esquerda"
+            aria-label="Rolar abas para a esquerda"
+          >
+            <ChevronLeft size={16} />
+          </button>
+        )}
 
-          return (
-            <button
-              key={pill.id}
-              onClick={() => {
-                setActiveSection(pill.id);
-                setFeedback({ type: '', message: '' });
-              }}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.5rem',
-                padding: '0.6rem 1rem',
-                borderRadius: '6px',
-                border: isActive ? '1.5px solid var(--primary-accent)' : '1px solid var(--border-subtle)',
-                backgroundColor: isActive ? 'var(--primary-accent-bg)' : 'var(--bg-surface)',
-                color: isActive ? 'var(--primary-accent)' : 'var(--text-main)',
-                fontSize: '0.78rem',
-                fontWeight: isActive ? 800 : 600,
-                cursor: 'pointer',
-                whiteSpace: 'nowrap',
-                transition: 'all 0.15s ease',
-                boxShadow: isActive ? 'var(--shadow-sm)' : 'none'
-              }}
-            >
-              <Icon size={16} />
-              <span>{pill.label}</span>
-              <span style={{
-                fontSize: '0.65rem',
-                padding: '0.1rem 0.35rem',
-                borderRadius: '3px',
-                backgroundColor: isActive ? 'var(--primary-accent)' : 'var(--bg-secondary)',
-                color: isActive ? '#ffffff' : 'var(--text-muted)',
-                fontWeight: 700
-              }}>
-                {pill.badge}
-              </span>
-            </button>
-          );
-        })}
+        <div 
+          ref={trackRef}
+          className="settings-nav-track"
+          tabIndex={0}
+          role="tablist"
+          aria-label="Navegação de Configurações e Perfil"
+        >
+          {navigationPills.map(pill => {
+            const Icon = pill.icon;
+            const isActive = activeSection === pill.id;
+
+            return (
+              <button
+                key={pill.id}
+                role="tab"
+                aria-selected={isActive}
+                onClick={() => {
+                  setActiveSection(pill.id);
+                  setFeedback({ type: '', message: '' });
+                }}
+                className={`settings-nav-pill ${isActive ? 'active' : ''}`}
+                title={pill.label}
+              >
+                <span className="settings-nav-pill-icon">
+                  <Icon size={16} />
+                </span>
+                <span className="settings-nav-pill-label">{pill.label}</span>
+                <span className="settings-nav-pill-badge">
+                  {pill.badge}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+
+        {canScrollRight && (
+          <button 
+            type="button"
+            className="settings-nav-scroll-btn right"
+            onClick={() => scrollByAmount(240)}
+            title="Rolar abas para a direita"
+            aria-label="Rolar abas para a direita"
+          >
+            <ChevronRight size={16} />
+          </button>
+        )}
       </div>
 
       {/* Feedback de Operações */}
