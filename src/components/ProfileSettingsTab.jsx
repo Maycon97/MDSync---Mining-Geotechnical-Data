@@ -122,7 +122,7 @@ export const ProfileSettingsTab = ({ onNavigateTab }) => {
   const [activePolicyDoc, setActivePolicyDoc] = useState('art');
 
   // ==========================================
-  // 9. REGRAS DE INSPEÇÃO & IDENTIFICADORES (SYSDAM)
+  // 9. REGRAS DE INSPEÇÃO & IDENTIFICADORES
   // ==========================================
   const [inspectionRules, setInspectionRules] = useState(() => storageService.getInspectionRules());
   const [recordTemplate, setRecordTemplate] = useState(() => storageService.getRecordIdTemplate());
@@ -570,7 +570,7 @@ Todas as alterações em cotas de alerta, limiares críticos e aprovações de l
     { id: 'armazenamento_backup', label: '6. Armazenamento', icon: Database, badge: storageStats.usedFormatted },
     { id: 'versao_pwa', label: '7. Versão & PWA', icon: RefreshCw, badge: 'v2.5.0' },
     { id: 'politicas_compliance', label: '8. Políticas & Compliance', icon: FileCheck2, badge: 'ANM 95' },
-    { id: 'regras_inspecao', label: '9. Regras de Inspeção', icon: Sliders, badge: 'SYSDAM' }
+    { id: 'regras_inspecao', label: '9. Regras de Inspeção', icon: Sliders, badge: 'REGRAS' }
   ];
 
   const trackRef = useRef(null);
@@ -2653,12 +2653,12 @@ Todas as alterações em cotas de alerta, limiares críticos e aprovações de l
       )}
 
       {/* ------------------------------------------------------------
-          9. SUB-ABA: REGRAS DE INSPEÇÃO & IDENTIFICADORES (SYSDAM)
+          9. SUB-ABA: REGRAS DE INSPEÇÃO & IDENTIFICADORES
           ------------------------------------------------------------ */}
       {activeSection === 'regras_inspecao' && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
           
-          {/* PAINEL 1: 4 REGRAS OPERACIONAIS DE INSPEÇÃO (INSPIRADO NO SYSDAM) */}
+          {/* PAINEL 1: 4 REGRAS OPERACIONAIS DE INSPEÇÃO */}
           <div className="card-panel" style={{
             padding: '1.5rem',
             borderRadius: '8px',
@@ -2670,7 +2670,7 @@ Todas as alterações em cotas de alerta, limiares críticos e aprovações de l
                 <Sliders size={20} style={{ color: 'var(--primary-accent)' }} />
                 <div>
                   <h3 style={{ fontSize: '1.05rem', fontWeight: 800, color: 'var(--text-main)', margin: 0 }}>
-                    Parâmetros Operacionais de Inspeção (Padrão SYSDAM)
+                    Parâmetros Operacionais de Inspeção
                   </h3>
                   <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', margin: '2px 0 0 0' }}>
                     Controle de inserção avulsa, histórico retroativo com data de corte, autenticação PIN e sincronismo ao vivo
@@ -2684,7 +2684,7 @@ Todas as alterações em cotas de alerta, limiares críticos e aprovações de l
                   if (setSystemToast) {
                     setSystemToast({
                       type: 'success',
-                      message: 'Regras de inspeção e template SYSDAM salvos com sucesso!'
+                      message: 'Regras de inspeção e template salvos com sucesso!'
                     });
                   }
                 }}
@@ -2913,7 +2913,7 @@ Todas as alterações em cotas de alerta, limiares críticos e aprovações de l
                   setRecordTemplate(defaultTpl);
                   storageService.saveRecordIdTemplate(defaultTpl);
                   if (setSystemToast) {
-                    setSystemToast({ type: 'info', message: 'Template restaurado para o padrão SYSDAM!' });
+                    setSystemToast({ type: 'info', message: 'Template restaurado para o padrão do sistema!' });
                   }
                 }}
                 style={{

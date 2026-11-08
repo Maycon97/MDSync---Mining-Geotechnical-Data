@@ -161,9 +161,7 @@ export const SideDrawer = ({
           title: 'Estruturas do Empreendimento',
           icon: Building2,
           type: 'tab',
-          tabId: 'estruturas_empreendimento',
-          badge: 'SYSDAM',
-          badgeColor: '#0284c7'
+          tabId: 'estruturas_empreendimento'
         },
         {
           id: 'mapa',

@@ -146,7 +146,7 @@ export const AnomaliasInspecoesTab = ({ onNavigateTab }) => {
     const struct = structures.find(s => s.nome === novaAnomalia.estrutura || s.id === novaAnomalia.estrutura);
     const categoria = struct ? (struct.categoria || 'Barragens') : 'Barragens';
 
-    // Gerar código usando o template engine do SYSDAM
+    // Gerar código usando o template engine oficial
     const template = storageService.getRecordIdTemplate();
     const nextCounter = anomaliasGeotecnicas.length + 1;
     const codigoGerado = recordIdTemplateService.interpolateTemplate(template, {
@@ -296,7 +296,7 @@ export const AnomaliasInspecoesTab = ({ onNavigateTab }) => {
               color: '#a855f7',
               fontWeight: 700
             }}
-            title="Configurar Template do Identificador do Registro (SYSDAM)"
+            title="Configurar Template do Identificador do Registro"
           >
             <Sparkles size={16} />
             <span>Template ID</span>
@@ -316,10 +316,10 @@ export const AnomaliasInspecoesTab = ({ onNavigateTab }) => {
               color: 'var(--text-main)',
               fontWeight: 600
             }}
-            title="Configurar regras operacionais de inspeção (SYSDAM)"
+            title="Configurar regras operacionais de inspeção"
           >
             <Settings size={16} />
-            <span>Regras SYSDAM</span>
+            <span>Regras de Inspeção</span>
           </button>
 
           <button

@@ -1346,7 +1346,7 @@ export const MapTab = ({
               transition: 'all 0.2s ease',
               whiteSpace: 'nowrap'
             }}
-          title="Abrir Painel de Empreendimentos e Estruturas (SysDam)"
+          title="Abrir Painel de Empreendimentos e Estruturas"
         >
           <Building2 size={15} style={{ color: '#38bdf8' }} />
           <span>Empreendimentos</span>
@@ -1457,7 +1457,7 @@ export const MapTab = ({
             transition: 'all 0.2s ease',
             whiteSpace: 'nowrap'
           }}
-          title="Abrir Gaveta Lateral de Registros e Ocorrências Geotécnicas (SYSDAM)"
+          title="Abrir Gaveta Lateral de Registros e Ocorrências Geotécnicas"
         >
           <ClipboardList size={15} />
           <span>Ocorrências</span>
@@ -1946,7 +1946,7 @@ export const MapTab = ({
                 </div>
 
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                  <span style={{ fontSize: '0.74rem', color: '#cbd5e1' }}>Ocorrências SYSDAM:</span>
+                  <span style={{ fontSize: '0.74rem', color: '#cbd5e1' }}>Ocorrências Geotécnicas:</span>
                   <button
                     onClick={() => setShowAnomalies(!showAnomalies)}
                     style={{

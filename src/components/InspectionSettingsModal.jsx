@@ -86,7 +86,7 @@ export const InspectionSettingsModal = ({ isOpen, onClose, onSave }) => {
               Configurações & Parâmetros de Inspeção
             </h2>
             <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)', margin: '2px 0 0 0' }}>
-              Diretrizes operacionais para registro de anomalias e sincronização mobile (Padrão SYSDAM)
+              Diretrizes operacionais para registro de anomalias e sincronização mobile
             </p>
           </div>
 
@@ -116,7 +116,7 @@ export const InspectionSettingsModal = ({ isOpen, onClose, onSave }) => {
           </div>
         </div>
 
-        {/* Lista de Cards de Configuração (Fiel ao SYSDAM) */}
+        {/* Lista de Cards de Configuração */}
         <div style={{
           padding: '1.25rem 1.5rem',
           overflowY: 'auto',
@@ -211,7 +211,7 @@ export const InspectionSettingsModal = ({ isOpen, onClose, onSave }) => {
               Quando habilitado, passa a ser permitido adicionar históricos em outros registros a partir da data de corte, e os registros com histórico dentro desse período passam a ser exibidos no aplicativo.
             </p>
 
-            {/* Aviso/Alert do SYSDAM */}
+            {/* Aviso/Alert Informativo */}
             <div style={{
               display: 'flex',
               alignItems: 'flex-start',

@@ -696,7 +696,7 @@ export const SysdamEmpreendimentosPanel = ({
                           Inspeções Regulares & Anomalias
                         </div>
                         <div style={{ fontSize: '0.66rem', color: '#94a3b8' }}>
-                          {getAnomaliesCount(selectedEstrutura.sigla)} anomalias cadastradas no padrão SYSDAM / ANM 95
+                          {getAnomaliesCount(selectedEstrutura.sigla)} anomalias cadastradas (Portaria ANM 95/2022)
                         </div>
                       </div>
                     </div>
@@ -842,7 +842,7 @@ export const SysdamEmpreendimentosPanel = ({
                     <span>Voltar à lista de estruturas</span>
                   </button>
                   <span style={{ fontSize: '0.65rem', color: '#64748b' }}>
-                    Padrão SYSDAM Portal
+                    Portal de Empreendimentos
                   </span>
                 </div>
               </div>

@@ -134,7 +134,7 @@ export const MapFloatingWidget = ({
         <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
           <TrendingUp size={13} style={{ color: '#38bdf8' }} />
           <span style={{ fontSize: '0.72rem', fontWeight: 800, color: '#f8fafc' }}>
-            Indicadores SYSDAM & GUT
+            Indicadores Geotécnicos & GUT
           </span>
         </div>
         <button
@@ -153,7 +153,7 @@ export const MapFloatingWidget = ({
         </button>
       </div>
 
-      {/* 1. Status dos Registros (SYSDAM) */}
+      {/* 1. Status dos Registros */}
       <div style={{ borderBottom: '1px solid var(--border-subtle)' }}>
         <div
           onClick={() => toggleItem('status')}
@@ -196,7 +196,7 @@ export const MapFloatingWidget = ({
         )}
       </div>
 
-      {/* 2. Planos de Ação (SYSDAM) */}
+      {/* 2. Planos de Ação */}
       <div style={{ borderBottom: '1px solid var(--border-subtle)' }}>
         <div
           onClick={() => toggleItem('planos')}
@@ -239,7 +239,7 @@ export const MapFloatingWidget = ({
         )}
       </div>
 
-      {/* 3. Classificação GUT [Detalhado] (SYSDAM) */}
+      {/* 3. Classificação GUT [Detalhado] */}
       <div style={{ borderBottom: '1px solid var(--border-subtle)' }}>
         <div
           onClick={() => toggleItem('gut')}
@@ -305,7 +305,7 @@ export const MapFloatingWidget = ({
         )}
       </div>
 
-      {/* 4. Evolução Temporal (SYSDAM) */}
+      {/* 4. Evolução Temporal */}
       <div style={{ borderBottom: '1px solid var(--border-subtle)' }}>
         <div
           onClick={() => toggleItem('evolucao')}
@@ -346,7 +346,7 @@ export const MapFloatingWidget = ({
         )}
       </div>
 
-      {/* 5. Legenda Geotécnica Oficial (SYSDAM) */}
+      {/* 5. Legenda Geotécnica Oficial */}
       <div>
         <div
           onClick={() => toggleItem('legenda')}
