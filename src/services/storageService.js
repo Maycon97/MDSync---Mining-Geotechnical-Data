@@ -36,7 +36,8 @@ const STORAGE_KEYS = {
   COMUNICADOS_OPERACIONAIS: 'mdsync_comunicados_operacionais',
   RECORD_ID_TEMPLATE: 'mdsync_record_id_template',
   INSPECTION_RULES: 'mdsync_inspection_rules',
-  ESTRUTURAS_EMPREENDIMENTO: 'mdsync_estruturas_empreendimento'
+  ESTRUTURAS_EMPREENDIMENTO: 'mdsync_estruturas_empreendimento',
+  IMPORTACOES_PCMI: 'mdsync_importacoes_pcmi'
 };
 
 export const storageService = {
@@ -930,7 +931,7 @@ export const storageService = {
     }
   },
 
-  // Fila Offline de Sincronização
+  // Fila Offline de Sincronização & Persistência Dupla (LocalStorage + IndexedDB)
   getOfflineQueue() {
     try {
       const q = localStorage.getItem(STORAGE_KEYS.OFFLINE_QUEUE);
@@ -944,12 +945,35 @@ export const storageService = {
       const queue = this.getOfflineQueue();
       const queueItem = {
         ...item,
-        queueId: `Q-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
-        timestamp: Date.now(),
-        dataHoraFila: new Date().toLocaleString('pt-BR')
+        queueId: item.queueId || `Q-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+        timestamp: item.timestamp || Date.now(),
+        dataHoraFila: item.dataHoraFila || new Date().toLocaleString('pt-BR'),
+        origem: item.origem || 'App Campo / APK',
+        sincronizado: false
       };
       queue.unshift(queueItem);
-      localStorage.setItem(STORAGE_KEYS.OFFLINE_QUEUE, JSON.stringify(queue));
+
+      // Persistência robusta no IndexedDB (alta capacidade para fotos e auditoria)
+      try {
+        indexedDBStorage.saveQueueItem(queueItem);
+      } catch (idxErr) {
+        console.warn('[StorageService] Falha ao persistir item na fila do IndexedDB:', idxErr);
+      }
+
+      // Persistência no LocalStorage com proteção anti-quota
+      try {
+        localStorage.setItem(STORAGE_KEYS.OFFLINE_QUEUE, JSON.stringify(queue));
+      } catch (quotaErr) {
+        console.warn('[StorageService] Quota no LocalStorage ao enfileirar. Salvando versão compactada:', quotaErr);
+        const compactQueue = queue.map(q => {
+          if (q.foto && q.foto.length > 500) {
+            return { ...q, foto: '[Foto salva em IndexedDB]' };
+          }
+          return q;
+        });
+        localStorage.setItem(STORAGE_KEYS.OFFLINE_QUEUE, JSON.stringify(compactQueue));
+      }
+
       window.dispatchEvent(new CustomEvent('mdsync:queue-changed', { detail: { count: queue.length } }));
       return queueItem;
     } catch (e) {
@@ -961,6 +985,13 @@ export const storageService = {
     try {
       const queue = this.getOfflineQueue().filter(item => item.queueId !== queueId);
       localStorage.setItem(STORAGE_KEYS.OFFLINE_QUEUE, JSON.stringify(queue));
+
+      try {
+        indexedDBStorage.deleteQueueItem(queueId);
+      } catch (idxErr) {
+        console.warn('[StorageService] Falha ao deletar item do IndexedDB:', idxErr);
+      }
+
       window.dispatchEvent(new CustomEvent('mdsync:queue-changed', { detail: { count: queue.length } }));
     } catch (e) {
       console.error('Erro ao remover da fila offline:', e);
@@ -969,53 +1000,123 @@ export const storageService = {
   clearOfflineQueue() {
     try {
       localStorage.setItem(STORAGE_KEYS.OFFLINE_QUEUE, JSON.stringify([]));
+
+      try {
+        indexedDBStorage.clearQueue();
+      } catch (idxErr) {
+        console.warn('[StorageService] Falha ao limpar IndexedDB queue:', idxErr);
+      }
+
       window.dispatchEvent(new CustomEvent('mdsync:queue-changed', { detail: { count: 0 } }));
     } catch (e) {
       console.error('Erro ao limpar fila offline:', e);
     }
   },
 
-  // Processar e Sincronizar Fila com o Banco de Dados Interno
-  async syncOfflineQueue() {
+  // Exportar Pacote de Contingência Offline para Campo / APK
+  exportContingencyPackage() {
     const queue = this.getOfflineQueue();
+    return {
+      tipo: 'PACOTE_CONTINGENCIA_OFFLINE_MDSYNC',
+      geradoEm: new Date().toISOString(),
+      versaoApp: 'v2.5.0-GEOTEC',
+      totalItens: queue.length,
+      itensFila: queue
+    };
+  },
+
+  downloadContingencyPackage() {
+    const data = this.exportContingencyPackage();
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `mdsync_contingencia_campo_${new Date().toISOString().slice(0, 10)}_${Date.now().toString().slice(-4)}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    return data;
+  },
+
+  // Processar e Sincronizar Fila com o Banco de Dados Interno e Base Central
+  async syncOfflineQueue() {
+    let queue = this.getOfflineQueue();
+    if (queue.length === 0) {
+      // Tentar recuperar do IndexedDB caso o LocalStorage tenha sido limpo
+      try {
+        const idbQueue = await indexedDBStorage.getQueueItems();
+        if (Array.isArray(idbQueue) && idbQueue.length > 0) {
+          queue = idbQueue;
+        }
+      } catch {}
+    }
+
     if (queue.length === 0) return { count: 0, items: [] };
 
-    // Simular sincronização HTTP/WebSocket segura com retry
+    // Simular sincronização segura via Túnel com heartbeat e tolerância a falhas
     await new Promise(resolve => setTimeout(resolve, 800));
 
     const syncedItems = [];
     queue.forEach(item => {
-      if (item.type === 'reading' || item.tipo) {
+      const nowIso = new Date().toISOString();
+
+      if (item.type === 'reading' || item.tipo === 'INA' || item.tipo === 'PZ' || item.tipo === 'VT' || item.tipo === 'MV') {
         this.saveLocalReading({
           ...item,
           sincronizado: true,
-          dataSincronizacao: new Date().toISOString()
+          dataSincronizacao: nowIso
         });
       } else if (item.type === 'anomaly' || item.severidade) {
         this.saveLocalAnomaly({
           ...item,
           sincronizado: true,
-          dataSincronizacao: new Date().toISOString()
+          dataSincronizacao: nowIso
         });
       } else if (item.type === 'fluig_ticket' || item.protocolo) {
         this.saveFluigTicket({
           ...item,
           sincronizado: true,
-          dataSincronizacao: new Date().toISOString()
+          dataSincronizacao: nowIso
         });
       } else if (item.type === 'checklist' || item.surveyId) {
         this.saveLocalChecklist({
           ...item,
           sincronizado: true,
-          dataSincronizacao: new Date().toISOString()
+          dataSincronizacao: nowIso
         });
       } else if (item.type === 'vehicle_checklist' || item.type === 'checklist_veicular' || item.placa) {
         this.saveLocalVehicleChecklist({
           ...item,
           sincronizado: true,
-          dataSincronizacao: new Date().toISOString()
+          dataSincronizacao: nowIso
+        });
+      } else if (item.type === 'coleta' || item.codigoColeta) {
+        this.saveColeta({
+          ...item,
+          sincronizado: true,
+          dataSincronizacao: nowIso
+        });
+      } else if (item.type === 'estrutura' || item.tipo === 'estrutura') {
+        this.saveEstruturaEmpreendimento({
+          ...item,
+          sincronizado: true,
+          dataSincronizacao: nowIso
+        });
+      } else if (item.type === 'ordem_servico') {
+        this.saveOrdemServico({
+          ...item,
+          sincronizado: true,
+          dataSincronizacao: nowIso
+        });
+      } else if (item.type === 'importacao') {
+        this.saveImportacaoPcmi({
+          ...item,
+          status: 'CONCLUIDO',
+          dataSincronizacao: nowIso
         });
       }
+
       syncedItems.push(item);
     });
 
@@ -1028,7 +1129,41 @@ export const storageService = {
       console.warn('Falha no auto-despacho para staging corporativo:', e);
     }
 
+    // Notificar os módulos do sistema sobre sincronização concluída
+    window.dispatchEvent(new CustomEvent('mdsync:data-synced', {
+      detail: { count: syncedItems.length, items: syncedItems, timestamp: new Date().toISOString() }
+    }));
+
     return { count: syncedItems.length, items: syncedItems };
+  },
+
+  // Histórico de Importações PCMI
+  getImportacoesPcmi() {
+    try {
+      const stored = localStorage.getItem(STORAGE_KEYS.IMPORTACOES_PCMI);
+      return stored ? JSON.parse(stored) : [];
+    } catch {
+      return [];
+    }
+  },
+
+  saveImportacaoPcmi(record) {
+    try {
+      const list = this.getImportacoesPcmi();
+      const newRec = {
+        id: record.id || `IMP-${Date.now().toString().slice(-4)}`,
+        data: record.data || new Date().toLocaleString('pt-BR'),
+        status: record.status || 'CONCLUIDO',
+        ...record
+      };
+      list.unshift(newRec);
+      localStorage.setItem(STORAGE_KEYS.IMPORTACOES_PCMI, JSON.stringify(list));
+      window.dispatchEvent(new CustomEvent('mdsync:importacoes-changed', { detail: newRec }));
+      return newRec;
+    } catch (e) {
+      console.warn('Erro ao salvar importação PCMI:', e);
+      return null;
+    }
   },
 
   // ==========================================================

@@ -140,6 +140,38 @@ export const GeotechDataProvider = ({ children }) => {
     return () => window.removeEventListener('mdsync:estruturas-changed', handleEstruturasChanged);
   }, []);
 
+  // Ouvir importações adicionadas via túnel ou manual
+  useEffect(() => {
+    const handleImportacoesChanged = () => {
+      const local = storageService.getImportacoesPcmi();
+      setImportacoesPcmi(prev => {
+        const mergedMap = new Map();
+        local.forEach(imp => mergedMap.set(imp.id, imp));
+        prev.forEach(imp => {
+          if (!mergedMap.has(imp.id)) mergedMap.set(imp.id, imp);
+        });
+        return Array.from(mergedMap.values());
+      });
+    };
+    window.addEventListener('mdsync:importacoes-changed', handleImportacoesChanged);
+    return () => window.removeEventListener('mdsync:importacoes-changed', handleImportacoesChanged);
+  }, []);
+
+  // Ouvir dados sincronizados para atualizar estados locais em memória
+  useEffect(() => {
+    const handleDataSynced = () => {
+      setReadingsPiezometria(prev => prev.map(r => ({ ...r, sincronizado: true, situacao: 'Sincronizado Base Central' })));
+      setReadingsVazao(prev => prev.map(r => ({ ...r, sincronizado: true, situacao: 'Sincronizado Base Central' })));
+      setAnomalies(prev => prev.map(a => ({ ...a, sincronizado: true })));
+      setChecklists(prev => prev.map(c => ({ ...c, sincronizado: true })));
+      setVehicleChecklists(prev => prev.map(v => ({ ...v, sincronizado: true })));
+      setColetas(prev => prev.map(col => ({ ...col, sincronizado: true })));
+      setOfflineQueue([]);
+    };
+    window.addEventListener('mdsync:data-synced', handleDataSynced);
+    return () => window.removeEventListener('mdsync:data-synced', handleDataSynced);
+  }, []);
+
   // Monitorar eventos reais de conexão
   useEffect(() => {
     const handleOnline = () => {
@@ -157,6 +189,30 @@ export const GeotechDataProvider = ({ children }) => {
       window.removeEventListener('offline', handleOffline);
     };
   }, []);
+
+  // Heartbeat periódico e retorno de visibilidade para reconexão no App/APK
+  useEffect(() => {
+    const checkConnection = () => {
+      const currentOnline = navigator.onLine;
+      if (currentOnline !== realOnline) {
+        setRealOnline(currentOnline);
+        if (currentOnline && !simulatedOffline) {
+          triggerAutoSyncIfPending();
+        }
+      }
+    };
+    const interval = setInterval(checkConnection, 15000);
+    const handleVisibility = () => {
+      if (document.visibilityState === 'visible') {
+        checkConnection();
+      }
+    };
+    document.addEventListener('visibilitychange', handleVisibility);
+    return () => {
+      clearInterval(interval);
+      document.removeEventListener('visibilitychange', handleVisibility);
+    };
+  }, [realOnline, simulatedOffline]);
 
   const showToast = (message, type = 'info', duration = 4000) => {
     setSystemToast({ message, type });
@@ -350,7 +406,8 @@ export const GeotechDataProvider = ({ children }) => {
         const localLotes = storageService.getLotesRelatorios();
         setLotesRelatorios([...localLotes, ...(data.lotesRelatorios || [])]);
 
-        setImportacoesPcmi(data.importacoesPcmi || []);
+        const localImportacoes = storageService.getImportacoesPcmi();
+        setImportacoesPcmi([...localImportacoes, ...(data.importacoesPcmi || [])]);
         setSumps(data.sumps || []);
 
         // Novos Datasets Consolidados de Serviços de Geotecnia (Demandas, Rotina, PSB, FoS, Radar, Cronograma)
@@ -585,10 +642,23 @@ export const GeotechDataProvider = ({ children }) => {
 
   // Coletas (Inspect)
   const addColeta = (coletaData) => {
-    const saved = storageService.saveColeta(coletaData);
+    const dataWithSyncStatus = {
+      ...coletaData,
+      sincronizado: isOnline
+    };
+    const saved = storageService.saveColeta(dataWithSyncStatus);
     if (saved) {
       setColetas(prev => [saved, ...prev.filter(c => c.id !== saved.id)]);
-      showToast(`Coleta ${saved.codigoColeta || saved.id} registrada com sucesso!`, 'success');
+      if (!isOnline) {
+        storageService.addToOfflineQueue({
+          type: 'coleta',
+          ...dataWithSyncStatus,
+          descricao: `Coleta ${coletaData.codigoColeta || saved.id} - ${coletaData.estrutura || 'Geral'}`
+        });
+        showToast(`Coleta salva na fila offline! Será sincronizada quando a conexão retornar.`, 'info');
+      } else {
+        showToast(`Coleta ${saved.codigoColeta || saved.id} registrada com sucesso!`, 'success');
+      }
       return saved;
     }
     return null;
