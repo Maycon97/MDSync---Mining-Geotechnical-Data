@@ -214,24 +214,15 @@ export const EstruturasEmpreendimentoTab = ({ onNavigateTab }) => {
             Estruturas do empreendimento
           </h1>
           <button
+            type="button"
             onClick={handleOpenCreate}
-            style={{
-              width: '28px',
-              height: '28px',
-              borderRadius: '50%',
-              backgroundColor: '#0284c7',
-              border: 'none',
-              color: '#ffffff',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              cursor: 'pointer',
-              boxShadow: '0 2px 8px rgba(2, 132, 199, 0.4)',
-              transition: 'transform 0.15s ease'
-            }}
-            title="Cadastrar nova estrutura"
+            className="btn-structure-add"
+            title="Cadastrar nova estrutura (+)"
+            aria-label="Cadastrar nova estrutura"
           >
-            <Plus size={18} strokeWidth={2.5} />
+            <span className="icon-plus-animated">
+              <Plus size={17} strokeWidth={2.8} />
+            </span>
           </button>
         </div>
 
@@ -665,17 +656,20 @@ export const EstruturasEmpreendimentoTab = ({ onNavigateTab }) => {
 
       {/* Modal de Criação / Edição de Estrutura */}
       {modalOpen && (
-        <div style={{
-          position: 'fixed',
-          top: 0, left: 0, right: 0, bottom: 0,
-          backgroundColor: 'rgba(0,0,0,0.6)',
-          backdropFilter: 'blur(6px)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          zIndex: 2500,
-          padding: '1rem'
-        }}>
+        <div 
+          className="modal-backdrop"
+          style={{
+            position: 'fixed',
+            top: 0, left: 0, right: 0, bottom: 0,
+            backgroundColor: 'rgba(0,0,0,0.6)',
+            backdropFilter: 'blur(6px)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 2500,
+            padding: '1rem'
+          }}
+        >
           <div style={{
             backgroundColor: 'var(--bg-surface)',
             borderRadius: '16px',

@@ -151,3 +151,4 @@ class IndexedDBStorageService {
 
 export const indexedDBStorage = new IndexedDBStorageService();
 export default indexedDBStorage;
+

@@ -94,3 +94,4 @@ export async function compressImage(fileOrDataUrl, {
     }
   });
 }
+
