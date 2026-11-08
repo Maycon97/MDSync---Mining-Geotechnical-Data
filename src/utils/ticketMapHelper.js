@@ -447,3 +447,4 @@ export const generateTicketTooltip = (ticket) => {
     </div>
   `;
 };
+

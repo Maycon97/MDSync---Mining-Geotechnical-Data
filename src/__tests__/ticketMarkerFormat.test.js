@@ -155,3 +155,4 @@ describe('Ticket Map Marker Formatting & Balloon Popup Suite', () => {
     expect(tooltip).toContain('#10b981'); // B3 is green
   });
 });
+
