@@ -54,6 +54,8 @@ import { ENGENHO_SECO_SECTORS } from '../data/engenhoSecoBlockModelData';
 import { EngenhoSecoBlockModelViewer } from './EngenhoSecoBlockModelViewer';
 import { SumpsExecutivePanel } from './SumpsExecutivePanel';
 import { SUMPS_DATA } from '../data/sumpsData';
+import { chamadosSyncTunnel } from '../services/chamadosSyncTunnel';
+import { createChamadoMarkerHtml, createChamadoPopupContent } from '../utils/chamadoMarkerFormatter';
 
 // Conversor Geodésico de Alta Precisão WGS-84 / SIRGAS 2000 -> UTM Fuso 23S
 function latLonToUtm23S(lat, lon) {
@@ -279,12 +281,26 @@ export const MapTab = ({
     });
   }, [anomaliasGeotecnicas, activeStructureId]);
 
-  // Chamados georreferenciados do Banco Central PCMI
+  // Chamados georreferenciados do Banco Central PCMI e Túnel Fluig
   const georeferencedTickets = useMemo(() => {
-    return (fluigTickets || []).filter(t => {
+    const tunnelTickets = (typeof chamadosSyncTunnel !== 'undefined' && chamadosSyncTunnel?.getActiveTickets) 
+      ? chamadosSyncTunnel.getActiveTickets() 
+      : [];
+    const all = [...(fluigTickets || [])];
+    const seenProtos = new Set(all.map(t => String(t.protocolo || t.proto || t.id)));
+
+    tunnelTickets.forEach(t => {
+      const p = String(t.proto || t.protocolo || t.id);
+      if (p && !seenProtos.has(p)) {
+        seenProtos.add(p);
+        all.push(t);
+      }
+    });
+
+    return all.filter(t => {
       if (!t.lat || !t.lon) return false;
       if (activeStructureId !== 'TODAS') {
-        const structNorm = (t.estrutura || '').toUpperCase().replace(/\s+/g, '_');
+        const structNorm = (t.estrutura || t.estr || '').toUpperCase().replace(/\s+/g, '_');
         if (!structNorm.includes(activeStructureId) && !activeStructureId.includes(structNorm)) {
           return false;
         }
@@ -292,6 +308,24 @@ export const MapTab = ({
       return true;
     });
   }, [fluigTickets, activeStructureId]);
+
+  // Registra handler seguro para o clique no botão do balão Leaflet
+  useEffect(() => {
+    window.__handleSelectChamadoDetail = (proto) => {
+      const target = String(proto).trim();
+      const found = georeferencedTickets.find(x => 
+        String(x.protocolo || x.proto || x.id).trim() === target
+      );
+      if (found) {
+        setSelectedInstrument(null);
+        setSelectedInspectionRecord(null);
+        setSelectedTicket(found);
+      }
+    };
+    return () => {
+      delete window.__handleSelectChamadoDetail;
+    };
+  }, [georeferencedTickets]);
 
   // Inicializar o mapa Leaflet com ciclo de vida robusto e camadas anti-blecaute
   useEffect(() => {
@@ -1090,49 +1124,30 @@ export const MapTab = ({
       layer.addLayer(marker);
     });
 
-    // 3. Marcadores de Chamados e Anomalias de Campo (Banco Central PCMI)
+    // 3. Marcadores de Chamados e Anomalias de Campo (Banco Central PCMI & Fluig)
     if (showTickets && georeferencedTickets.length > 0) {
       georeferencedTickets.forEach(t => {
-        const isSelected = selectedTicket && selectedTicket.protocolo === t.protocolo;
-        const isCritica = t.criticidade?.includes('A') || t.criticidadeNivel?.includes('Alerta') || t.criticidadeNivel?.includes('Emergência');
+        const protoTarget = String(t.protocolo || t.proto || t.id);
+        const isSelected = selectedTicket && String(selectedTicket.protocolo || selectedTicket.proto || selectedTicket.id) === protoTarget;
         
         const ticketIcon = new DivIcon({
-          className: 'custom-fluig-ticket-marker',
-          html: `
-            <div style="
-              background: ${isCritica ? '#ef4444' : '#f59e0b'};
-              color: #ffffff;
-              border: ${isSelected ? '3px solid #38bdf8' : '2px solid #ffffff'};
-              border-radius: 8px;
-              padding: 3px 8px;
-              font-family: 'Inter', sans-serif;
-              font-size: 10px;
-              font-weight: 800;
-              box-shadow: 0 4px 14px rgba(0,0,0,0.65);
-              display: flex;
-              align-items: center;
-              gap: 4px;
-              white-space: nowrap;
-              cursor: pointer;
-              transform: translate(-50%, -50%);
-              backdrop-filter: blur(4px);
-              transition: all 0.2s ease;
-            ">
-              <span>⚡ #${t.protocolo}</span>
-            </div>
-          `,
+          className: 'custom-chamado-fluig-pill-marker',
+          html: createChamadoMarkerHtml(t, isSelected),
           iconSize: [0, 0]
         });
 
-        const ticketMarker = new Marker([t.lat, t.lon], { icon: ticketIcon, zIndexOffset: 700 });
-        ticketMarker.bindTooltip(`
-          <div style="font-family: 'Inter', sans-serif; font-size: 11px; padding: 2px 4px; max-width: 260px;">
-            <strong style="color: #f59e0b;">Chamado PCMI #${t.protocolo}</strong><br/>
-            <strong>${t.titulo}</strong><br/>
-            <span style="color: #94a3b8;">${t.estrutura} - ${t.localizacao || ''}</span><br/>
-            <span style="font-size: 10px; color: #38bdf8;">Ação: ${t.acaoRecomendada || t.descricao || '-'}</span>
-          </div>
-        `, { sticky: true, opacity: 0.95 });
+        const ticketMarker = new Marker([t.lat, t.lon], { icon: ticketIcon, zIndexOffset: isSelected ? 1000 : 700 });
+        
+        const popupContent = createChamadoPopupContent(t);
+        ticketMarker.bindPopup(popupContent, {
+          className: 'chamados-executive-popup',
+          maxWidth: 340,
+          minWidth: 280,
+          offset: [0, -10],
+          autoPan: true,
+          autoPanPadding: [24, 24],
+          closeButton: true
+        });
 
         ticketMarker.on('click', () => {
           setSelectedInstrument(null);
@@ -2661,17 +2676,17 @@ export const MapTab = ({
                   textTransform: 'uppercase',
                   letterSpacing: '0.5px'
                 }}>
-                  Chamado PCMI #{selectedTicket.protocolo}
+                  Chamado PCMI #{selectedTicket.protocolo || selectedTicket.proto || selectedTicket.id}
                 </span>
                 <span className="badge-status badge-atencao" style={{ fontSize: '0.65rem', padding: '0.1rem 0.35rem' }}>
-                  {selectedTicket.criticidade || 'Nível Alerta'}
+                  {selectedTicket.criticidade || selectedTicket.crit || 'Nível Alerta'}
                 </span>
               </div>
               <h3 style={{ fontSize: '1.05rem', fontWeight: 800, color: 'var(--text-main)', margin: '4px 0 2px' }}>
-                {selectedTicket.titulo}
+                {selectedTicket.titulo || selectedTicket.acaoCorretiva || 'Chamado de Manutenção'}
               </h3>
               <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-                {selectedTicket.estrutura} • {selectedTicket.localizacao}
+                {selectedTicket.estrutura || selectedTicket.estr || 'Complexo Itaminas'} • {selectedTicket.localizacao || selectedTicket.tipo || ''}
               </span>
             </div>
             <button
@@ -2695,7 +2710,7 @@ export const MapTab = ({
             gap: '4px'
           }}>
             <div style={{ color: 'var(--text-faint)', fontSize: '0.68rem', fontWeight: 700 }}>ANOMALIA / OCORRÊNCIA</div>
-            <div style={{ color: 'var(--text-main)' }}>{selectedTicket.descricao}</div>
+            <div style={{ color: 'var(--text-main)' }}>{selectedTicket.descricao || selectedTicket.planoAcao || selectedTicket.observacoes || 'Sem descrição cadastrada'}</div>
           </div>
 
           <div style={{
@@ -2709,17 +2724,17 @@ export const MapTab = ({
             gap: '4px'
           }}>
             <div style={{ color: 'var(--primary-accent)', fontSize: '0.68rem', fontWeight: 700 }}>AÇÃO RECOMENDADA (PCMI)</div>
-            <div style={{ color: 'var(--text-main)' }}>{selectedTicket.acaoRecomendada || 'Acompanhamento e intervenção corretiva em campo.'}</div>
+            <div style={{ color: 'var(--text-main)' }}>{selectedTicket.acaoRecomendada || selectedTicket.acaoCorretiva || 'Acompanhamento e intervenção corretiva em campo.'}</div>
           </div>
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem', fontSize: '0.75rem' }}>
             <div style={{ padding: '0.45rem', backgroundColor: 'var(--bg-secondary)', borderRadius: '6px', border: '1px solid var(--border-subtle)' }}>
               <div style={{ color: 'var(--text-faint)', fontSize: '0.68rem' }}>Setor Responsável</div>
-              <strong>{selectedTicket.setorResponsavel || selectedTicket.setorResponsavelSigla || 'Manutenção Civil'}</strong>
+              <strong>{selectedTicket.setorResponsavel || selectedTicket.requerido || selectedTicket.setorResponsavelSigla || 'Manutenção Civil'}</strong>
             </div>
             <div style={{ padding: '0.45rem', backgroundColor: 'var(--bg-secondary)', borderRadius: '6px', border: '1px solid var(--border-subtle)' }}>
               <div style={{ color: 'var(--text-faint)', fontSize: '0.68rem' }}>Prazo SLA</div>
-              <strong style={{ color: '#f59e0b' }}>{selectedTicket.prazoSla || 'Ativo'}</strong>
+              <strong style={{ color: '#f59e0b' }}>{selectedTicket.prazoSla || selectedTicket.limite || 'Ativo'}</strong>
             </div>
           </div>
 

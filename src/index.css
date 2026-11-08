@@ -902,6 +902,41 @@ textarea:focus-visible,
 /* ============================================================
    POPUPS EXECUTIVOS DE CHAMADOS & ANOMALIAS GEOTÉCNICAS
    ============================================================ */
+.custom-chamado-fluig-pill-marker {
+  background: transparent !important;
+  border: none !important;
+}
+
+.mdsync-chamado-marker-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  border-radius: 9999px;
+  padding: 3px 8px 3px 6px;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  font-size: 11px;
+  font-weight: 800;
+  cursor: pointer;
+  white-space: nowrap;
+  user-select: none;
+  transform: translate(-50%, -50%);
+  transition: transform 0.18s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.18s ease, filter 0.18s ease;
+  z-index: 600;
+}
+
+.mdsync-chamado-marker-pill:hover {
+  transform: translate(-50%, -50%) scale(1.12);
+  z-index: 1000 !important;
+  filter: brightness(1.18);
+}
+
+.mdsync-chamado-marker-pill.is-selected {
+  transform: translate(-50%, -50%) scale(1.18);
+  box-shadow: 0 0 16px #38bdf8, 0 4px 12px rgba(0, 0, 0, 0.8) !important;
+  border-color: #38bdf8 !important;
+  z-index: 1001 !important;
+}
+
 .chamados-executive-popup {
   animation: chamadosPopupEntrance 0.32s cubic-bezier(0.16, 1, 0.3, 1) forwards !important;
   transform-origin: bottom center;
