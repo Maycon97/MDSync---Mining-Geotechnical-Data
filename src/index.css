@@ -3235,13 +3235,12 @@ button:active:not(:disabled),
 
 .geotinho-floating-fab-container {
   position: fixed;
-  bottom: 12px;
-  right: 12px;
+  bottom: 20px;
+  right: 20px;
   z-index: 1100;
   display: flex;
   align-items: center;
-  flex-direction: row-reverse;
-  gap: 8px;
+  justify-content: center;
   pointer-events: auto;
 }
 
@@ -3339,40 +3338,44 @@ button:active:not(:disabled),
   z-index: 2;
 }
 
-/* Tooltip lateral expansível */
+/* Tooltip lateral expansível flutuando à esquerda do botão */
 .geotinho-floating-tooltip {
-  background: rgba(15, 23, 42, 0.92);
+  position: absolute;
+  right: calc(100% + 14px);
+  top: 50%;
+  transform: translateY(-50%) translateX(8px) scale(0.95);
+  transform-origin: right center;
+  background: rgba(15, 23, 42, 0.94);
   color: #f8fafc;
   padding: 0.55rem 0.85rem;
   border-radius: 12px;
   border: 1px solid rgba(56, 189, 248, 0.35);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
   backdrop-filter: blur(14px);
   -webkit-backdrop-filter: blur(14px);
   white-space: nowrap;
   pointer-events: none;
   opacity: 0;
-  transform: translateX(10px) scale(0.94);
   transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .geotinho-floating-tooltip.visible {
   opacity: 1;
-  transform: translateX(0px) scale(1);
+  transform: translateY(-50%) translateX(0px) scale(1);
 }
 
 /* Responsividade Mobile e Conflito com Navegação Inferior */
 @media (max-width: 768px) {
   .geotinho-floating-fab-container {
-    bottom: calc(64px + var(--safe-bottom, 0px));
-    right: 8px;
+    bottom: calc(68px + var(--safe-bottom, 0px));
+    right: 14px;
   }
   .geotinho-floating-btn {
     width: 50px;
     height: 50px;
   }
   .geotinho-floating-tooltip {
-    display: none;
+    display: none !important;
   }
 }
 
