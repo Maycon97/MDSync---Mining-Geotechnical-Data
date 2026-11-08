@@ -56,6 +56,7 @@ import { SumpsExecutivePanel } from './SumpsExecutivePanel';
 import { SUMPS_DATA } from '../data/sumpsData';
 import { chamadosSyncTunnel } from '../services/chamadosSyncTunnel';
 import { createChamadoMarkerHtml, createChamadoPopupContent } from '../utils/chamadoMarkerFormatter';
+import { createQgisPinMarkerHtml, resolveStructureDefaultColor } from '../utils/qgisPinFormatter';
 
 // Conversor Geodésico de Alta Precisão WGS-84 / SIRGAS 2000 -> UTM Fuso 23S
 function latLonToUtm23S(lat, lon) {
@@ -989,7 +990,8 @@ export const MapTab = ({
           const existing = combinedStructuresMap.get(key) || {};
           const lat = e.lat ?? e.coordenadas?.lat ?? existing.lat;
           const lon = e.lon ?? e.coordenadas?.lon ?? existing.lon;
-          combinedStructuresMap.set(key, { ...existing, ...e, lat, lon });
+          const corMarcador = e.corMarcador || e.corPin || e.pinColor || existing.corMarcador;
+          combinedStructuresMap.set(key, { ...existing, ...e, lat, lon, corMarcador });
         }
       });
 
@@ -1000,47 +1002,36 @@ export const MapTab = ({
                                   normalizeStructureKey(activeStructureId) === normalizeStructureKey(struct.id) ||
                                   normalizeStructureKey(activeStructureId) === normalizeStructureKey(struct.sigla);
 
+          const pinColor = resolveStructureDefaultColor(struct);
+
+          // Alfinete Cartográfico estilo QGIS (com ponta cônica na coordenada exata)
           const structIcon = new DivIcon({
-            className: 'structure-map-badge',
-            html: `
-              <div style="
-                background: ${isCurrentActive ? 'linear-gradient(135deg, #0284c7 0%, #0369a1 100%)' : 'rgba(15, 23, 42, 0.94)'};
-                border: ${isCurrentActive ? '2.5px solid #38bdf8' : '2px solid rgba(255, 255, 255, 0.85)'};
-                border-radius: 8px;
-                padding: 4px 10px;
-                color: #ffffff;
-                font-family: 'Inter', sans-serif;
-                font-size: 11px;
-                font-weight: 800;
-                box-shadow: ${isCurrentActive ? '0 0 25px rgba(56, 189, 248, 0.9), 0 4px 14px rgba(0,0,0,0.6)' : '0 4px 12px rgba(0,0,0,0.5)'};
-                white-space: nowrap;
-                display: flex;
-                align-items: center;
-                gap: 6px;
-                cursor: pointer;
-                transform: translate(-50%, -50%);
-                backdrop-filter: blur(8px);
-                transition: all 0.25s ease;
-                z-index: ${isCurrentActive ? 9999 : 500};
-              ">
-                <span style="width: 8px; height: 8px; border-radius: 50%; background: ${isCurrentActive ? '#38bdf8' : '#10b981'}; display: inline-block; box-shadow: 0 0 8px ${isCurrentActive ? '#38bdf8' : '#10b981'};"></span>
-                <span>${struct.nome}</span>
-                ${isCurrentActive ? '<span style="font-size: 8px; background: rgba(56,189,248,0.3); border: 1px solid #38bdf8; padding: 1px 4px; border-radius: 3px; font-weight: 700;">LOCADO</span>' : ''}
-              </div>
-            `,
-            iconSize: [0, 0]
+            className: 'qgis-structure-pin-icon',
+            html: createQgisPinMarkerHtml(struct, { isSelected: isCurrentActive }),
+            iconSize: [32, 44],
+            iconAnchor: [16, 42],
+            popupAnchor: [0, -42],
+            tooltipAnchor: [0, -42]
           });
 
-          const structMarker = new Marker([struct.lat, struct.lon], { icon: structIcon });
+          const structMarker = new Marker([struct.lat, struct.lon], { 
+            icon: structIcon,
+            zIndexOffset: isCurrentActive ? 1200 : 500
+          });
+
           structMarker.bindTooltip(`
-            <div style="font-family: 'Inter', sans-serif; font-size: 11px; padding: 2px 4px; text-align: center;">
-              <strong style="color: #38bdf8;">${struct.nome}</strong> (${struct.sigla || struct.id})<br/>
-              <span style="color: #94a3b8; font-size: 10px;">Lat: ${Number(struct.lat).toFixed(6)} | Lon: ${Number(struct.lon).toFixed(6)}</span>
+            <div style="font-family: 'Inter', system-ui, -apple-system, sans-serif; font-size: 11px; padding: 4px 7px; text-align: center; border-radius: 6px;">
+              <div style="display: flex; align-items: center; justify-content: center; gap: 5px; margin-bottom: 2px;">
+                <span style="width: 8px; height: 8px; border-radius: 50%; background: ${pinColor}; box-shadow: 0 0 6px ${pinColor}; display: inline-block;"></span>
+                <strong style="color: #ffffff; letter-spacing: 0.2px;">${struct.nome}</strong> 
+                <span style="color: #38bdf8; font-weight: 700;">(${struct.sigla || struct.id})</span>
+              </div>
+              <span style="color: #94a3b8; font-size: 10px; font-family: monospace;">Lat: ${Number(struct.lat).toFixed(6)} | Lon: ${Number(struct.lon).toFixed(6)}</span>
             </div>
           `, {
             permanent: true,
             direction: 'top',
-            offset: [0, -14],
+            offset: [0, -44],
             className: 'leaflet-tooltip-empreendimento'
           });
           

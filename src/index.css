@@ -907,6 +907,31 @@ textarea:focus-visible,
   border: none !important;
 }
 
+/* ============================================================
+   ALFINETES DE ESTRUTURAS ESTILO QGIS (SIMBOLOGIA CARTOGRÁFICA)
+   ============================================================ */
+.qgis-structure-pin-icon {
+  background: transparent !important;
+  border: none !important;
+}
+
+.qgis-structure-pin-wrapper {
+  transition: transform 0.22s cubic-bezier(0.16, 1, 0.3, 1), filter 0.22s ease;
+  will-change: transform, filter;
+}
+
+.qgis-structure-pin-wrapper:hover {
+  transform: scale(1.18);
+  filter: brightness(1.15) drop-shadow(0 6px 14px rgba(0, 0, 0, 0.65));
+  z-index: 1000 !important;
+}
+
+.qgis-structure-pin-wrapper.is-selected {
+  transform: scale(1.22);
+  filter: drop-shadow(0 0 14px #38bdf8) brightness(1.25);
+  z-index: 1001 !important;
+}
+
 .mdsync-chamado-marker-pill {
   display: inline-flex;
   align-items: center;

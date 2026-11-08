@@ -5,6 +5,7 @@
 
 import { securityShield } from './securityShield';
 import { indexedDBStorage } from './indexedDBStorage';
+import { resolveStructureDefaultColor } from '../utils/qgisPinFormatter';
 
 const STORAGE_KEYS = {
   THEME: 'mdsync_theme',
@@ -1882,7 +1883,13 @@ export const storageService = {
     try {
       if (typeof window !== 'undefined' && typeof localStorage !== 'undefined') {
         const data = localStorage.getItem(STORAGE_KEYS.ESTRUTURAS_EMPREENDIMENTO);
-        if (data) return JSON.parse(data);
+        if (data) {
+          const parsed = JSON.parse(data);
+          return (parsed || []).map(e => ({
+            ...e,
+            corMarcador: e.corMarcador || e.corPin || e.pinColor || resolveStructureDefaultColor(e)
+          }));
+        }
       }
 
       const defaultEstruturas = [
@@ -2103,12 +2110,14 @@ export const storageService = {
       const lon = (estrutura.lon !== undefined && estrutura.lon !== '' && !isNaN(Number(estrutura.lon)))
         ? Number(estrutura.lon)
         : (estrutura.coordenadas?.lon !== undefined ? Number(estrutura.coordenadas.lon) : undefined);
+      const corMarcador = estrutura.corMarcador || estrutura.corPin || estrutura.pinColor || resolveStructureDefaultColor(estrutura);
       const normalized = {
         ...estrutura,
         id: cleanId || estrutura.id,
         sigla: cleanSigla || estrutura.sigla,
         lat,
         lon,
+        corMarcador,
         coordenadas: (lat !== undefined && lon !== undefined) ? { lat, lon } : (estrutura.coordenadas || undefined)
       };
       if (idx !== -1) {

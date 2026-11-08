@@ -3,6 +3,11 @@ import { useGeotechData } from '../context/GeotechDataContext';
 import { storageService } from '../services/storageService';
 import { StructureLocationPickerModal } from './StructureLocationPickerModal';
 import { 
+  QGIS_PIN_COLORS, 
+  resolveStructureDefaultColor, 
+  createQgisPinSvg 
+} from '../utils/qgisPinFormatter';
+import { 
   Building2, 
   Search, 
   Plus, 
@@ -130,7 +135,8 @@ export const EstruturasEmpreendimentoTab = ({ onNavigateTab }) => {
       cri: 'Baixo',
       statusDce: 'DCE Válida (Emitida)',
       lat: '',
-      lon: ''
+      lon: '',
+      corMarcador: '#ef4444'
     });
     setModalOpen(true);
   };
@@ -154,7 +160,8 @@ export const EstruturasEmpreendimentoTab = ({ onNavigateTab }) => {
       cri: est.cri || 'Baixo',
       statusDce: est.statusDce || 'DCE Válida',
       lat: lat !== undefined && lat !== null ? String(lat) : '',
-      lon: lon !== undefined && lon !== null ? String(lon) : ''
+      lon: lon !== undefined && lon !== null ? String(lon) : '',
+      corMarcador: est.corMarcador || resolveStructureDefaultColor(est)
     });
     setModalOpen(true);
   };
@@ -171,6 +178,7 @@ export const EstruturasEmpreendimentoTab = ({ onNavigateTab }) => {
         ...directPickerEstrutura,
         lat: newCoords.lat,
         lon: newCoords.lon,
+        corMarcador: newCoords.corMarcador || directPickerEstrutura.corMarcador || resolveStructureDefaultColor(directPickerEstrutura),
         coordenadas: { lat: newCoords.lat, lon: newCoords.lon }
       };
       storageService.saveEstruturaEmpreendimento(updated);
@@ -188,12 +196,13 @@ export const EstruturasEmpreendimentoTab = ({ onNavigateTab }) => {
       setFormData(prev => ({
         ...prev,
         lat: String(newCoords.lat),
-        lon: String(newCoords.lon)
+        lon: String(newCoords.lon),
+        corMarcador: newCoords.corMarcador || prev.corMarcador || '#ef4444'
       }));
       if (setSystemToast) {
         setSystemToast({
           type: 'info',
-          message: `Coordenadas definidas: Lat ${newCoords.lat}, Lon ${newCoords.lon}`
+          message: `Coordenadas e cor do alfinete definidas: Lat ${newCoords.lat}, Lon ${newCoords.lon}`
         });
       }
     }
@@ -242,6 +251,7 @@ export const EstruturasEmpreendimentoTab = ({ onNavigateTab }) => {
       tipoLetra: formData.tipo === 'BARRAGEM' ? 'B' : (formData.tipo === 'CAVA' ? 'C' : 'P'),
       lat: latNum,
       lon: lonNum,
+      corMarcador: formData.corMarcador || resolveStructureDefaultColor(formData),
       coordenadas: (latNum !== undefined && lonNum !== undefined) 
         ? { lat: latNum, lon: lonNum } 
         : (editingEstrutura?.coordenadas || undefined)
@@ -471,29 +481,46 @@ export const EstruturasEmpreendimentoTab = ({ onNavigateTab }) => {
                   }}
                 >
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                    {/* Badge Circular com Letra (B, C, P) */}
-                    <div style={{
-                      width: '26px',
-                      height: '26px',
-                      borderRadius: '50%',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      fontSize: '0.72rem',
-                      fontWeight: 800,
-                      backgroundColor: badge.bg,
-                      color: badge.text,
-                      border: `1px solid ${badge.border}`
-                    }}>
-                      {est.tipoLetra || (est.tipo === 'BARRAGEM' ? 'B' : (est.tipo === 'CAVA' ? 'C' : 'P'))}
-                    </div>
+                    {/* Badge Circular com Letra e Cor Temática do Alfinete QGIS */}
+                    {(() => {
+                      const estColor = est.corMarcador || resolveStructureDefaultColor(est);
+                      return (
+                        <div style={{
+                          width: '26px',
+                          height: '26px',
+                          borderRadius: '50%',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          fontSize: '0.72rem',
+                          fontWeight: 800,
+                          backgroundColor: `${estColor}22`,
+                          color: estColor,
+                          border: `1.8px solid ${estColor}`,
+                          boxShadow: `0 0 8px ${estColor}44`,
+                          flexShrink: 0
+                        }}>
+                          {est.tipoLetra || (est.tipo === 'BARRAGEM' ? 'B' : (est.tipo === 'CAVA' ? 'C' : 'P'))}
+                        </div>
+                      );
+                    })()}
 
                     <span style={{
                       fontSize: '0.85rem',
                       fontWeight: isSelected ? 700 : 500,
-                      color: isSelected ? 'var(--primary-accent)' : 'var(--text-main)'
+                      color: isSelected ? 'var(--primary-accent)' : 'var(--text-main)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '6px'
                     }}>
-                      {est.sigla} - {est.nome}
+                      <span style={{
+                        width: '7px',
+                        height: '7px',
+                        borderRadius: '50%',
+                        backgroundColor: est.corMarcador || resolveStructureDefaultColor(est),
+                        boxShadow: `0 0 5px ${est.corMarcador || resolveStructureDefaultColor(est)}`
+                      }}></span>
+                      <span>{est.sigla} - {est.nome}</span>
                     </span>
                   </div>
 
@@ -533,7 +560,7 @@ export const EstruturasEmpreendimentoTab = ({ onNavigateTab }) => {
             flexDirection: 'column',
             gap: '1.25rem'
           }}>
-            {/* Título da Estrutura */}
+            {/* Título da Estrutura com Ícone de Alfinete QGIS */}
             <div style={{
               display: 'flex',
               alignItems: 'center',
@@ -541,7 +568,19 @@ export const EstruturasEmpreendimentoTab = ({ onNavigateTab }) => {
               borderBottom: '1px solid var(--border-subtle)',
               paddingBottom: '1rem'
             }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                <div 
+                  title={`Alfinete QGIS (${(selectedEstrutura.corMarcador || resolveStructureDefaultColor(selectedEstrutura)).toUpperCase()})`}
+                  style={{ display: 'flex', alignItems: 'center' }}
+                  dangerouslySetInnerHTML={{ 
+                    __html: createQgisPinSvg({ 
+                      color: selectedEstrutura.corMarcador || resolveStructureDefaultColor(selectedEstrutura), 
+                      sigla: selectedEstrutura.sigla, 
+                      width: 24, 
+                      height: 33 
+                    }) 
+                  }} 
+                />
                 <h2 style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--primary-accent)', margin: 0 }}>
                   {selectedEstrutura.nome}
                 </h2>
@@ -673,7 +712,7 @@ export const EstruturasEmpreendimentoTab = ({ onNavigateTab }) => {
                 </div>
               </div>
 
-              {/* Localização Georreferenciada no Mapa */}
+              {/* Localização Georreferenciada no Mapa & Simbologia QGIS */}
               <div style={{
                 display: 'flex',
                 alignItems: 'center',
@@ -686,22 +725,29 @@ export const EstruturasEmpreendimentoTab = ({ onNavigateTab }) => {
                 gap: '0.5rem',
                 marginTop: '0.25rem'
               }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
-                  <div style={{
-                    width: '28px',
-                    height: '28px',
-                    borderRadius: '6px',
-                    backgroundColor: (selectedEstrutura.lat && selectedEstrutura.lon) ? 'rgba(16, 185, 129, 0.15)' : 'rgba(245, 158, 11, 0.15)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    color: (selectedEstrutura.lat && selectedEstrutura.lon) ? '#10b981' : '#f59e0b'
-                  }}>
-                    <MapPin size={15} />
-                  </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
+                  <div 
+                    title="Alfinete Cartográfico QGIS"
+                    style={{ display: 'flex', alignItems: 'center' }}
+                    dangerouslySetInnerHTML={{ 
+                      __html: createQgisPinSvg({ 
+                        color: selectedEstrutura.corMarcador || resolveStructureDefaultColor(selectedEstrutura), 
+                        sigla: selectedEstrutura.sigla, 
+                        width: 24, 
+                        height: 33 
+                      }) 
+                    }} 
+                  />
                   <div>
-                    <div style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-main)' }}>
-                      Localização no Mapa
+                    <div style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-main)', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <span>Localização no Mapa (Alfinete QGIS)</span>
+                      <span style={{
+                        width: '8px',
+                        height: '8px',
+                        borderRadius: '50%',
+                        backgroundColor: selectedEstrutura.corMarcador || resolveStructureDefaultColor(selectedEstrutura),
+                        boxShadow: `0 0 6px ${selectedEstrutura.corMarcador || resolveStructureDefaultColor(selectedEstrutura)}`
+                      }}></span>
                     </div>
                     <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>
                       {(selectedEstrutura.lat && selectedEstrutura.lon)
@@ -1053,6 +1099,135 @@ export const EstruturasEmpreendimentoTab = ({ onNavigateTab }) => {
                 />
               </div>
 
+              {/* Seção: Simbologia & Cor do Alfinete no Mapa (Padrão QGIS) */}
+              <div style={{
+                padding: '0.85rem 1rem',
+                borderRadius: '8px',
+                backgroundColor: 'var(--bg-secondary)',
+                border: '1px solid var(--border-subtle)',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '0.65rem'
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.5rem' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <span style={{ fontSize: '0.95rem' }}>📍</span>
+                    <span style={{ fontSize: '0.82rem', fontWeight: 700, color: 'var(--text-main)' }}>
+                      Simbologia & Cor do Alfinete (Estilo QGIS)
+                    </span>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>Cor:</span>
+                    <span style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '5px',
+                      backgroundColor: 'var(--bg-card)',
+                      padding: '2px 8px',
+                      borderRadius: '4px',
+                      border: '1px solid var(--border-medium)',
+                      fontSize: '0.72rem',
+                      fontWeight: 800,
+                      color: formData.corMarcador
+                    }}>
+                      <span style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: formData.corMarcador }}></span>
+                      <span>{formData.corMarcador.toUpperCase()}</span>
+                    </span>
+                  </div>
+                </div>
+
+                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap' }}>
+                  {/* Prévia do Alfinete */}
+                  <div style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    padding: '6px 12px',
+                    backgroundColor: 'rgba(15, 23, 42, 0.65)',
+                    borderRadius: '8px',
+                    border: '1px solid var(--border-medium)',
+                    minWidth: '54px'
+                  }}>
+                    <div dangerouslySetInnerHTML={{ __html: createQgisPinSvg({ color: formData.corMarcador, sigla: formData.sigla || 'EX', width: 26, height: 36 }) }} />
+                    <span style={{ fontSize: '0.62rem', color: 'var(--text-muted)', marginTop: '2px', fontWeight: 600 }}>Prévia</span>
+                  </div>
+
+                  {/* Paleta Rápida QGIS */}
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', flex: 1 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
+                      {QGIS_PIN_COLORS.map(c => {
+                        const isCurrent = formData.corMarcador.toLowerCase() === c.hex.toLowerCase();
+                        return (
+                          <button
+                            key={c.id}
+                            data-color={c.hex}
+                            data-testid={`color-swatch-${c.id}`}
+                            type="button"
+                            onClick={() => setFormData(prev => ({ ...prev, corMarcador: c.hex }))}
+                            title={`${c.name} - ${c.desc}`}
+                            style={{
+                              width: '26px',
+                              height: '26px',
+                              borderRadius: '50%',
+                              backgroundColor: c.hex,
+                              border: isCurrent ? '2.5px solid #ffffff' : '1.5px solid rgba(255,255,255,0.3)',
+                              boxShadow: isCurrent ? `0 0 10px ${c.hex}, 0 2px 5px rgba(0,0,0,0.6)` : '0 2px 4px rgba(0,0,0,0.35)',
+                              cursor: 'pointer',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              transform: isCurrent ? 'scale(1.18)' : 'scale(1)',
+                              transition: 'transform 0.15s ease',
+                              padding: 0
+                            }}
+                          >
+                            {isCurrent && <span style={{ color: '#ffffff', fontSize: '11px', fontWeight: 900 }}>✓</span>}
+                          </button>
+                        );
+                      })}
+
+                      {/* Seletor Customizado Pipeta */}
+                      <label 
+                        title="Escolher qualquer cor hexadecimal personalizada..."
+                        style={{
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '5px',
+                          padding: '3px 8px',
+                          borderRadius: '6px',
+                          backgroundColor: 'var(--bg-card)',
+                          border: '1px solid var(--border-medium)',
+                          cursor: 'pointer',
+                          fontSize: '0.72rem',
+                          color: 'var(--text-main)',
+                          fontWeight: 600
+                        }}
+                      >
+                        <span>🎨 Custom</span>
+                        <input 
+                          type="color" 
+                          value={formData.corMarcador} 
+                          onChange={(e) => setFormData(prev => ({ ...prev, corMarcador: e.target.value }))}
+                          style={{
+                            width: '20px',
+                            height: '20px',
+                            border: 'none',
+                            borderRadius: '4px',
+                            cursor: 'pointer',
+                            padding: 0,
+                            background: 'none'
+                          }}
+                        />
+                      </label>
+                    </div>
+                    <span style={{ fontSize: '0.68rem', color: 'var(--text-muted)' }}>
+                      Escolha a cor do alfinete para marcar esta estrutura no mapa, assim como no software QGIS.
+                    </span>
+                  </div>
+                </div>
+              </div>
+
               {/* Seção: Localização Georreferenciada no Mapa */}
               <div style={{
                 padding: '0.85rem 1rem',
@@ -1247,6 +1422,7 @@ export const EstruturasEmpreendimentoTab = ({ onNavigateTab }) => {
         }}
         structureName={directPickerEstrutura ? directPickerEstrutura.nome : (formData.nome || 'Nova Estrutura')}
         structureSigla={directPickerEstrutura ? directPickerEstrutura.sigla : formData.sigla}
+        initialColor={directPickerEstrutura ? (directPickerEstrutura.corMarcador || resolveStructureDefaultColor(directPickerEstrutura)) : (formData.corMarcador || '#ef4444')}
         existingStructures={estruturas}
         onConfirm={handleConfirmLocation}
       />
