@@ -1011,6 +1011,38 @@ textarea:focus-visible,
   animation: chamadosPulseDot 1.8s infinite ease-in-out;
 }
 
+/* Marcadores Georreferenciados de Chamados de Manutenção Geotécnica */
+.custom-fluig-ticket-marker {
+  transition: transform 0.22s cubic-bezier(0.16, 1, 0.3, 1), filter 0.2s ease !important;
+  z-index: 700;
+}
+
+.custom-fluig-ticket-marker:hover {
+  transform: translate(-50%, -50%) scale(1.08) !important;
+  filter: brightness(1.12);
+  z-index: 1000 !important;
+}
+
+.custom-ticket-marker-pin {
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
+.custom-ticket-marker-pin.is-selected {
+  outline: 3px solid #38bdf8 !important;
+  outline-offset: 2px !important;
+  transform: translate(-50%, -50%) scale(1.12) !important;
+  box-shadow: 0 0 20px rgba(56, 189, 248, 0.8), 0 6px 18px rgba(0, 0, 0, 0.8) !important;
+}
+
+.ticket-gear-spin {
+  display: inline-block;
+  transition: transform 0.4s ease;
+}
+
+.custom-fluig-ticket-marker:hover .ticket-gear-spin {
+  transform: rotate(60deg);
+}
+
 
 /* ============================================================
    TABELAS DE DADOS GEOTÉCNICOS DE ALTA PERFORMANCE

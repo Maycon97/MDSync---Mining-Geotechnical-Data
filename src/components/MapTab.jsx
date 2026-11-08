@@ -54,6 +54,11 @@ import { ENGENHO_SECO_SECTORS } from '../data/engenhoSecoBlockModelData';
 import { EngenhoSecoBlockModelViewer } from './EngenhoSecoBlockModelViewer';
 import { SumpsExecutivePanel } from './SumpsExecutivePanel';
 import { SUMPS_DATA } from '../data/sumpsData';
+import { 
+  createTicketDivIcon, 
+  generateTicketBalloonPopup, 
+  generateTicketTooltip 
+} from '../utils/ticketMapHelper';
 
 // Conversor Geodésico de Alta Precisão WGS-84 / SIRGAS 2000 -> UTM Fuso 23S
 function latLonToUtm23S(lat, lon) {
@@ -172,7 +177,24 @@ export const MapTab = ({
   const [isSiderFlipped, setIsSiderFlipped] = useState(false);
   const [isMapPresetModified, setIsMapPresetModified] = useState(false);
   const [copiedCoords, setCopiedCoords] = useState(false);
+  const [photoEnlargeModal, setPhotoEnlargeModal] = useState(null);
   const structureTooltipsRef = useRef([]);
+
+  // Expõe handlers globais seguros para links/botões dentro do HTML dos popups de chamados
+  useEffect(() => {
+    window.__openPhotoModal = (url, title, subtitle) => {
+      setPhotoEnlargeModal({ url, title, subtitle });
+    };
+    window.__navigateToChamados = (proto) => {
+      if (typeof onNavigateTab === 'function') {
+        onNavigateTab('chamados', { ticketId: proto });
+      }
+    };
+    return () => {
+      delete window.__openPhotoModal;
+      delete window.__navigateToChamados;
+    };
+  }, [onNavigateTab]);
 
   // Fechar popovers estratégicos com Escape ou clique externo
   useEffect(() => {
@@ -956,49 +978,32 @@ export const MapTab = ({
       layer.addLayer(marker);
     });
 
-    // 3. Marcadores de Chamados e Anomalias de Campo (Banco Central PCMI)
+    // 3. Marcadores de Chamados e Manutenções Geotécnicas (Padrão ⛮ + Criticidade + Balão Informativo)
     if (showTickets && georeferencedTickets.length > 0) {
       georeferencedTickets.forEach(t => {
-        const isSelected = selectedTicket && selectedTicket.protocolo === t.protocolo;
-        const isCritica = t.criticidade?.includes('A') || t.criticidadeNivel?.includes('Alerta') || t.criticidadeNivel?.includes('Emergência');
+        const isSelected = selectedTicket && (
+          selectedTicket.protocolo === t.protocolo || 
+          selectedTicket.proto === t.protocolo ||
+          selectedTicket.id === t.id
+        );
         
-        const ticketIcon = new DivIcon({
-          className: 'custom-fluig-ticket-marker',
-          html: `
-            <div style="
-              background: ${isCritica ? '#ef4444' : '#f59e0b'};
-              color: #ffffff;
-              border: ${isSelected ? '3px solid #38bdf8' : '2px solid #ffffff'};
-              border-radius: 8px;
-              padding: 3px 8px;
-              font-family: 'Inter', sans-serif;
-              font-size: 10px;
-              font-weight: 800;
-              box-shadow: 0 4px 14px rgba(0,0,0,0.65);
-              display: flex;
-              align-items: center;
-              gap: 4px;
-              white-space: nowrap;
-              cursor: pointer;
-              transform: translate(-50%, -50%);
-              backdrop-filter: blur(4px);
-              transition: all 0.2s ease;
-            ">
-              <span>⚡ #${t.protocolo}</span>
-            </div>
-          `,
-          iconSize: [0, 0]
-        });
-
+        // DivIcon com símbolo ⛮ de manutenção, cor de criticidade e número do protocolo
+        const ticketIcon = createTicketDivIcon(t, isSelected, DivIcon);
         const ticketMarker = new Marker([t.lat, t.lon], { icon: ticketIcon, zIndexOffset: 700 });
-        ticketMarker.bindTooltip(`
-          <div style="font-family: 'Inter', sans-serif; font-size: 11px; padding: 2px 4px; max-width: 260px;">
-            <strong style="color: #f59e0b;">Chamado PCMI #${t.protocolo}</strong><br/>
-            <strong>${t.titulo}</strong><br/>
-            <span style="color: #94a3b8;">${t.estrutura} - ${t.localizacao || ''}</span><br/>
-            <span style="font-size: 10px; color: #38bdf8;">Ação: ${t.acaoRecomendada || t.descricao || '-'}</span>
-          </div>
-        `, { sticky: true, opacity: 0.95 });
+
+        // Tooltip de prévia rápida no hover
+        ticketMarker.bindTooltip(generateTicketTooltip(t), { sticky: true, opacity: 0.96 });
+
+        // Balão informativo com todas as informações do chamado
+        ticketMarker.bindPopup(generateTicketBalloonPopup(t), {
+          className: 'chamados-executive-popup',
+          maxWidth: 340,
+          minWidth: 280,
+          offset: [0, -12],
+          autoPan: true,
+          autoPanPadding: [24, 24],
+          closeButton: true
+        });
 
         ticketMarker.on('click', () => {
           setSelectedInstrument(null);
@@ -2778,6 +2783,83 @@ export const MapTab = ({
         activeFilterAnom={filterSumpAnom}
         onChangeFilterAnom={setFilterSumpAnom}
       />
+
+      {/* Modal de Ampliação de Foto da Anomalia do Chamado */}
+      {photoEnlargeModal && (
+        <div 
+          className="modal-backdrop animate-fade-in"
+          onClick={() => setPhotoEnlargeModal(null)}
+          style={{
+            position: 'fixed',
+            top: 0, left: 0, right: 0, bottom: 0,
+            backgroundColor: 'rgba(0, 0, 0, 0.85)',
+            backdropFilter: 'blur(8px)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 4000,
+            padding: '1.5rem'
+          }}
+        >
+          <div 
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              position: 'relative',
+              maxWidth: '850px',
+              width: '100%',
+              backgroundColor: '#0f172a',
+              borderRadius: '16px',
+              border: '1px solid rgba(255,255,255,0.2)',
+              overflow: 'hidden',
+              boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.85)'
+            }}
+          >
+            <div style={{
+              padding: '0.9rem 1.25rem',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              borderBottom: '1px solid rgba(255,255,255,0.1)',
+              backgroundColor: 'rgba(255,255,255,0.03)'
+            }}>
+              <div>
+                <h4 style={{ margin: 0, fontSize: '0.95rem', fontWeight: 800, color: '#f8fafc' }}>
+                  {photoEnlargeModal.title || 'Evidência Fotográfica do Chamado'}
+                </h4>
+                {photoEnlargeModal.subtitle && (
+                  <p style={{ margin: '2px 0 0 0', fontSize: '0.75rem', color: '#94a3b8' }}>
+                    {photoEnlargeModal.subtitle}
+                  </p>
+                )}
+              </div>
+              <button
+                onClick={() => setPhotoEnlargeModal(null)}
+                style={{
+                  background: 'rgba(255,255,255,0.1)',
+                  border: 'none',
+                  borderRadius: '50%',
+                  width: '30px',
+                  height: '30px',
+                  color: '#fff',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center'
+                }}
+              >
+                ✕
+              </button>
+            </div>
+            <div style={{ padding: '1rem', display: 'flex', justifyContent: 'center', maxHeight: '75vh', overflow: 'auto' }}>
+              <img 
+                src={photoEnlargeModal.url} 
+                alt="Foto Ampliada" 
+                style={{ maxWidth: '100%', maxHeight: '70vh', objectFit: 'contain', borderRadius: '8px' }} 
+              />
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
