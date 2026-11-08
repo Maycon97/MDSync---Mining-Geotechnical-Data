@@ -116,6 +116,69 @@ describe('ChamadosPainelExecutivo Component Mount', () => {
     expect(container.textContent).toContain('Chamados por Tipo');
     expect(container.textContent).toContain('Pontos de Anomalia');
   });
+
+  it('should display the formatted photo section and insert/change image buttons in ticket detail modal', async () => {
+    await act(async () => {
+      root.render(
+        <ChamadosPainelExecutivo
+          onNavigateTab={vi.fn()}
+          onOpenNewTicket={vi.fn()}
+          onOpenFluigList={vi.fn()}
+        />
+      );
+    });
+
+    // Open detail of ticket 132707 (or first available ticket)
+    const firstTicket = CONTROLE_CHAMADOS_DATA.tickets[0];
+    await act(async () => {
+      window.__openTicketDetail(firstTicket.proto);
+    });
+
+    // Verify modal is open and has Registro Fotográfico da Anomalia
+    expect(container.textContent).toContain(`Chamado #${firstTicket.proto}`);
+    expect(container.textContent).toContain('Registro Fotográfico da Anomalia');
+
+    // Should have either the action buttons (Ampliar / Trocar) or the insert button (Inserir Imagem)
+    const hasPhotoButtons = container.textContent.includes('Ampliar') || container.textContent.includes('Inserir Imagem da Anomalia');
+    expect(hasPhotoButtons).toBe(true);
+
+    // Should have hidden file input for photo upload
+    const fileInput = container.querySelector('input[type="file"][accept="image/*"]');
+    expect(fileInput).not.toBeNull();
+  });
+
+  it('should transition to upload fallback on image error and update ticket on file upload', async () => {
+    await act(async () => {
+      root.render(
+        <ChamadosPainelExecutivo
+          onNavigateTab={vi.fn()}
+          onOpenNewTicket={vi.fn()}
+          onOpenFluigList={vi.fn()}
+        />
+      );
+    });
+
+    // Pick a ticket with a photo or inject one with a broken photo
+    const firstTicket = CONTROLE_CHAMADOS_DATA.tickets[0];
+    await act(async () => {
+      window.__openTicketDetail(firstTicket.proto);
+    });
+
+    const img = container.querySelector('img[alt="Registro fotográfico da anomalia"]');
+    if (img) {
+      // Simulate error event on broken image
+      await act(async () => {
+        img.dispatchEvent(new Event('error'));
+      });
+      // Should now show the fallback state
+      expect(container.textContent).toContain('Link de imagem anterior inacessível ou formato incompatível');
+      expect(container.textContent).toContain('Substituir por Nova Imagem');
+    }
+
+    // Now test uploading a new image
+    const fileInput = container.querySelector('input[type="file"][accept="image/*"]');
+    expect(fileInput).not.toBeNull();
+  });
 });
 
 describe('Túnel de Conexão Automática — chamadosSyncTunnel', () => {

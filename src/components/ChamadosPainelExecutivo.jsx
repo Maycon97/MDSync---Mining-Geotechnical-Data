@@ -43,6 +43,9 @@ import {
   FolderInput,
   Upload,
   Camera,
+  ImagePlus,
+  ZoomIn,
+  Trash2,
   Sparkles,
   RefreshCw
 } from 'lucide-react';
@@ -163,6 +166,72 @@ export const ChamadosPainelExecutivo = ({ onNavigateTab, onOpenNewTicket, onOpen
   const [showTableModal, setShowTableModal] = useState(false);
   const [selectedTicketDetail, setSelectedTicketDetail] = useState(null);
   const [activeTabSubView, setActiveTabSubView] = useState('dashboard'); // 'dashboard' | 'tabela' | 'cronograma'
+
+  // Foto e Evidência do Chamado selecionado
+  const ticketPhotoInputRef = useRef(null);
+  const [ticketPhotoError, setTicketPhotoError] = useState(false);
+
+  useEffect(() => {
+    setTicketPhotoError(false);
+  }, [selectedTicketDetail?.proto, selectedTicketDetail?.fotoAberturaUrl]);
+
+  const handleTicketPhotoUpload = (e) => {
+    const file = e.target.files?.[0];
+    if (!file || !selectedTicketDetail) return;
+
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      const base64Url = ev.target.result;
+      const targetProto = selectedTicketDetail.proto;
+
+      const updatedTicket = {
+        ...selectedTicketDetail,
+        fotoAberturaUrl: base64Url,
+        foto: base64Url,
+        evidenciaUrl: base64Url
+      };
+
+      setSelectedTicketDetail(updatedTicket);
+      setRawTickets(prev => prev.map(t => {
+        if (String(t.proto || t.protocolo || t.id).trim() === String(targetProto).trim()) {
+          return { ...t, ...updatedTicket };
+        }
+        return t;
+      }));
+
+      chamadosSyncTunnel.updateTickets([updatedTicket], 'Inserção de Registro Fotográfico');
+      setTicketPhotoError(false);
+      setSyncToastMessage(`Foto da anomalia do Chamado #${targetProto} anexada e sincronizada!`);
+      setTimeout(() => setSyncToastMessage(null), 4000);
+    };
+    reader.readAsDataURL(file);
+    e.target.value = '';
+  };
+
+  const handleRemoveTicketPhoto = () => {
+    if (!selectedTicketDetail) return;
+    const targetProto = selectedTicketDetail.proto;
+
+    const updatedTicket = {
+      ...selectedTicketDetail,
+      fotoAberturaUrl: null,
+      foto: null,
+      evidenciaUrl: null
+    };
+
+    setSelectedTicketDetail(updatedTicket);
+    setRawTickets(prev => prev.map(t => {
+      if (String(t.proto || t.protocolo || t.id).trim() === String(targetProto).trim()) {
+        return { ...t, ...updatedTicket };
+      }
+      return t;
+    }));
+
+    chamadosSyncTunnel.updateTickets([updatedTicket], 'Remoção de Registro Fotográfico');
+    setTicketPhotoError(false);
+    setSyncToastMessage(`Foto removida do Chamado #${targetProto}.`);
+    setTimeout(() => setSyncToastMessage(null), 4000);
+  };
 
   // Map refs
   const mapContainerRef = useRef(null);
@@ -1970,12 +2039,37 @@ export const ChamadosPainelExecutivo = ({ onNavigateTab, onOpenNewTicket, onOpen
                 <X size={18} />
               </button>
             </div>
-            <div style={{ padding: '1rem', display: 'flex', justifyContent: 'center', alignItems: 'center', overflow: 'auto' }}>
+            <div style={{ padding: '1.25rem', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', overflow: 'auto', minHeight: '220px' }}>
               <img 
                 src={photoEnlargeModal.url} 
                 alt="Foto em alta resolução" 
+                onError={(e) => {
+                  e.currentTarget.style.display = 'none';
+                  const fb = document.getElementById('enlarge-photo-error-fallback');
+                  if (fb) fb.style.display = 'flex';
+                }}
                 style={{ maxWidth: '100%', maxHeight: '75vh', objectFit: 'contain', borderRadius: '8px' }} 
               />
+              <div 
+                id="enlarge-photo-error-fallback"
+                style={{ 
+                  display: 'none', 
+                  flexDirection: 'column', 
+                  alignItems: 'center', 
+                  gap: '10px', 
+                  color: '#fde68a', 
+                  padding: '2.5rem 1rem',
+                  textAlign: 'center'
+                }}
+              >
+                <AlertTriangle size={36} color="#f59e0b" />
+                <div style={{ fontWeight: 700, fontSize: '0.95rem', color: '#ffffff' }}>
+                  Não foi possível carregar a imagem original
+                </div>
+                <div style={{ fontSize: '0.8rem', color: '#9db3d1', maxWidth: '380px' }}>
+                  O link original pode estar indisponível. Utilize o botão &quot;Trocar Foto&quot; na ficha do chamado para carregar uma nova foto da galeria ou câmera.
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -2108,39 +2202,239 @@ export const ChamadosPainelExecutivo = ({ onNavigateTab, onOpenNewTicket, onOpen
                   </div>
                 </div>
               )}
-              {selectedTicketDetail.fotoAberturaUrl && (
-                <div style={{ gridColumn: 'span 2', marginTop: '4px' }}>
-                  <div style={{ color: '#9db3d1', fontSize: '0.74rem', textTransform: 'uppercase', marginBottom: '4px' }}>Registro Fotográfico da Anomalia</div>
-                  <div style={{ position: 'relative', borderRadius: '8px', overflow: 'hidden', border: '1px solid rgba(113,209,248,0.3)', cursor: 'pointer' }}
-                    onClick={() => setPhotoEnlargeModal({
-                      url: selectedTicketDetail.fotoAberturaUrl,
-                      title: `Chamado #${selectedTicketDetail.proto} · Foto da Anomalia`,
-                      subtitle: `${selectedTicketDetail.estr} · ${selectedTicketDetail.tipo}`
-                    })}
-                  >
+              {/* REGISTRO FOTOGRÁFICO DA ANOMALIA COM SUPORTE A INSERÇÃO, ERRO E AMPLIAÇÃO */}
+              <div style={{ gridColumn: 'span 2', marginTop: '6px' }}>
+                <div style={{ 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  justifyContent: 'space-between',
+                  marginBottom: '6px' 
+                }}>
+                  <div style={{ 
+                    color: '#9db3d1', 
+                    fontSize: '0.74rem', 
+                    textTransform: 'uppercase', 
+                    fontWeight: 700, 
+                    letterSpacing: '0.5px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px'
+                  }}>
+                    <Camera size={14} color="#38bdf8" />
+                    <span>Registro Fotográfico da Anomalia</span>
+                  </div>
+                  {selectedTicketDetail.fotoAberturaUrl && !ticketPhotoError && (
+                    <span style={{ fontSize: '0.72rem', color: '#38bdf8', fontWeight: 600 }}>
+                      Foto anexada
+                    </span>
+                  )}
+                </div>
+
+                {/* Input oculto para upload de foto pelo dispositivo ou câmera */}
+                <input
+                  type="file"
+                  ref={ticketPhotoInputRef}
+                  accept="image/*"
+                  capture="environment"
+                  onChange={handleTicketPhotoUpload}
+                  style={{ display: 'none' }}
+                />
+
+                {selectedTicketDetail.fotoAberturaUrl && !ticketPhotoError ? (
+                  /* CARD COM IMAGEM CARREGADA COM SUCESSO */
+                  <div style={{
+                    position: 'relative',
+                    borderRadius: '10px',
+                    overflow: 'hidden',
+                    border: '1px solid rgba(56, 189, 248, 0.4)',
+                    backgroundColor: '#070f1e',
+                    boxShadow: '0 8px 24px rgba(0,0,0,0.5)',
+                    minHeight: '200px'
+                  }}>
                     <img 
                       src={selectedTicketDetail.fotoAberturaUrl} 
-                      alt="Registro fotográfico" 
-                      style={{ width: '100%', maxHeight: '180px', objectFit: 'cover', display: 'block' }} 
+                      alt="Registro fotográfico da anomalia" 
+                      onError={() => setTicketPhotoError(true)}
+                      style={{ 
+                        width: '100%', 
+                        height: '210px',
+                        objectFit: 'cover', 
+                        display: 'block' 
+                      }} 
                     />
+                    
+                    {/* BARRA INFERIOR DE CONTROLES E AÇÕES */}
                     <div style={{
                       position: 'absolute',
-                      bottom: '8px',
-                      right: '8px',
-                      backgroundColor: 'rgba(0,0,0,0.7)',
-                      color: '#ffffff',
-                      fontSize: '0.72rem',
-                      padding: '3px 8px',
-                      borderRadius: '4px',
+                      bottom: 0,
+                      left: 0,
+                      right: 0,
+                      padding: '8px 12px',
+                      background: 'linear-gradient(to top, rgba(7, 15, 30, 0.95) 0%, rgba(7, 15, 30, 0.75) 70%, transparent 100%)',
                       display: 'flex',
                       alignItems: 'center',
-                      gap: '4px'
+                      justifyContent: 'space-between',
+                      gap: '8px',
+                      borderTop: '1px solid rgba(255, 255, 255, 0.08)'
                     }}>
-                      <Camera size={12} /> Clique para ampliar
+                      <div style={{
+                        color: '#e2e8f0',
+                        fontSize: '0.72rem',
+                        fontWeight: 600,
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '5px'
+                      }}>
+                        <span style={{ 
+                          width: '7px', 
+                          height: '7px', 
+                          borderRadius: '50%', 
+                          backgroundColor: '#34d399', 
+                          boxShadow: '0 0 8px #34d399' 
+                        }} />
+                        <span>Evidência de Campo</span>
+                      </div>
+
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        <button
+                          type="button"
+                          onClick={() => setPhotoEnlargeModal({
+                            url: selectedTicketDetail.fotoAberturaUrl,
+                            title: `Chamado #${selectedTicketDetail.proto} · Foto da Anomalia`,
+                            subtitle: `${selectedTicketDetail.estr || ''} · ${selectedTicketDetail.tipo || ''}`
+                          })}
+                          style={{
+                            backgroundColor: 'rgba(56, 189, 248, 0.25)',
+                            color: '#ffffff',
+                            border: '1px solid rgba(56, 189, 248, 0.5)',
+                            fontSize: '0.73rem',
+                            padding: '4px 9px',
+                            borderRadius: '6px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '5px',
+                            fontWeight: 700,
+                            cursor: 'pointer',
+                            transition: 'all 0.2s'
+                          }}
+                          title="Ampliar visualização da foto"
+                        >
+                          <ZoomIn size={13} /> Ampliar
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => ticketPhotoInputRef.current?.click()}
+                          style={{
+                            backgroundColor: 'rgba(255, 255, 255, 0.12)',
+                            color: '#ffffff',
+                            border: '1px solid rgba(255, 255, 255, 0.25)',
+                            fontSize: '0.73rem',
+                            padding: '4px 9px',
+                            borderRadius: '6px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '5px',
+                            fontWeight: 600,
+                            cursor: 'pointer'
+                          }}
+                          title="Substituir por outra foto"
+                        >
+                          <Camera size={13} /> Trocar Foto
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={handleRemoveTicketPhoto}
+                          style={{
+                            backgroundColor: 'rgba(239, 68, 68, 0.2)',
+                            color: '#fca5a5',
+                            border: '1px solid rgba(239, 68, 68, 0.4)',
+                            fontSize: '0.73rem',
+                            padding: '4px 7px',
+                            borderRadius: '6px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            cursor: 'pointer'
+                          }}
+                          title="Remover foto"
+                        >
+                          <Trash2 size={13} />
+                        </button>
+                      </div>
                     </div>
                   </div>
-                </div>
-              )}
+                ) : (
+                  /* CARD FORMATADO DE INSERIR IMAGEM (QUANDO VAZIO OU LINK INACESSÍVEL) */
+                  <div style={{
+                    minHeight: '170px',
+                    borderRadius: '10px',
+                    border: '2px dashed rgba(56, 189, 248, 0.35)',
+                    backgroundColor: 'rgba(15, 23, 42, 0.65)',
+                    padding: '1.25rem 1rem',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    textAlign: 'center',
+                    gap: '0.65rem'
+                  }}>
+                    <div style={{
+                      width: '44px',
+                      height: '44px',
+                      borderRadius: '50%',
+                      backgroundColor: ticketPhotoError ? 'rgba(245, 158, 11, 0.15)' : 'rgba(56, 189, 248, 0.12)',
+                      border: `1px solid ${ticketPhotoError ? 'rgba(245, 158, 11, 0.4)' : 'rgba(56, 189, 248, 0.3)'}`,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      color: ticketPhotoError ? '#f59e0b' : '#38bdf8'
+                    }}>
+                      {ticketPhotoError ? <AlertTriangle size={22} /> : <ImagePlus size={22} />}
+                    </div>
+
+                    <div>
+                      <div style={{ 
+                        color: ticketPhotoError ? '#fde68a' : '#f1f5f9', 
+                        fontSize: '0.82rem', 
+                        fontWeight: 700 
+                      }}>
+                        {ticketPhotoError 
+                          ? 'Link de imagem anterior inacessível ou formato incompatível' 
+                          : 'Nenhum registro fotográfico anexado'}
+                      </div>
+                      <div style={{ color: '#94a3b8', fontSize: '0.74rem', marginTop: '2px' }}>
+                        {ticketPhotoError
+                          ? 'Substitua por uma foto da câmera ou arquivo do computador'
+                          : 'Adicione uma evidência fotográfica da anomalia para auditoria'}
+                      </div>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => ticketPhotoInputRef.current?.click()}
+                      style={{
+                        marginTop: '2px',
+                        background: 'linear-gradient(135deg, #0284c7 0%, #0369a1 100%)',
+                        color: '#ffffff',
+                        border: '1px solid rgba(56, 189, 248, 0.5)',
+                        padding: '7px 16px',
+                        borderRadius: '8px',
+                        fontWeight: 700,
+                        fontSize: '0.8rem',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '6px',
+                        boxShadow: '0 4px 14px rgba(2, 132, 199, 0.4)'
+                      }}
+                    >
+                      <Camera size={15} />
+                      <span>{ticketPhotoError ? 'Substituir por Nova Imagem' : 'Inserir Imagem da Anomalia'}</span>
+                    </button>
+                  </div>
+                )}
+              </div>
             </div>
 
             <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px', marginTop: '0.5rem' }}>

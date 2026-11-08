@@ -187,3 +187,4 @@ export function createQgisPinMarkerHtml(struct, options = {}) {
     </div>
   `.trim();
 }
+

@@ -1726,17 +1726,30 @@ export const ChamadosTab = ({ onNavigateTab }) => {
                     borderRadius: '10px',
                     overflow: 'hidden',
                     border: '1px solid var(--border-subtle)',
-                    backgroundColor: '#000000',
+                    backgroundColor: '#070f1e',
+                    minHeight: '160px',
                     maxHeight: '320px',
                     display: 'flex',
+                    flexDirection: 'column',
                     alignItems: 'center',
-                    justifyContent: 'center'
+                    justifyContent: 'center',
+                    padding: '0.5rem'
                   }}>
                     <img 
                       src={selectedTicketDetail.evidenciaFoto} 
                       alt={selectedTicketDetail.titulo} 
-                      style={{ maxWidth: '100%', maxHeight: '320px', objectFit: 'contain' }} 
+                      onError={(e) => {
+                        e.currentTarget.style.display = 'none';
+                        const fb = e.currentTarget.nextElementSibling;
+                        if (fb) fb.style.display = 'flex';
+                      }}
+                      style={{ maxWidth: '100%', maxHeight: '310px', objectFit: 'contain', borderRadius: '6px' }} 
                     />
+                    <div style={{ display: 'none', flexDirection: 'column', alignItems: 'center', gap: '6px', color: '#fde68a', padding: '1rem', textAlign: 'center' }}>
+                      <AlertTriangle size={24} color="#f59e0b" />
+                      <div style={{ fontSize: '0.82rem', fontWeight: 700, color: '#f1f5f9' }}>Evidência fotográfica não disponível</div>
+                      <div style={{ fontSize: '0.74rem', color: '#94a3b8' }}>O arquivo de foto não foi localizado ou o link está indisponível</div>
+                    </div>
                   </div>
                 </div>
               )}
