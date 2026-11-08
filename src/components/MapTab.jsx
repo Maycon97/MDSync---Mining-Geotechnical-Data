@@ -11,7 +11,7 @@ import L, {
   DivIcon, 
   Control 
 } from '../utils/leafletCompat';
-import { useGeotechData } from '../context/GeotechDataContext';
+import { useGeotechData, normalizeStructureKey } from '../context/GeotechDataContext';
 import { STRUCTURE_BOUNDARIES, STRUCTURE_CATEGORIES } from '../data/structureBoundaries';
 import { 
   Layers, 
@@ -54,11 +54,6 @@ import { ENGENHO_SECO_SECTORS } from '../data/engenhoSecoBlockModelData';
 import { EngenhoSecoBlockModelViewer } from './EngenhoSecoBlockModelViewer';
 import { SumpsExecutivePanel } from './SumpsExecutivePanel';
 import { SUMPS_DATA } from '../data/sumpsData';
-import { 
-  createTicketDivIcon, 
-  generateTicketBalloonPopup, 
-  generateTicketTooltip 
-} from '../utils/ticketMapHelper';
 
 // Conversor Geodésico de Alta Precisão WGS-84 / SIRGAS 2000 -> UTM Fuso 23S
 function latLonToUtm23S(lat, lon) {
@@ -177,24 +172,36 @@ export const MapTab = ({
   const [isSiderFlipped, setIsSiderFlipped] = useState(false);
   const [isMapPresetModified, setIsMapPresetModified] = useState(false);
   const [copiedCoords, setCopiedCoords] = useState(false);
-  const [photoEnlargeModal, setPhotoEnlargeModal] = useState(null);
   const structureTooltipsRef = useRef([]);
+  const structuresLayerRef = useRef(null);
 
-  // Expõe handlers globais seguros para links/botões dentro do HTML dos popups de chamados
-  useEffect(() => {
-    window.__openPhotoModal = (url, title, subtitle) => {
-      setPhotoEnlargeModal({ url, title, subtitle });
-    };
-    window.__navigateToChamados = (proto) => {
-      if (typeof onNavigateTab === 'function') {
-        onNavigateTab('chamados', { ticketId: proto });
+  // Catálogo unificado de estruturas (banco mestre + cadastradas pelo usuário com geolocalização)
+  const allDisplayStructures = useMemo(() => {
+    const structMap = new globalThis.Map();
+    (structures || []).forEach(s => {
+      const key = s.id || s.sigla;
+      if (key) structMap.set(key, { ...s });
+    });
+    (estruturas || []).forEach(e => {
+      const key = e.id || e.sigla;
+      if (key) {
+        const existing = structMap.get(key) || {};
+        const lat = e.lat ?? e.coordenadas?.lat ?? existing.lat;
+        const lon = e.lon ?? e.coordenadas?.lon ?? existing.lon;
+        structMap.set(key, {
+          ...existing,
+          ...e,
+          id: existing.id || e.id || e.sigla,
+          sigla: e.sigla || existing.sigla || key,
+          nome: e.nome || existing.nome || key,
+          lat,
+          lon,
+          coordenadas: (lat && lon) ? { lat, lon } : (existing.coordenadas || e.coordenadas)
+        });
       }
-    };
-    return () => {
-      delete window.__openPhotoModal;
-      delete window.__navigateToChamados;
-    };
-  }, [onNavigateTab]);
+    });
+    return Array.from(structMap.values());
+  }, [structures, estruturas]);
 
   // Fechar popovers estratégicos com Escape ou clique externo
   useEffect(() => {
@@ -223,17 +230,24 @@ export const MapTab = ({
   // Sincronizar selectedEstrutura quando activeStructureId mudar
   useEffect(() => {
     if (activeStructureId && activeStructureId !== 'TODAS') {
-      const match = estruturas.find(e => 
+      const match = (estruturas || []).find(e => 
         e.id === activeStructureId || 
         e.sigla === activeStructureId || 
+        normalizeStructureKey(e.id) === activeStructureId ||
+        normalizeStructureKey(e.sigla) === activeStructureId ||
         activeStructureId.includes(e.sigla) ||
         (e.nome && activeStructureId.includes(e.nome.toUpperCase()))
+      ) || (structures || []).find(s =>
+        s.id === activeStructureId ||
+        s.sigla === activeStructureId ||
+        normalizeStructureKey(s.id) === activeStructureId ||
+        normalizeStructureKey(s.sigla) === activeStructureId
       );
       if (match) {
         setSelectedEstrutura(match);
       }
     }
-  }, [activeStructureId, estruturas]);
+  }, [activeStructureId, estruturas, structures]);
 
   // Ocorrências / Anomalias de Inspeção Georreferenciadas (Padrão SYSDAM)
   const georeferencedAnomalies = useMemo(() => {
@@ -318,14 +332,57 @@ export const MapTab = ({
       initialLat = -20.095810;
       initialLon = -44.111803;
       initialZoom = navigationContext.zoom || 16;
+    } else if (navigationContext?.locateStructureId) {
+      const target = (estruturas || []).find(e => e.id === navigationContext.locateStructureId || e.sigla === navigationContext.locateStructureId) ||
+                     (structures || []).find(s => s.id === navigationContext.locateStructureId || s.sigla === navigationContext.locateStructureId);
+      const tLat = target?.lat ?? target?.coordenadas?.lat;
+      const tLon = target?.lon ?? target?.coordenadas?.lon;
+      if (tLat && tLon) {
+        initialLat = tLat;
+        initialLon = tLon;
+        initialZoom = 16;
+      }
     } else if (navigationContext?.structureId && navigationContext.structureId !== 'TODAS') {
       const bound = STRUCTURE_BOUNDARIES.find(b => b.id === navigationContext.structureId);
-      const st = (structures || []).find(s => s.id === navigationContext.structureId);
-      const center = bound?.center || (st?.lat && st?.lon ? [st.lat, st.lon] : null);
+      const st = (estruturas || []).find(e => 
+        e.id === navigationContext.structureId || 
+        e.sigla === navigationContext.structureId || 
+        normalizeStructureKey(e.id) === navigationContext.structureId || 
+        normalizeStructureKey(e.sigla) === navigationContext.structureId
+      ) || (structures || []).find(s => 
+        s.id === navigationContext.structureId || 
+        s.sigla === navigationContext.structureId || 
+        normalizeStructureKey(s.id) === navigationContext.structureId || 
+        normalizeStructureKey(s.sigla) === navigationContext.structureId
+      );
+      const lat = st?.lat ?? st?.coordenadas?.lat;
+      const lon = st?.lon ?? st?.coordenadas?.lon;
+      const center = (lat && lon) ? [lat, lon] : (bound?.center || null);
       if (center) {
         initialLat = center[0];
         initialLon = center[1];
         initialZoom = navigationContext.zoom || 16;
+      }
+    } else if (activeStructureId && activeStructureId !== 'TODAS') {
+      const bound = STRUCTURE_BOUNDARIES.find(b => b.id === activeStructureId);
+      const st = (estruturas || []).find(e => 
+        e.id === activeStructureId || 
+        e.sigla === activeStructureId || 
+        normalizeStructureKey(e.id) === activeStructureId || 
+        normalizeStructureKey(e.sigla) === activeStructureId
+      ) || (structures || []).find(s => 
+        s.id === activeStructureId || 
+        s.sigla === activeStructureId || 
+        normalizeStructureKey(s.id) === activeStructureId || 
+        normalizeStructureKey(s.sigla) === activeStructureId
+      );
+      const lat = st?.lat ?? st?.coordenadas?.lat;
+      const lon = st?.lon ?? st?.coordenadas?.lon;
+      const center = (lat && lon) ? [lat, lon] : (bound?.center || null);
+      if (center) {
+        initialLat = center[0];
+        initialLon = center[1];
+        initialZoom = 16;
       }
     } else {
       try {
@@ -474,6 +531,7 @@ export const MapTab = ({
 
     const sumpsLayer = new LayerGroup().addTo(map);
     const pluviometriaLayer = new LayerGroup().addTo(map);
+    const structuresLayer = new LayerGroup().addTo(map);
 
     // Registro das instâncias
     mapInstanceRef.current = {
@@ -486,6 +544,7 @@ export const MapTab = ({
     polygonsLayerRef.current = polygonsLayer;
     sumpsLayerRef.current = sumpsLayer;
     pluviometriaLayerRef.current = pluviometriaLayer;
+    structuresLayerRef.current = structuresLayer;
 
     // Rastreamento de coordenadas do cursor (WGS-84 e SIRGAS 2000 UTM 23S) e nível de zoom em tempo real
     map.on('mousemove', (e) => {
@@ -501,19 +560,24 @@ export const MapTab = ({
         const target = locateStructureTargetRef.current;
         const lat = Number(e.latlng.lat.toFixed(6));
         const lon = Number(e.latlng.lng.toFixed(6));
-        storageService.saveEstruturaEmpreendimento({
+        const updated = {
           ...target,
           lat,
           lon,
           coordenadas: { lat, lon }
-        });
+        };
+        storageService.saveEstruturaEmpreendimento(updated);
+        const refreshed = storageService.getEstruturasEmpreendimento();
+        setEstruturas(refreshed);
+        setSelectedEstrutura(updated);
         setLocateStructureTarget(null);
         if (setSystemToast) {
           setSystemToast({
             type: 'success',
-            message: `Localização da estrutura "${target.nome}" inserida no mapa com sucesso!`
+            message: `Localização da estrutura "${target.nome}" inserida no mapa com sucesso! (Lat: ${lat}, Lon: ${lon})`
           });
         }
+        map.flyTo([lat, lon], 17, { duration: 0.8 });
       }
     });
 
@@ -585,6 +649,8 @@ export const MapTab = ({
       sumpsLayerRef.current = null;
       if (pluviometriaLayerRef.current) pluviometriaLayerRef.current.clearLayers();
       pluviometriaLayerRef.current = null;
+      if (structuresLayerRef.current) structuresLayerRef.current.clearLayers();
+      structuresLayerRef.current = null;
     };
   }, []);
 
@@ -675,14 +741,26 @@ export const MapTab = ({
     if (structId === 'TODAS') {
       map.flyTo([-20.063818, -44.114360], 14, { duration: 1.2 });
     } else {
-      const boundary = STRUCTURE_BOUNDARIES.find(b => b.id === structId);
-      const struct = structures.find(s => s.id === structId);
-      const targetCenter = boundary?.center || (struct?.lat && struct?.lon ? [struct.lat, struct.lon] : null);
+      const bound = STRUCTURE_BOUNDARIES.find(b => b.id === structId);
+      const struct = (estruturas || []).find(e => 
+        e.id === structId || 
+        e.sigla === structId || 
+        normalizeStructureKey(e.id) === structId || 
+        normalizeStructureKey(e.sigla) === structId
+      ) || (structures || []).find(s => 
+        s.id === structId || 
+        s.sigla === structId || 
+        normalizeStructureKey(s.id) === structId || 
+        normalizeStructureKey(s.sigla) === structId
+      );
+      const targetLat = struct?.lat ?? struct?.coordenadas?.lat;
+      const targetLon = struct?.lon ?? struct?.coordenadas?.lon;
+      const targetCenter = (targetLat && targetLon) ? [targetLat, targetLon] : (bound?.center || null);
       if (targetCenter) {
         map.flyTo(targetCenter, 16, { duration: 1.2 });
       }
     }
-  }, [selectStructure, selectedInstrument, structures]);
+  }, [selectStructure, selectedInstrument, structures, estruturas]);
 
   // Navegar suavemente e focar no instrumento selecionado
   const handleSelectInstrument = useCallback((inst) => {
@@ -776,7 +854,28 @@ export const MapTab = ({
           </div>
         `, { sticky: true, opacity: 0.95 });
 
-        polygon.on('click', () => {
+        polygon.on('click', (e) => {
+          if (locateStructureTargetRef.current) {
+            const target = locateStructureTargetRef.current;
+            const lat = Number(e.latlng.lat.toFixed(6));
+            const lon = Number(e.latlng.lng.toFixed(6));
+            const updated = { ...target, lat, lon, coordenadas: { lat, lon } };
+            storageService.saveEstruturaEmpreendimento(updated);
+            const refreshed = storageService.getEstruturasEmpreendimento();
+            setEstruturas(refreshed);
+            setSelectedEstrutura(updated);
+            setLocateStructureTarget(null);
+            if (setSystemToast) {
+              setSystemToast({
+                type: 'success',
+                message: `Localização da estrutura "${target.nome}" inserida no mapa com sucesso! (Lat: ${lat}, Lon: ${lon})`
+              });
+            }
+            if (mapInstanceRef.current?.map) {
+              mapInstanceRef.current.map.flyTo([lat, lon], 17, { duration: 0.8 });
+            }
+            return;
+          }
           handleSelectStructure(boundary.id);
           const match = estruturas.find(e => e.id === boundary.id || e.sigla === boundary.id || boundary.id.includes(e.sigla));
           if (match) {
@@ -839,78 +938,91 @@ export const MapTab = ({
       layer.clearLayers();
       structureTooltipsRef.current = [];
 
-    // 1. Badges das Estruturas da Mina (Unificando catálogo com novas estruturas cadastradas)
-    const combinedStructuresMap = new Map();
-    (structures || []).forEach(s => {
-      const key = s.id || s.sigla;
-      if (key) combinedStructuresMap.set(key, { ...s });
-    });
-    (estruturas || []).forEach(e => {
-      const key = e.id || e.sigla;
-      if (key) {
-        const existing = combinedStructuresMap.get(key) || {};
-        const lat = e.lat ?? e.coordenadas?.lat ?? existing.lat;
-        const lon = e.lon ?? e.coordenadas?.lon ?? existing.lon;
-        combinedStructuresMap.set(key, { ...existing, ...e, lat, lon });
-      }
-    });
+    // 1. Badges das Estruturas da Mina (LayerGroup dedicado - NUNCA entra em cluster de instrumentos)
+    if (structuresLayerRef.current) {
+      const structLayer = structuresLayerRef.current;
+      structLayer.clearLayers();
+      structureTooltipsRef.current = [];
 
-    Array.from(combinedStructuresMap.values()).forEach(struct => {
-      if (struct.lat && struct.lon) {
-        const isCurrentActive = activeStructureId === struct.id || activeStructureId === struct.sigla;
-        const structIcon = new DivIcon({
-          className: 'structure-map-badge',
-          html: `
-            <div style="
-              background: rgba(15, 23, 42, 0.94);
-              border: 2px solid ${isCurrentActive ? '#38bdf8' : 'rgba(255, 255, 255, 0.7)'};
-              border-radius: 8px;
-              padding: 4px 10px;
-              color: #ffffff;
-              font-family: 'Inter', sans-serif;
-              font-size: 11px;
-              font-weight: 700;
-              box-shadow: ${isCurrentActive ? '0 0 20px rgba(56, 189, 248, 0.7)' : '0 4px 12px rgba(0,0,0,0.5)'};
-              white-space: nowrap;
-              display: flex;
-              align-items: center;
-              gap: 6px;
-              cursor: pointer;
-              transform: translate(-50%, -50%);
-              backdrop-filter: blur(8px);
-              transition: all 0.25s ease;
-            ">
-              <span style="width: 8px; height: 8px; border-radius: 50%; background: ${isCurrentActive ? '#38bdf8' : '#10b981'}; display: inline-block;"></span>
-              ${struct.nome}
+      const combinedStructuresMap = new globalThis.Map();
+      (structures || []).forEach(s => {
+        const key = s.id || s.sigla;
+        if (key) combinedStructuresMap.set(key, { ...s });
+      });
+      (estruturas || []).forEach(e => {
+        const key = e.id || e.sigla;
+        if (key) {
+          const existing = combinedStructuresMap.get(key) || {};
+          const lat = e.lat ?? e.coordenadas?.lat ?? existing.lat;
+          const lon = e.lon ?? e.coordenadas?.lon ?? existing.lon;
+          combinedStructuresMap.set(key, { ...existing, ...e, lat, lon });
+        }
+      });
+
+      Array.from(combinedStructuresMap.values()).forEach(struct => {
+        if (struct.lat && struct.lon) {
+          const isCurrentActive = activeStructureId === struct.id || 
+                                  activeStructureId === struct.sigla ||
+                                  normalizeStructureKey(activeStructureId) === normalizeStructureKey(struct.id) ||
+                                  normalizeStructureKey(activeStructureId) === normalizeStructureKey(struct.sigla);
+
+          const structIcon = new DivIcon({
+            className: 'structure-map-badge',
+            html: `
+              <div style="
+                background: ${isCurrentActive ? 'linear-gradient(135deg, #0284c7 0%, #0369a1 100%)' : 'rgba(15, 23, 42, 0.94)'};
+                border: ${isCurrentActive ? '2.5px solid #38bdf8' : '2px solid rgba(255, 255, 255, 0.85)'};
+                border-radius: 8px;
+                padding: 4px 10px;
+                color: #ffffff;
+                font-family: 'Inter', sans-serif;
+                font-size: 11px;
+                font-weight: 800;
+                box-shadow: ${isCurrentActive ? '0 0 25px rgba(56, 189, 248, 0.9), 0 4px 14px rgba(0,0,0,0.6)' : '0 4px 12px rgba(0,0,0,0.5)'};
+                white-space: nowrap;
+                display: flex;
+                align-items: center;
+                gap: 6px;
+                cursor: pointer;
+                transform: translate(-50%, -50%);
+                backdrop-filter: blur(8px);
+                transition: all 0.25s ease;
+                z-index: ${isCurrentActive ? 9999 : 500};
+              ">
+                <span style="width: 8px; height: 8px; border-radius: 50%; background: ${isCurrentActive ? '#38bdf8' : '#10b981'}; display: inline-block; box-shadow: 0 0 8px ${isCurrentActive ? '#38bdf8' : '#10b981'};"></span>
+                <span>${struct.nome}</span>
+                ${isCurrentActive ? '<span style="font-size: 8px; background: rgba(56,189,248,0.3); border: 1px solid #38bdf8; padding: 1px 4px; border-radius: 3px; font-weight: 700;">LOCADO</span>' : ''}
+              </div>
+            `,
+            iconSize: [0, 0]
+          });
+
+          const structMarker = new Marker([struct.lat, struct.lon], { icon: structIcon });
+          structMarker.bindTooltip(`
+            <div style="font-family: 'Inter', sans-serif; font-size: 11px; padding: 2px 4px; text-align: center;">
+              <strong style="color: #38bdf8;">${struct.nome}</strong> (${struct.sigla || struct.id})<br/>
+              <span style="color: #94a3b8; font-size: 10px;">Lat: ${Number(struct.lat).toFixed(6)} | Lon: ${Number(struct.lon).toFixed(6)}</span>
             </div>
-          `,
-          iconSize: [0, 0]
-        });
-
-        const structMarker = new Marker([struct.lat, struct.lon], { icon: structIcon });
-        structMarker.bindTooltip(struct.nome, {
-          permanent: true,
-          direction: 'top',
-          offset: [0, -14],
-          className: 'leaflet-tooltip-empreendimento'
-        });
-        
-        structMarker.on('click', () => {
-          handleSelectStructure(struct.id || struct.sigla);
-          const match = estruturas.find(e => e.id === struct.id || e.sigla === struct.id || struct.id?.includes(e.sigla) || struct.sigla === e.sigla);
-          if (match) {
-            setSelectedEstrutura(match);
-          } else {
-            setSelectedEstrutura(struct);
-          }
-          setIsSiderCollapsed(false);
-          setIsSiderFlipped(true);
-        });
-        
-        layer.addLayer(structMarker);
-        structureTooltipsRef.current.push(structMarker);
-      }
-    });
+          `, {
+            permanent: true,
+            direction: 'top',
+            offset: [0, -14],
+            className: 'leaflet-tooltip-empreendimento'
+          });
+          
+          structMarker.on('click', () => {
+            handleSelectStructure(struct.id || struct.sigla);
+            const match = estruturas.find(e => e.id === struct.id || e.sigla === struct.id || struct.id?.includes(e.sigla) || struct.sigla === e.sigla);
+            setSelectedEstrutura(match || struct);
+            setIsSiderCollapsed(false);
+            setIsSiderFlipped(true);
+          });
+          
+          structLayer.addLayer(structMarker);
+          structureTooltipsRef.current.push(structMarker);
+        }
+      });
+    }
 
     // 2. Marcadores dos Instrumentos Geotécnicos (Coordenadas Exatas Banco_De_Dados.xlsx)
     filteredInstruments.forEach(inst => {
@@ -978,32 +1090,49 @@ export const MapTab = ({
       layer.addLayer(marker);
     });
 
-    // 3. Marcadores de Chamados e Manutenções Geotécnicas (Padrão ⛮ + Criticidade + Balão Informativo)
+    // 3. Marcadores de Chamados e Anomalias de Campo (Banco Central PCMI)
     if (showTickets && georeferencedTickets.length > 0) {
       georeferencedTickets.forEach(t => {
-        const isSelected = selectedTicket && (
-          selectedTicket.protocolo === t.protocolo || 
-          selectedTicket.proto === t.protocolo ||
-          selectedTicket.id === t.id
-        );
+        const isSelected = selectedTicket && selectedTicket.protocolo === t.protocolo;
+        const isCritica = t.criticidade?.includes('A') || t.criticidadeNivel?.includes('Alerta') || t.criticidadeNivel?.includes('Emergência');
         
-        // DivIcon com símbolo ⛮ de manutenção, cor de criticidade e número do protocolo
-        const ticketIcon = createTicketDivIcon(t, isSelected, DivIcon);
-        const ticketMarker = new Marker([t.lat, t.lon], { icon: ticketIcon, zIndexOffset: 700 });
-
-        // Tooltip de prévia rápida no hover
-        ticketMarker.bindTooltip(generateTicketTooltip(t), { sticky: true, opacity: 0.96 });
-
-        // Balão informativo com todas as informações do chamado
-        ticketMarker.bindPopup(generateTicketBalloonPopup(t), {
-          className: 'chamados-executive-popup',
-          maxWidth: 340,
-          minWidth: 280,
-          offset: [0, -12],
-          autoPan: true,
-          autoPanPadding: [24, 24],
-          closeButton: true
+        const ticketIcon = new DivIcon({
+          className: 'custom-fluig-ticket-marker',
+          html: `
+            <div style="
+              background: ${isCritica ? '#ef4444' : '#f59e0b'};
+              color: #ffffff;
+              border: ${isSelected ? '3px solid #38bdf8' : '2px solid #ffffff'};
+              border-radius: 8px;
+              padding: 3px 8px;
+              font-family: 'Inter', sans-serif;
+              font-size: 10px;
+              font-weight: 800;
+              box-shadow: 0 4px 14px rgba(0,0,0,0.65);
+              display: flex;
+              align-items: center;
+              gap: 4px;
+              white-space: nowrap;
+              cursor: pointer;
+              transform: translate(-50%, -50%);
+              backdrop-filter: blur(4px);
+              transition: all 0.2s ease;
+            ">
+              <span>⚡ #${t.protocolo}</span>
+            </div>
+          `,
+          iconSize: [0, 0]
         });
+
+        const ticketMarker = new Marker([t.lat, t.lon], { icon: ticketIcon, zIndexOffset: 700 });
+        ticketMarker.bindTooltip(`
+          <div style="font-family: 'Inter', sans-serif; font-size: 11px; padding: 2px 4px; max-width: 260px;">
+            <strong style="color: #f59e0b;">Chamado PCMI #${t.protocolo}</strong><br/>
+            <strong>${t.titulo}</strong><br/>
+            <span style="color: #94a3b8;">${t.estrutura} - ${t.localizacao || ''}</span><br/>
+            <span style="font-size: 10px; color: #38bdf8;">Ação: ${t.acaoRecomendada || t.descricao || '-'}</span>
+          </div>
+        `, { sticky: true, opacity: 0.95 });
 
         ticketMarker.on('click', () => {
           setSelectedInstrument(null);
@@ -1466,10 +1595,47 @@ export const MapTab = ({
       <div className="map-hud-topbar">
         {/* 1. TOP-LEFT HUD: Botões Estratégicos de Abertura de Conteúdos */}
         <div className="map-hud-top-left">
-          {/* Botão 1: Painel Executivo Oficial de SUMPs */}
+          {/* Botão 1: Empreendimentos & Estruturas (Abre painel lateral 3D) */}
           <button
-            onClick={() => setShowSumpsPanel(prev => !prev)}
-            className={`btn-subtle map-hud-trigger ${showSumpsPanel ? 'active-glow' : ''}`}
+            onClick={() => setIsSiderCollapsed(prev => !prev)}
+            className={`btn-subtle map-hud-trigger ${!isSiderCollapsed ? 'active-glow' : ''}`}
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '5px',
+              padding: '0.3rem 0.65rem',
+              borderRadius: '10px',
+              backgroundColor: !isSiderCollapsed ? 'rgba(56, 189, 248, 0.24)' : 'rgba(15, 23, 42, 0.85)',
+              color: !isSiderCollapsed ? '#38bdf8' : '#e2e8f0',
+              border: !isSiderCollapsed ? '1px solid #38bdf8' : '1px solid rgba(255, 255, 255, 0.12)',
+              fontSize: '0.74rem',
+              fontWeight: 700,
+              cursor: 'pointer',
+              boxShadow: '0 4px 14px rgba(0, 0, 0, 0.4)',
+              backdropFilter: 'blur(16px)',
+              transition: 'all 0.2s ease',
+              whiteSpace: 'nowrap'
+            }}
+          title="Abrir Painel de Empreendimentos e Estruturas"
+        >
+          <Building2 size={15} style={{ color: '#38bdf8' }} />
+          <span>Empreendimentos</span>
+          <span style={{
+            backgroundColor: 'rgba(56, 189, 248, 0.25)',
+            color: '#38bdf8',
+            padding: '1px 6px',
+            borderRadius: '999px',
+            fontSize: '0.65rem',
+            fontWeight: 800
+          }}>
+            {estruturas.length}
+          </span>
+        </button>
+
+        {/* Botão 2: Painel Executivo Oficial de SUMPs */}
+        <button
+          onClick={() => setShowSumpsPanel(prev => !prev)}
+          className={`btn-subtle map-hud-trigger ${showSumpsPanel ? 'active-glow' : ''}`}
           style={{
             display: 'inline-flex',
             alignItems: 'center',
@@ -1684,7 +1850,12 @@ export const MapTab = ({
           <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
             <Building2 size={14} style={{ color: activeStructureId !== 'TODAS' ? '#38bdf8' : '#94a3b8' }} />
             <select
-              value={activeStructureId}
+              value={allDisplayStructures.find(s => 
+                s.id === activeStructureId || 
+                s.sigla === activeStructureId || 
+                normalizeStructureKey(s.id) === activeStructureId ||
+                normalizeStructureKey(s.sigla) === activeStructureId
+              )?.id || activeStructureId || 'TODAS'}
               onChange={(e) => handleSelectStructure(e.target.value)}
               className="form-select"
               style={{
@@ -1699,14 +1870,14 @@ export const MapTab = ({
                 cursor: 'pointer'
               }}
             >
-              <option value="TODAS">Complexo Geral ({structures.length})</option>
-              {structures.map(s => {
+              <option value="TODAS">Complexo Geral ({allDisplayStructures.length})</option>
+              {allDisplayStructures.map(s => {
                 const count = instruments.filter(i => 
                   (i.estrutura?.replace(/\s+/g, '_') === s.id || i.estrutura === s.id || i.estrutura === s.nome)
                 ).length;
                 return (
-                  <option key={s.id} value={s.id}>
-                    {s.nome} ({count})
+                  <option key={s.id || s.sigla} value={s.id || s.sigla}>
+                    {s.nome} {count > 0 ? `(${count})` : (s.lat && s.lon ? '(Locada)' : '')}
                   </option>
                 );
               })}
@@ -2746,83 +2917,6 @@ export const MapTab = ({
         activeFilterAnom={filterSumpAnom}
         onChangeFilterAnom={setFilterSumpAnom}
       />
-
-      {/* Modal de Ampliação de Foto da Anomalia do Chamado */}
-      {photoEnlargeModal && (
-        <div 
-          className="modal-backdrop animate-fade-in"
-          onClick={() => setPhotoEnlargeModal(null)}
-          style={{
-            position: 'fixed',
-            top: 0, left: 0, right: 0, bottom: 0,
-            backgroundColor: 'rgba(0, 0, 0, 0.85)',
-            backdropFilter: 'blur(8px)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            zIndex: 4000,
-            padding: '1.5rem'
-          }}
-        >
-          <div 
-            onClick={(e) => e.stopPropagation()}
-            style={{
-              position: 'relative',
-              maxWidth: '850px',
-              width: '100%',
-              backgroundColor: '#0f172a',
-              borderRadius: '16px',
-              border: '1px solid rgba(255,255,255,0.2)',
-              overflow: 'hidden',
-              boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.85)'
-            }}
-          >
-            <div style={{
-              padding: '0.9rem 1.25rem',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              borderBottom: '1px solid rgba(255,255,255,0.1)',
-              backgroundColor: 'rgba(255,255,255,0.03)'
-            }}>
-              <div>
-                <h4 style={{ margin: 0, fontSize: '0.95rem', fontWeight: 800, color: '#f8fafc' }}>
-                  {photoEnlargeModal.title || 'Evidência Fotográfica do Chamado'}
-                </h4>
-                {photoEnlargeModal.subtitle && (
-                  <p style={{ margin: '2px 0 0 0', fontSize: '0.75rem', color: '#94a3b8' }}>
-                    {photoEnlargeModal.subtitle}
-                  </p>
-                )}
-              </div>
-              <button
-                onClick={() => setPhotoEnlargeModal(null)}
-                style={{
-                  background: 'rgba(255,255,255,0.1)',
-                  border: 'none',
-                  borderRadius: '50%',
-                  width: '30px',
-                  height: '30px',
-                  color: '#fff',
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center'
-                }}
-              >
-                ✕
-              </button>
-            </div>
-            <div style={{ padding: '1rem', display: 'flex', justifyContent: 'center', maxHeight: '75vh', overflow: 'auto' }}>
-              <img 
-                src={photoEnlargeModal.url} 
-                alt="Foto Ampliada" 
-                style={{ maxWidth: '100%', maxHeight: '70vh', objectFit: 'contain', borderRadius: '8px' }} 
-              />
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 };

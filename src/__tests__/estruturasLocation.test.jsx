@@ -4,7 +4,7 @@ import { createRoot } from 'react-dom/client';
 import { describe, it, expect, vi, beforeAll, afterAll } from 'vitest';
 import { EstruturasEmpreendimentoTab } from '../components/EstruturasEmpreendimentoTab';
 import { StructureLocationPickerModal } from '../components/StructureLocationPickerModal';
-import { GeotechDataProvider } from '../context/GeotechDataContext';
+import { GeotechDataProvider, useGeotechData } from '../context/GeotechDataContext';
 import { AuthProvider } from '../context/AuthContext';
 import { storageService } from '../services/storageService';
 
@@ -31,34 +31,56 @@ describe('Estruturas Location & Map Placement', () => {
     container.remove();
   });
 
-  it('storageService.saveEstruturaEmpreendimento correctly normalizes and saves lat/lon', () => {
+  it('storageService.saveEstruturaEmpreendimento correctly normalizes and saves lat/lon and dispatches event', () => {
     const eventSpy = vi.fn();
     window.addEventListener('mdsync:estruturas-changed', eventSpy);
 
     const testStruct = {
-      id: 'TEST-EST-1',
-      sigla: 'TEST-1',
-      nome: 'Estrutura Teste Georreferenciada',
-      lat: '-20.065432',
-      lon: '-44.112345'
+      id: 'PDE ES SMB',
+      sigla: 'PDE ES SMB',
+      nome: 'PDE Samambaia',
+      lat: '-20.093978',
+      lon: '-44.106216'
     };
 
     const saved = storageService.saveEstruturaEmpreendimento(testStruct);
     expect(saved).toBe(true);
 
     const list = storageService.getEstruturasEmpreendimento();
-    const found = list.find(e => e.id === 'TEST-EST-1' || e.sigla === 'TEST-1');
+    const found = list.find(e => e.id === 'PDE ES SMB' || e.sigla === 'PDE ES SMB');
     expect(found).toBeDefined();
-    expect(found.lat).toBe(-20.065432);
-    expect(found.lon).toBe(-44.112345);
-    expect(found.coordenadas.lat).toBe(-20.065432);
-    expect(found.coordenadas.lon).toBe(-44.112345);
+    expect(found.lat).toBe(-20.093978);
+    expect(found.lon).toBe(-44.106216);
+    expect(found.coordenadas.lat).toBe(-20.093978);
+    expect(found.coordenadas.lon).toBe(-44.106216);
 
     expect(eventSpy).toHaveBeenCalled();
     window.removeEventListener('mdsync:estruturas-changed', eventSpy);
+  });
 
-    // Clean up
-    storageService.deleteEstruturaEmpreendimento('TEST-EST-1');
+  it('GeotechDataProvider automatically synchronizes structures when mdsync:estruturas-changed is dispatched', async () => {
+    let capturedStructures = [];
+    const Consumer = () => {
+      const { structures } = useGeotechData();
+      capturedStructures = structures;
+      return <div data-testid="count">{structures.length}</div>;
+    };
+
+    await act(async () => {
+      root.render(
+        <AuthProvider>
+          <GeotechDataProvider>
+            <Consumer />
+          </GeotechDataProvider>
+        </AuthProvider>
+      );
+    });
+
+    const hasSamambaia = capturedStructures.some(s => s.nome === 'PDE Samambaia' || s.id === 'PDE ES SMB');
+    expect(hasSamambaia).toBe(true);
+    const samambaia = capturedStructures.find(s => s.nome === 'PDE Samambaia' || s.id === 'PDE ES SMB');
+    expect(samambaia.lat).toBe(-20.093978);
+    expect(samambaia.lon).toBe(-44.106216);
   });
 
   it('renders location fields and actions inside the create structure modal', async () => {
@@ -90,6 +112,38 @@ describe('Estruturas Location & Map Placement', () => {
     // Find latitude and longitude inputs
     const inputs = modal.querySelectorAll('input[type="number"]');
     expect(inputs.length).toBeGreaterThanOrEqual(2);
+  });
+
+  it('clicking Ver no Georeferenciamento navigates to mapa with exact coords and structureId', async () => {
+    const navigateSpy = vi.fn();
+
+    await act(async () => {
+      root.render(
+        <AuthProvider>
+          <GeotechDataProvider>
+            <EstruturasEmpreendimentoTab onNavigateTab={navigateSpy} />
+          </GeotechDataProvider>
+        </AuthProvider>
+      );
+    });
+
+    const geoButtons = Array.from(container.querySelectorAll('button')).filter(
+      b => b.textContent.includes('Ver no Georeferenciamento') || b.textContent.includes('Ver no Mapa')
+    );
+    expect(geoButtons.length).toBeGreaterThan(0);
+
+    await act(async () => {
+      geoButtons[0].click();
+    });
+
+    expect(navigateSpy).toHaveBeenCalledWith(
+      'mapa',
+      expect.objectContaining({
+        structureId: expect.any(String),
+        coords: expect.any(Array),
+        zoom: expect.any(Number)
+      })
+    );
   });
 
   it('StructureLocationPickerModal calls onConfirm with coords when confirmed', async () => {
@@ -137,4 +191,3 @@ describe('Estruturas Location & Map Placement', () => {
     pickerContainer.remove();
   });
 });
-

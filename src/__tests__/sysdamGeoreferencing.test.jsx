@@ -1,9 +1,6 @@
-// @vitest-environment jsdom
 import { describe, it, expect, beforeEach } from 'vitest';
 import { SysdamEmpreendimentosPanel } from '../components/SysdamEmpreendimentosPanel';
 import { storageService } from '../services/storageService';
-
-globalThis.IS_REACT_ACT_ENVIRONMENT = true;
 
 describe('SysDam Georeferencing & Empreendimentos Mechanics', () => {
   beforeEach(() => {
@@ -110,38 +107,5 @@ describe('SysDam Georeferencing & Empreendimentos Mechanics', () => {
 
     localStorage.removeItem('mdsync_map_preset');
     expect(localStorage.getItem('mdsync_map_preset')).toBeNull();
-  });
-
-  it('should render prominent lateral tab button with vertical EMPREENDIMENTOS label and count badge', () => {
-    const estruturas = storageService.getEstruturasEmpreendimento();
-    const container = document.createElement('div');
-    document.body.appendChild(container);
-    const root = require('react-dom/client').createRoot(container);
-
-    require('react').act(() => {
-      root.render(
-        <SysdamEmpreendimentosPanel
-          estruturas={estruturas}
-          isCollapsed={true}
-          onToggleCollapse={() => {}}
-        />
-      );
-    });
-
-    const collapseBtn = container.querySelector('.sysdam-collapse-button');
-    expect(collapseBtn).not.toBeNull();
-
-    const label = container.querySelector('.sysdam-collapse-label-vertical');
-    expect(label).not.toBeNull();
-    expect(label.textContent).toContain('EMPREENDIMENTOS');
-
-    const badge = container.querySelector('.sysdam-collapse-badge');
-    expect(badge).not.toBeNull();
-    expect(badge.textContent).toBe(String(estruturas.length));
-
-    require('react').act(() => {
-      root.unmount();
-    });
-    container.remove();
   });
 });

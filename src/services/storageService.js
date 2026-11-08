@@ -1955,7 +1955,13 @@ export const storageService = {
   saveEstruturaEmpreendimento(estrutura) {
     try {
       const estruturas = this.getEstruturasEmpreendimento();
-      const idx = estruturas.findIndex(e => e.id === estrutura.id || e.sigla === estrutura.sigla);
+      const cleanId = (estrutura.id || estrutura.sigla || '').trim().toUpperCase();
+      const cleanSigla = (estrutura.sigla || estrutura.id || '').trim().toUpperCase();
+      const idx = estruturas.findIndex(e => 
+        (e.id && e.id.trim().toUpperCase() === cleanId) || 
+        (e.sigla && e.sigla.trim().toUpperCase() === cleanSigla) ||
+        (estrutura.nome && e.nome && e.nome.trim().toUpperCase() === estrutura.nome.trim().toUpperCase())
+      );
       const lat = (estrutura.lat !== undefined && estrutura.lat !== '' && !isNaN(Number(estrutura.lat)))
         ? Number(estrutura.lat)
         : (estrutura.coordenadas?.lat !== undefined ? Number(estrutura.coordenadas.lat) : undefined);
@@ -1964,6 +1970,8 @@ export const storageService = {
         : (estrutura.coordenadas?.lon !== undefined ? Number(estrutura.coordenadas.lon) : undefined);
       const normalized = {
         ...estrutura,
+        id: cleanId || estrutura.id,
+        sigla: cleanSigla || estrutura.sigla,
         lat,
         lon,
         coordenadas: (lat !== undefined && lon !== undefined) ? { lat, lon } : (estrutura.coordenadas || undefined)
@@ -1974,6 +1982,14 @@ export const storageService = {
         estruturas.push(normalized);
       }
       localStorage.setItem(STORAGE_KEYS.ESTRUTURAS_EMPREENDIMENTO, JSON.stringify(estruturas));
+
+      // Dual-Persistence para alta resiliência operacional na mina (IndexedDB)
+      try {
+        if (typeof indexedDBStorage !== 'undefined' && indexedDBStorage.saveMedia) {
+          indexedDBStorage.saveMedia('estruturas_catalog', JSON.stringify(estruturas), 'application/json');
+        }
+      } catch (_) {}
+
       window.dispatchEvent(new CustomEvent('mdsync:estruturas-changed', { detail: estruturas }));
       return true;
     } catch (e) {
@@ -1983,8 +1999,16 @@ export const storageService = {
   },
   deleteEstruturaEmpreendimento(id) {
     try {
-      const estruturas = this.getEstruturasEmpreendimento().filter(e => e.id !== id && e.sigla !== id);
+      const cleanTarget = String(id).trim().toUpperCase();
+      const estruturas = this.getEstruturasEmpreendimento().filter(e => 
+        e.id?.trim().toUpperCase() !== cleanTarget && e.sigla?.trim().toUpperCase() !== cleanTarget
+      );
       localStorage.setItem(STORAGE_KEYS.ESTRUTURAS_EMPREENDIMENTO, JSON.stringify(estruturas));
+      try {
+        if (typeof indexedDBStorage !== 'undefined' && indexedDBStorage.saveMedia) {
+          indexedDBStorage.saveMedia('estruturas_catalog', JSON.stringify(estruturas), 'application/json');
+        }
+      } catch (_) {}
       window.dispatchEvent(new CustomEvent('mdsync:estruturas-changed', { detail: estruturas }));
       return true;
     } catch (e) {

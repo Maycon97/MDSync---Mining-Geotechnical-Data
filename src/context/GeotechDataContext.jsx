@@ -104,6 +104,42 @@ export const GeotechDataProvider = ({ children }) => {
     return () => window.removeEventListener('mdsync:queue-changed', handleQueueChange);
   }, []);
 
+  // Sincronizar catálogo global de estruturas quando evento for emitido (novas estruturas, edições e georreferenciamento)
+  useEffect(() => {
+    const handleEstruturasChanged = () => {
+      const catalog = storageService.getEstruturasEmpreendimento();
+      setStructures(prev => {
+        const mergedMap = new Map();
+        (prev || []).forEach(s => {
+          const key = s.id || s.sigla;
+          if (key) mergedMap.set(key, { ...s });
+        });
+        (catalog || []).forEach(e => {
+          const key = e.id || e.sigla;
+          if (key) {
+            const existing = mergedMap.get(key) || {};
+            const lat = e.lat ?? e.coordenadas?.lat ?? existing.lat;
+            const lon = e.lon ?? e.coordenadas?.lon ?? existing.lon;
+            mergedMap.set(key, {
+              ...existing,
+              ...e,
+              id: existing.id || e.id || e.sigla,
+              sigla: e.sigla || existing.sigla || key,
+              nome: e.nome || existing.nome || key,
+              categoria: e.categoria || e.tipo || existing.categoria || 'Pilhas',
+              lat,
+              lon,
+              coordenadas: (lat && lon) ? { lat, lon } : (existing.coordenadas || e.coordenadas)
+            });
+          }
+        });
+        return Array.from(mergedMap.values());
+      });
+    };
+    window.addEventListener('mdsync:estruturas-changed', handleEstruturasChanged);
+    return () => window.removeEventListener('mdsync:estruturas-changed', handleEstruturasChanged);
+  }, []);
+
   // Monitorar eventos reais de conexão
   useEffect(() => {
     const handleOnline = () => {
@@ -235,7 +271,35 @@ export const GeotechDataProvider = ({ children }) => {
           }
           return { ...s, categoria };
         });
-        setStructures(enrichedStructures);
+
+        // Unificar com catálogo persistente (que contém novas estruturas adicionadas e coordenadas salvas)
+        const catalog = storageService.getEstruturasEmpreendimento();
+        const mergedMap = new Map();
+        enrichedStructures.forEach(s => {
+          const key = s.id || s.sigla;
+          if (key) mergedMap.set(key, { ...s });
+        });
+        (catalog || []).forEach(e => {
+          const key = e.id || e.sigla;
+          if (key) {
+            const existing = mergedMap.get(key) || {};
+            const lat = e.lat ?? e.coordenadas?.lat ?? existing.lat;
+            const lon = e.lon ?? e.coordenadas?.lon ?? existing.lon;
+            mergedMap.set(key, {
+              ...existing,
+              ...e,
+              id: existing.id || e.id || e.sigla,
+              sigla: e.sigla || existing.sigla || key,
+              nome: e.nome || existing.nome || key,
+              categoria: e.categoria || e.tipo || existing.categoria || 'Pilhas',
+              lat,
+              lon,
+              coordenadas: (lat && lon) ? { lat, lon } : (existing.coordenadas || e.coordenadas)
+            });
+          }
+        });
+
+        setStructures(Array.from(mergedMap.values()));
         setLimites(data.limites || {});
         setReadingsPiezometria(data.leiturasPiezometricas || []);
         setReadingsVazao(data.leiturasVazao || []);

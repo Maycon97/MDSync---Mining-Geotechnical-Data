@@ -279,15 +279,27 @@ export const EstruturasEmpreendimentoTab = ({ onNavigateTab }) => {
   };
 
   const handleGoToMap = (est) => {
-    if (selectStructure && est) {
+    if (!est) return;
+    if (selectStructure) {
       selectStructure(est.sigla || est.id);
     }
     const lat = est.lat ?? est.coordenadas?.lat;
     const lon = est.lon ?? est.coordenadas?.lon;
-    if (onNavigateTab && est) {
+    
+    // Se a estrutura ainda não possui coordenadas georreferenciadas salvas, abrir no modo de locação direta no mapa
+    if (!lat || !lon) {
+      if (onNavigateTab) {
+        onNavigateTab('mapa', {
+          locateStructureId: est.id || est.sigla
+        });
+      }
+      return;
+    }
+
+    if (onNavigateTab) {
       onNavigateTab('mapa', {
         structureId: est.id || est.sigla,
-        coords: (lat && lon) ? [lat, lon] : undefined,
+        coords: [Number(lat), Number(lon)],
         zoom: 16
       });
     }

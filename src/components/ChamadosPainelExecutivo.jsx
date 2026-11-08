@@ -1,10 +1,5 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 import L from '../utils/leafletCompat';
-import {
-  createTicketDivIcon,
-  generateTicketBalloonPopup,
-  generateTicketTooltip
-} from '../utils/ticketMapHelper';
 import logoItaminas from '../assets/logo_itaminas.png';
 import { chamadosSyncTunnel } from '../services/chamadosSyncTunnel';
 import {
@@ -358,24 +353,118 @@ export const ChamadosPainelExecutivo = ({ onNavigateTab, onOpenNewTicket, onOpen
             }
           }
 
-          const ticketIcon = createTicketDivIcon(t, false, L.DivIcon);
-          const marker = new L.Marker([t.lat, t.lon], { icon: ticketIcon, zIndexOffset: 700 });
+          const marker = L.circleMarker([t.lat, t.lon], {
+            radius: 7,
+            color: '#ffffff',
+            weight: 2,
+            fillColor: statusTheme.dotColor,
+            fillOpacity: 0.95
+          });
 
-          // Tooltip de prévia rápida no hover
-          marker.bindTooltip(generateTicketTooltip(t), { sticky: true, opacity: 0.96 });
-
+          // Transições dinâmicas ao interagir com o marcador
+          marker.on('mouseover', () => {
+            marker.setStyle({ radius: 10, weight: 3, fillOpacity: 1 });
+          });
+          marker.on('mouseout', () => {
+            marker.setStyle({ radius: 7, weight: 2, fillOpacity: 0.95 });
+          });
           marker.on('click', () => {
             if (mapInstanceRef.current) {
               mapInstanceRef.current.panTo([t.lat, t.lon], { animate: true, duration: 0.45 });
             }
           });
 
-          // Balão Informativo (Leaflet Popup) com todas as informações completas do chamado
-          marker.bindPopup(generateTicketBalloonPopup(t), {
+          const popupContent = `
+            <div style="font-family: inherit; font-size: 12px; line-height: 1.45; min-width: 250px; max-width: 295px; padding: 12px 14px 14px 14px; color: #f1f5f9;">
+              
+              <!-- Cabeçalho com Protocolo e GUT (com espaço seguro para o botão fechar '×') -->
+              <div style="padding-right: 28px; margin-bottom: 8px; display: flex; align-items: center; justify-content: space-between; gap: 8px;">
+                <div style="display: flex; align-items: center; gap: 6px;">
+                  <span style="font-size: 13px; font-weight: 800; color: #38bdf8; letter-spacing: 0.3px;">#${safeProto}</span>
+                </div>
+                <span style="background: ${critColor}24; border: 1px solid ${critColor}66; color: ${critColor}; padding: 2px 7px; border-radius: 6px; font-size: 10px; font-weight: 800; letter-spacing: 0.5px; text-transform: uppercase;">
+                  ${t.crit || 'GUT'}
+                </span>
+              </div>
+
+              <!-- Identificação da Estrutura e Tipo -->
+              <div style="margin-bottom: 6px;">
+                <div style="font-weight: 700; font-size: 13px; color: #ffffff; line-height: 1.25;">${safeEstr}</div>
+                <div style="font-size: 11px; color: #94a3b8; margin-top: 1px;">Tipo: <span style="color: #cbd5e1; font-weight: 600;">${safeTipo}</span></div>
+              </div>
+
+              ${safeRequerido ? `
+                <div style="font-size: 11px; color: #94a3b8; margin-bottom: 5px;">
+                  Área: <span style="color: #e2e8f0; font-weight: 500;">${safeRequerido}</span>
+                </div>
+              ` : ''}
+
+              ${safeAcao ? `
+                <div style="margin: 7px 0; padding: 6px 9px; background: rgba(56, 189, 248, 0.08); border-left: 3px solid #38bdf8; border-radius: 4px; font-size: 11px; color: #e0f2fe; font-style: italic; line-height: 1.35;">
+                  “${safeAcao}”
+                </div>
+              ` : ''}
+
+              <!-- Status com Pílula de Alto Contraste & Indicador Pulsante -->
+              <div style="margin-top: 8px; padding-top: 7px; border-top: 1px solid rgba(255, 255, 255, 0.1); display: flex; align-items: center; justify-content: space-between; gap: 6px;">
+                <span style="font-size: 11px; color: #94a3b8; font-weight: 600;">Status:</span>
+                <span style="background: ${statusTheme.bgColor}; border: 1px solid ${statusTheme.borderColor}; color: ${statusTheme.textColor}; padding: 2px 8px; border-radius: 9999px; font-size: 10.5px; font-weight: 700; display: inline-flex; align-items: center; gap: 5px;">
+                  <span class="chamados-status-dot-pulse" style="width: 6px; height: 6px; border-radius: 50%; background: ${statusTheme.dotColor}; display: inline-block;"></span>
+                  <span>${t.status}</span>
+                </span>
+              </div>
+
+              <!-- Prazos & SLA -->
+              ${t.limite ? `
+                <div style="margin-top: 6px; display: flex; align-items: center; justify-content: space-between; font-size: 11px;">
+                  <span style="color: #94a3b8;">Limite: <strong style="color: #f1f5f9;">${t.limite.split('-').reverse().join('/')}</strong></span>
+                  ${slaBadge}
+                </div>
+              ` : ''}
+
+              <!-- Etapa Fluig -->
+              ${safeEtapa ? `
+                <div style="margin-top: 5px; font-size: 10.5px; color: #64748b;">
+                  Etapa: <span style="color: #94a3b8;">${safeEtapa}</span>
+                </div>
+              ` : ''}
+
+              <!-- Foto Geotécnica com Tratamento Seguro contra Imagens Quebradas -->
+              ${safePhoto ? `
+                <div class="popup-photo-wrapper chamados-popup-photo-card" style="margin-top: 9px; border-radius: 8px; overflow: hidden; border: 1px solid rgba(255,255,255,0.14); position: relative; background: rgba(0,0,0,0.5); cursor: pointer;" onclick="if(window.__openPhotoModal){window.__openPhotoModal('${safePhoto}', 'Protocolo #${safeProto} · Anomalia', '${safeEstr} · ${safeTipo}');}">
+                  <img 
+                    src="${safePhoto}" 
+                    alt="Foto da Anomalia" 
+                    loading="lazy" 
+                    onerror="this.onerror=null; var w=this.closest('.popup-photo-wrapper'); if(w) w.style.display='none';" 
+                    style="width: 100%; height: 105px; object-fit: cover; display: block;" 
+                  />
+                  <div style="position: absolute; bottom: 0; left: 0; right: 0; padding: 4px 8px; background: linear-gradient(180deg, transparent 0%, rgba(0,0,0,0.85) 100%); display: flex; align-items: center; justify-content: space-between;">
+                    <span style="font-size: 9.5px; color: #e2e8f0; font-weight: 600;">Foto da Anomalia</span>
+                    <span style="font-size: 9.5px; color: #38bdf8; font-weight: 700;">🔍 Ampliar</span>
+                  </div>
+                </div>
+              ` : ''}
+
+              <!-- Botão de Ação: Ver Ficha Completa -->
+              <button 
+                type="button" 
+                class="chamados-popup-btn" 
+                onclick="if(window.__openTicketDetail){window.__openTicketDetail('${safeProto}');}" 
+                style="width: 100%; margin-top: 10px; padding: 7px 10px; background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%); color: #ffffff; border: 1px solid rgba(255,255,255,0.22); border-radius: 8px; font-size: 11px; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; box-shadow: 0 2px 10px rgba(2,132,199,0.38);"
+              >
+                <span>Ver Ficha Geotécnica Completa</span>
+                <span style="font-size: 12px;">→</span>
+              </button>
+
+            </div>
+          `;
+
+          marker.bindPopup(popupContent, {
             className: 'chamados-executive-popup',
-            maxWidth: 340,
-            minWidth: 280,
-            offset: [0, -12],
+            maxWidth: 320,
+            minWidth: 260,
+            offset: [0, -10],
             autoPan: true,
             autoPanPadding: [24, 24],
             closeButton: true

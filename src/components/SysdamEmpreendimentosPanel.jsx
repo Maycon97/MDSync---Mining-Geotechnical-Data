@@ -159,25 +159,14 @@ export const SysdamEmpreendimentosPanel = ({
 
   return (
     <div className={`sysdam-map-sider ${isCollapsed ? 'collapsed' : ''}`}>
-      {/* Botão de Colapso Lateral Chamativo (Aba lateral de Empreendimentos) */}
+      {/* Botão de Colapso Lateral Padrão Sysdam (24x80px com seta) */}
       <button
         className="sysdam-collapse-button"
         onClick={onToggleCollapse}
-        title={isCollapsed ? 'Abrir painel de Empreendimentos e Estruturas' : 'Ocultar painel de empreendimentos'}
+        title={isCollapsed ? 'Expandir painel de empreendimentos' : 'Ocultar painel de empreendimentos'}
         aria-label="Alternar painel de empreendimentos"
       >
-        <div className="sysdam-collapse-icon-top">
-          <Building2 size={16} />
-        </div>
-        <span className="sysdam-collapse-label-vertical">
-          EMPREENDIMENTOS
-        </span>
-        <span className="sysdam-collapse-badge">
-          {estruturas.length || 8}
-        </span>
-        <div className="sysdam-collapse-arrow">
-          {isCollapsed ? <ChevronRight size={14} /> : <ChevronLeft size={14} />}
-        </div>
+        <ChevronLeft size={16} />
       </button>
 
       {/* Container 3D Flip Card */}

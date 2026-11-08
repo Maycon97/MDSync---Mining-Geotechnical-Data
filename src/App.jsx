@@ -102,7 +102,7 @@ export function App() {
   };
 
   const handleNavigateTab = (tabId, contextOrSubTab = null) => {
-    const targetTab = tabId === 'map' ? 'mapa' : tabId;
+    const targetTab = (tabId === 'map' || tabId === 'georreferenciamento') ? 'mapa' : tabId;
     if (targetTab === 'mapa') {
       if (contextOrSubTab && typeof contextOrSubTab === 'object') {
         setMapNavigationContext(contextOrSubTab);
