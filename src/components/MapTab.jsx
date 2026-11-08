@@ -147,8 +147,24 @@ export const MapTab = ({
   const [showToolsMenu, setShowToolsMenu] = useState(false);
   const [showLegendPopover, setShowLegendPopover] = useState(false);
 
-  // Estruturas e Empreendimentos Georreferenciados (Padrão SysDam Portal)
-  const estruturas = useMemo(() => storageService.getEstruturasEmpreendimento(), []);
+  // Estruturas e Empreendimentos Georreferenciados (Padrão Portal)
+  const [estruturas, setEstruturas] = useState(() => storageService.getEstruturasEmpreendimento());
+
+  useEffect(() => {
+    const handleEstruturasChanged = () => {
+      setEstruturas(storageService.getEstruturasEmpreendimento());
+    };
+    window.addEventListener('mdsync:estruturas-changed', handleEstruturasChanged);
+    return () => window.removeEventListener('mdsync:estruturas-changed', handleEstruturasChanged);
+  }, []);
+
+  // Alvo para posicionamento direto de estrutura no mapa via clique
+  const [locateStructureTarget, setLocateStructureTarget] = useState(null);
+  const locateStructureTargetRef = useRef(null);
+  useEffect(() => {
+    locateStructureTargetRef.current = locateStructureTarget;
+  }, [locateStructureTarget]);
+
   const [selectedEstrutura, setSelectedEstrutura] = useState(() => {
     return estruturas.find(e => e.id === activeStructureId || e.sigla === activeStructureId) || estruturas[0] || null;
   });
@@ -455,6 +471,28 @@ export const MapTab = ({
       const lon = Number(e.latlng.lng.toFixed(6));
       const utm = latLonToUtm23S(lat, lon);
       setCursorCoords({ lat, lon, utmE: utm.easting, utmN: utm.northing });
+    });
+
+    // Clique no mapa para posicionar estrutura quando em modo de georreferenciamento
+    map.on('click', (e) => {
+      if (locateStructureTargetRef.current) {
+        const target = locateStructureTargetRef.current;
+        const lat = Number(e.latlng.lat.toFixed(6));
+        const lon = Number(e.latlng.lng.toFixed(6));
+        storageService.saveEstruturaEmpreendimento({
+          ...target,
+          lat,
+          lon,
+          coordenadas: { lat, lon }
+        });
+        setLocateStructureTarget(null);
+        if (setSystemToast) {
+          setSystemToast({
+            type: 'success',
+            message: `Localização da estrutura "${target.nome}" inserida no mapa com sucesso!`
+          });
+        }
+      }
     });
 
     const handleCameraChange = () => {
@@ -779,10 +817,25 @@ export const MapTab = ({
       layer.clearLayers();
       structureTooltipsRef.current = [];
 
-    // 1. Badges das Estruturas da Mina
-    structures.forEach(struct => {
+    // 1. Badges das Estruturas da Mina (Unificando catálogo com novas estruturas cadastradas)
+    const combinedStructuresMap = new Map();
+    (structures || []).forEach(s => {
+      const key = s.id || s.sigla;
+      if (key) combinedStructuresMap.set(key, { ...s });
+    });
+    (estruturas || []).forEach(e => {
+      const key = e.id || e.sigla;
+      if (key) {
+        const existing = combinedStructuresMap.get(key) || {};
+        const lat = e.lat ?? e.coordenadas?.lat ?? existing.lat;
+        const lon = e.lon ?? e.coordenadas?.lon ?? existing.lon;
+        combinedStructuresMap.set(key, { ...existing, ...e, lat, lon });
+      }
+    });
+
+    Array.from(combinedStructuresMap.values()).forEach(struct => {
       if (struct.lat && struct.lon) {
-        const isCurrentActive = activeStructureId === struct.id;
+        const isCurrentActive = activeStructureId === struct.id || activeStructureId === struct.sigla;
         const structIcon = new DivIcon({
           className: 'structure-map-badge',
           html: `
@@ -821,10 +874,12 @@ export const MapTab = ({
         });
         
         structMarker.on('click', () => {
-          handleSelectStructure(struct.id);
-          const match = estruturas.find(e => e.id === struct.id || e.sigla === struct.id || struct.id.includes(e.sigla));
+          handleSelectStructure(struct.id || struct.sigla);
+          const match = estruturas.find(e => e.id === struct.id || e.sigla === struct.id || struct.id?.includes(e.sigla) || struct.sigla === e.sigla);
           if (match) {
             setSelectedEstrutura(match);
+          } else {
+            setSelectedEstrutura(struct);
           }
           setIsSiderCollapsed(false);
           setIsSiderFlipped(true);
@@ -1010,6 +1065,7 @@ export const MapTab = ({
   }
   }, [
     structures, 
+    estruturas,
     filteredInstruments, 
     georeferencedTickets, 
     showTickets, 
@@ -1249,12 +1305,24 @@ export const MapTab = ({
       if (ctx.filterStatus) {
         setFilterStatus(ctx.filterStatus);
       }
-      if (ctx.coords) {
+      if (ctx.locateStructureId) {
+        const target = (estruturas || []).find(e => e.id === ctx.locateStructureId || e.sigla === ctx.locateStructureId) ||
+                       (structures || []).find(s => s.id === ctx.locateStructureId || s.sigla === ctx.locateStructureId);
+        if (target) {
+          setLocateStructureTarget(target);
+          const tLat = target.lat ?? target.coordenadas?.lat ?? -20.0825;
+          const tLon = target.lon ?? target.coordenadas?.lon ?? -44.1085;
+          map.flyTo([tLat, tLon], 16, { duration: 1.2 });
+        }
+      } else if (ctx.coords) {
         map.flyTo(ctx.coords, ctx.zoom || 17, { duration: 1.2 });
       } else if (ctx.structureId && ctx.structureId !== 'TODAS') {
         const bound = STRUCTURE_BOUNDARIES.find(b => b.id === ctx.structureId);
-        const st = (structures || []).find(s => s.id === ctx.structureId);
-        const center = bound?.center || (st?.lat && st?.lon ? [st.lat, st.lon] : null);
+        const st = (structures || []).find(s => s.id === ctx.structureId || s.sigla === ctx.structureId);
+        const est = (estruturas || []).find(e => e.id === ctx.structureId || e.sigla === ctx.structureId);
+        const lat = est?.lat ?? est?.coordenadas?.lat ?? st?.lat;
+        const lon = est?.lon ?? est?.coordenadas?.lon ?? st?.lon;
+        const center = (lat && lon) ? [lat, lon] : (bound?.center || null);
         if (center) {
           map.flyTo(center, ctx.zoom || 16, { duration: 1.2 });
         }
@@ -1270,7 +1338,7 @@ export const MapTab = ({
     if (onClearNavigationContext) {
       onClearNavigationContext();
     }
-  }, [navigationContext, structures, instruments, onClearNavigationContext]);
+  }, [navigationContext, structures, instruments, estruturas, onClearNavigationContext]);
 
   // Tipos únicos de instrumentos para filtro
   const availableTypes = ['TODOS', 'INA', 'PZ', 'MV', 'VT', 'TILT', 'REF', 'ETR'];
@@ -1287,7 +1355,75 @@ export const MapTab = ({
       boxShadow: 'var(--shadow-xl)'
     }}>
       {/* Contêiner Leaflet Principal */}
-      <div ref={mapContainerRef} style={{ width: '100%', height: '100%', background: '#090d16' }} />
+      <div 
+        ref={mapContainerRef} 
+        style={{ 
+          width: '100%', 
+          height: '100%', 
+          background: '#090d16',
+          cursor: locateStructureTarget ? 'crosshair' : 'default'
+        }} 
+      />
+
+      {/* Banner HUD de Posicionamento Direto no Mapa */}
+      {locateStructureTarget && (
+        <div style={{
+          position: 'absolute',
+          top: '20px',
+          left: '50%',
+          transform: 'translateX(-50%)',
+          zIndex: 1000,
+          backgroundColor: 'rgba(15, 23, 42, 0.95)',
+          backdropFilter: 'blur(8px)',
+          border: '2px solid #0284c7',
+          borderRadius: '12px',
+          padding: '0.65rem 1.25rem',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '12px',
+          boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.7), 0 0 15px rgba(2, 132, 199, 0.4)',
+          color: '#f8fafc',
+          maxWidth: '90%'
+        }}>
+          <div style={{
+            width: '32px',
+            height: '32px',
+            borderRadius: '8px',
+            backgroundColor: '#0284c7',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            color: '#fff',
+            flexShrink: 0
+          }}>
+            <MapPin size={18} />
+          </div>
+          <div style={{ minWidth: 0 }}>
+            <div style={{ fontSize: '0.85rem', fontWeight: 700, color: '#38bdf8' }}>
+              Modo de Posicionamento no Mapa
+            </div>
+            <div style={{ fontSize: '0.75rem', color: '#cbd5e1' }}>
+              Clique em qualquer ponto do mapa para definir a localização de <strong>{locateStructureTarget.nome || locateStructureTarget.sigla}</strong>
+            </div>
+          </div>
+          <button
+            onClick={() => setLocateStructureTarget(null)}
+            style={{
+              padding: '0.35rem 0.75rem',
+              fontSize: '0.75rem',
+              borderRadius: '6px',
+              backgroundColor: 'rgba(255,255,255,0.1)',
+              border: '1px solid rgba(255,255,255,0.2)',
+              color: '#fff',
+              cursor: 'pointer',
+              marginLeft: '8px',
+              whiteSpace: 'nowrap'
+            }}
+          >
+            Cancelar
+          </button>
+        </div>
+      )}
 
       {/* ========================================================
           Sider Flutuante SysDam: Empreendimentos, 3D Flip Card & Módulos

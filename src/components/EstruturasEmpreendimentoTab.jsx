@@ -1,6 +1,7 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useGeotechData } from '../context/GeotechDataContext';
 import { storageService } from '../services/storageService';
+import { StructureLocationPickerModal } from './StructureLocationPickerModal';
 import { 
   Building2, 
   Search, 
@@ -19,7 +20,10 @@ import {
   FileText,
   Compass,
   Eye,
-  Sliders
+  Sliders,
+  Navigation,
+  Globe,
+  Crosshair
 } from 'lucide-react';
 
 export const EstruturasEmpreendimentoTab = ({ onNavigateTab }) => {
@@ -35,6 +39,19 @@ export const EstruturasEmpreendimentoTab = ({ onNavigateTab }) => {
   // Modais de Criação e Edição
   const [modalOpen, setModalOpen] = useState(false);
   const [editingEstrutura, setEditingEstrutura] = useState(null);
+  const [locationPickerOpen, setLocationPickerOpen] = useState(false);
+  const [directPickerEstrutura, setDirectPickerEstrutura] = useState(null);
+  const [isCapturingGps, setIsCapturingGps] = useState(false);
+
+  // Sincronizar catálogo quando houver alterações em outras abas
+  useEffect(() => {
+    const handleChanged = () => {
+      setEstruturas(storageService.getEstruturasEmpreendimento());
+    };
+    window.addEventListener('mdsync:estruturas-changed', handleChanged);
+    return () => window.removeEventListener('mdsync:estruturas-changed', handleChanged);
+  }, []);
+
   const [formData, setFormData] = useState({
     sigla: '',
     nome: '',
@@ -47,7 +64,9 @@ export const EstruturasEmpreendimentoTab = ({ onNavigateTab }) => {
     orgaoFiscalizador: 'ANM & FEAM',
     dpa: 'Alto',
     cri: 'Baixo',
-    statusDce: 'DCE Válida (Emitida)'
+    statusDce: 'DCE Válida (Emitida)',
+    lat: '',
+    lon: ''
   });
 
   // Estruturas filtradas por busca e categoria
@@ -96,6 +115,7 @@ export const EstruturasEmpreendimentoTab = ({ onNavigateTab }) => {
 
   const handleOpenCreate = () => {
     setEditingEstrutura(null);
+    setDirectPickerEstrutura(null);
     setFormData({
       sigla: '',
       nome: '',
@@ -108,16 +128,21 @@ export const EstruturasEmpreendimentoTab = ({ onNavigateTab }) => {
       orgaoFiscalizador: 'ANM & FEAM',
       dpa: 'Alto',
       cri: 'Baixo',
-      statusDce: 'DCE Válida (Emitida)'
+      statusDce: 'DCE Válida (Emitida)',
+      lat: '',
+      lon: ''
     });
     setModalOpen(true);
   };
 
   const handleOpenEdit = (est) => {
     setEditingEstrutura(est);
+    setDirectPickerEstrutura(null);
+    const lat = est.lat ?? est.coordenadas?.lat ?? '';
+    const lon = est.lon ?? est.coordenadas?.lon ?? '';
     setFormData({
-      sigla: est.sigla,
-      nome: est.nome,
+      sigla: est.sigla || '',
+      nome: est.nome || '',
       tipo: est.tipo || 'BARRAGEM',
       faseProjeto: est.faseProjeto || '',
       tipoSecao: est.tipoSecao || '',
@@ -127,9 +152,78 @@ export const EstruturasEmpreendimentoTab = ({ onNavigateTab }) => {
       orgaoFiscalizador: est.orgaoFiscalizador || 'ANM & FEAM',
       dpa: est.dpa || 'Médio',
       cri: est.cri || 'Baixo',
-      statusDce: est.statusDce || 'DCE Válida'
+      statusDce: est.statusDce || 'DCE Válida',
+      lat: lat !== undefined && lat !== null ? String(lat) : '',
+      lon: lon !== undefined && lon !== null ? String(lon) : ''
     });
     setModalOpen(true);
+  };
+
+  const handleOpenDirectLocationPicker = (est) => {
+    setDirectPickerEstrutura(est);
+    setLocationPickerOpen(true);
+  };
+
+  const handleConfirmLocation = (newCoords) => {
+    if (directPickerEstrutura) {
+      // Ajuste direto para a estrutura selecionada
+      const updated = {
+        ...directPickerEstrutura,
+        lat: newCoords.lat,
+        lon: newCoords.lon,
+        coordenadas: { lat: newCoords.lat, lon: newCoords.lon }
+      };
+      storageService.saveEstruturaEmpreendimento(updated);
+      const list = storageService.getEstruturasEmpreendimento();
+      setEstruturas(list);
+      setDirectPickerEstrutura(null);
+      if (setSystemToast) {
+        setSystemToast({
+          type: 'success',
+          message: `Localização no mapa da estrutura "${updated.nome}" definida com sucesso!`
+        });
+      }
+    } else {
+      // Preenchimento no formulário do modal
+      setFormData(prev => ({
+        ...prev,
+        lat: String(newCoords.lat),
+        lon: String(newCoords.lon)
+      }));
+      if (setSystemToast) {
+        setSystemToast({
+          type: 'info',
+          message: `Coordenadas definidas: Lat ${newCoords.lat}, Lon ${newCoords.lon}`
+        });
+      }
+    }
+  };
+
+  const handleCaptureGps = () => {
+    if (!navigator.geolocation) {
+      alert('Geolocalização não disponível no navegador.');
+      return;
+    }
+    setIsCapturingGps(true);
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        setIsCapturingGps(false);
+        const lat = pos.coords.latitude.toFixed(6);
+        const lon = pos.coords.longitude.toFixed(6);
+        setFormData(prev => ({ ...prev, lat, lon }));
+        if (setSystemToast) {
+          setSystemToast({
+            type: 'success',
+            message: `GPS capturado com sucesso: ${lat}, ${lon}`
+          });
+        }
+      },
+      (err) => {
+        setIsCapturingGps(false);
+        alert(`Erro ao capturar GPS: ${err.message}`);
+      },
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+    );
   };
 
   const handleSaveFormData = (e) => {
@@ -139,10 +233,18 @@ export const EstruturasEmpreendimentoTab = ({ onNavigateTab }) => {
       return;
     }
 
+    const latNum = (formData.lat !== '' && !isNaN(Number(formData.lat))) ? Number(formData.lat) : undefined;
+    const lonNum = (formData.lon !== '' && !isNaN(Number(formData.lon))) ? Number(formData.lon) : undefined;
+
     const payload = {
       ...formData,
       id: editingEstrutura ? editingEstrutura.id : formData.sigla.toUpperCase(),
-      tipoLetra: formData.tipo === 'BARRAGEM' ? 'B' : (formData.tipo === 'CAVA' ? 'C' : 'P')
+      tipoLetra: formData.tipo === 'BARRAGEM' ? 'B' : (formData.tipo === 'CAVA' ? 'C' : 'P'),
+      lat: latNum,
+      lon: lonNum,
+      coordenadas: (latNum !== undefined && lonNum !== undefined) 
+        ? { lat: latNum, lon: lonNum } 
+        : (editingEstrutura?.coordenadas || undefined)
     };
 
     storageService.saveEstruturaEmpreendimento(payload);
@@ -154,7 +256,9 @@ export const EstruturasEmpreendimentoTab = ({ onNavigateTab }) => {
     if (setSystemToast) {
       setSystemToast({
         type: 'success',
-        message: editingEstrutura ? 'Estrutura atualizada com sucesso!' : 'Nova estrutura cadastrada com sucesso!'
+        message: editingEstrutura 
+          ? `Estrutura "${payload.nome}" atualizada com sucesso!` 
+          : `Nova estrutura "${payload.nome}" cadastrada e inserida no mapa com sucesso!`
       });
     }
   };
@@ -178,10 +282,12 @@ export const EstruturasEmpreendimentoTab = ({ onNavigateTab }) => {
     if (selectStructure && est) {
       selectStructure(est.sigla || est.id);
     }
+    const lat = est.lat ?? est.coordenadas?.lat;
+    const lon = est.lon ?? est.coordenadas?.lon;
     if (onNavigateTab && est) {
       onNavigateTab('mapa', {
         structureId: est.id || est.sigla,
-        coords: est.lat && est.lon ? [est.lat, est.lon] : undefined,
+        coords: (lat && lon) ? [lat, lon] : undefined,
         zoom: 16
       });
     }
@@ -554,6 +660,141 @@ export const EstruturasEmpreendimentoTab = ({ onNavigateTab }) => {
                   </button>
                 </div>
               </div>
+
+              {/* Localização Georreferenciada no Mapa */}
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                padding: '0.65rem 0.85rem',
+                borderRadius: '8px',
+                backgroundColor: 'var(--bg-secondary)',
+                border: '1px solid var(--border-subtle)',
+                flexWrap: 'wrap',
+                gap: '0.5rem',
+                marginTop: '0.25rem'
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+                  <div style={{
+                    width: '28px',
+                    height: '28px',
+                    borderRadius: '6px',
+                    backgroundColor: (selectedEstrutura.lat && selectedEstrutura.lon) ? 'rgba(16, 185, 129, 0.15)' : 'rgba(245, 158, 11, 0.15)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    color: (selectedEstrutura.lat && selectedEstrutura.lon) ? '#10b981' : '#f59e0b'
+                  }}>
+                    <MapPin size={15} />
+                  </div>
+                  <div>
+                    <div style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-main)' }}>
+                      Localização no Mapa
+                    </div>
+                    <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>
+                      {(selectedEstrutura.lat && selectedEstrutura.lon)
+                        ? `Lat: ${Number(selectedEstrutura.lat).toFixed(6)} | Lon: ${Number(selectedEstrutura.lon).toFixed(6)} (WGS-84)`
+                        : 'Nenhuma coordenada cadastrada para esta estrutura'}
+                    </div>
+                  </div>
+                </div>
+
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
+                  {(selectedEstrutura.lat && selectedEstrutura.lon) ? (
+                    <>
+                      <button
+                        onClick={() => handleGoToMap(selectedEstrutura)}
+                        className="btn-primary"
+                        style={{
+                          padding: '0.35rem 0.75rem',
+                          fontSize: '0.75rem',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '5px'
+                        }}
+                      >
+                        <Compass size={13} />
+                        <span>Ver no Mapa</span>
+                      </button>
+                      <button
+                        onClick={() => handleOpenDirectLocationPicker(selectedEstrutura)}
+                        className="btn-secondary"
+                        style={{
+                          padding: '0.35rem 0.75rem',
+                          fontSize: '0.75rem',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '5px'
+                        }}
+                        title="Ajustar coordenadas da estrutura no mapa"
+                      >
+                        <Edit3 size={13} />
+                        <span>Alterar Ponto</span>
+                      </button>
+                      <button
+                        onClick={() => {
+                          if (onNavigateTab && selectedEstrutura) {
+                            onNavigateTab('mapa', {
+                              locateStructureId: selectedEstrutura.id || selectedEstrutura.sigla
+                            });
+                          }
+                        }}
+                        className="btn-secondary"
+                        style={{
+                          padding: '0.35rem 0.65rem',
+                          fontSize: '0.75rem',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '5px'
+                        }}
+                        title="Ir ao mapa principal e clicar para reposicionar a estrutura"
+                      >
+                        <Crosshair size={13} />
+                        <span>Reposicionar no Mapa</span>
+                      </button>
+                    </>
+                  ) : (
+                    <>
+                      <button
+                        onClick={() => handleOpenDirectLocationPicker(selectedEstrutura)}
+                        className="btn-primary"
+                        style={{
+                          padding: '0.4rem 0.85rem',
+                          fontSize: '0.75rem',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '5px',
+                          backgroundColor: '#0284c7'
+                        }}
+                      >
+                        <Plus size={14} />
+                        <span>Adicionar no Mapa</span>
+                      </button>
+                      <button
+                        onClick={() => {
+                          if (onNavigateTab && selectedEstrutura) {
+                            onNavigateTab('mapa', {
+                              locateStructureId: selectedEstrutura.id || selectedEstrutura.sigla
+                            });
+                          }
+                        }}
+                        className="btn-secondary"
+                        style={{
+                          padding: '0.4rem 0.75rem',
+                          fontSize: '0.75rem',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '5px'
+                        }}
+                        title="Abrir mapa principal e clicar para definir o local exato"
+                      >
+                        <Crosshair size={13} />
+                        <span>Marcar no Mapa Geral</span>
+                      </button>
+                    </>
+                  )}
+                </div>
+              </div>
             </div>
 
             {/* Painel de Conformidade e Indicadores Geotécnicos */}
@@ -800,6 +1041,154 @@ export const EstruturasEmpreendimentoTab = ({ onNavigateTab }) => {
                 />
               </div>
 
+              {/* Seção: Localização Georreferenciada no Mapa */}
+              <div style={{
+                padding: '0.85rem 1rem',
+                borderRadius: '8px',
+                backgroundColor: 'var(--bg-secondary)',
+                border: '1px solid var(--border-subtle)',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '0.65rem'
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.5rem' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <MapPin size={16} style={{ color: 'var(--primary-accent)' }} />
+                    <span style={{ fontSize: '0.82rem', fontWeight: 700, color: 'var(--text-main)' }}>
+                      Localização Georreferenciada no Mapa
+                    </span>
+                  </div>
+                  {formData.lat && formData.lon ? (
+                    <span style={{
+                      fontSize: '0.7rem',
+                      padding: '2px 8px',
+                      borderRadius: '999px',
+                      backgroundColor: 'rgba(16, 185, 129, 0.15)',
+                      color: '#10b981',
+                      fontWeight: 700,
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '4px'
+                    }}>
+                      <CheckCircle2 size={11} /> Coordenadas Definidas
+                    </span>
+                  ) : (
+                    <span style={{
+                      fontSize: '0.7rem',
+                      padding: '2px 8px',
+                      borderRadius: '999px',
+                      backgroundColor: 'rgba(245, 158, 11, 0.15)',
+                      color: '#f59e0b',
+                      fontWeight: 600,
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '4px'
+                    }}>
+                      <AlertTriangle size={11} /> Sem Coordenadas
+                    </span>
+                  )}
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+                  <div>
+                    <label style={{ fontSize: '0.72rem', fontWeight: 600, color: 'var(--text-muted)' }}>
+                      Latitude (WGS-84)
+                    </label>
+                    <input
+                      type="number"
+                      step="any"
+                      value={formData.lat}
+                      onChange={(e) => setFormData({ ...formData, lat: e.target.value })}
+                      placeholder="Ex: -20.063824"
+                      style={{
+                        width: '100%',
+                        padding: '0.45rem 0.65rem',
+                        fontSize: '0.8rem',
+                        borderRadius: '6px',
+                        backgroundColor: 'var(--bg-card)',
+                        border: '1px solid var(--border-medium)',
+                        color: 'var(--text-main)'
+                      }}
+                    />
+                  </div>
+                  <div>
+                    <label style={{ fontSize: '0.72rem', fontWeight: 600, color: 'var(--text-muted)' }}>
+                      Longitude (WGS-84)
+                    </label>
+                    <input
+                      type="number"
+                      step="any"
+                      value={formData.lon}
+                      onChange={(e) => setFormData({ ...formData, lon: e.target.value })}
+                      placeholder="Ex: -44.114686"
+                      style={{
+                        width: '100%',
+                        padding: '0.45rem 0.65rem',
+                        fontSize: '0.8rem',
+                        borderRadius: '6px',
+                        backgroundColor: 'var(--bg-card)',
+                        border: '1px solid var(--border-medium)',
+                        color: 'var(--text-main)'
+                      }}
+                    />
+                  </div>
+                </div>
+
+                {/* Ações Rápidas de Localização */}
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', marginTop: '0.2rem' }}>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setDirectPickerEstrutura(null);
+                      setLocationPickerOpen(true);
+                    }}
+                    className="btn-primary"
+                    style={{
+                      padding: '0.35rem 0.75rem',
+                      fontSize: '0.75rem',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '5px',
+                      backgroundColor: '#0284c7'
+                    }}
+                  >
+                    <Compass size={13} />
+                    <span>Marcar Ponto no Mapa</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={handleCaptureGps}
+                    disabled={isCapturingGps}
+                    className="btn-secondary"
+                    style={{
+                      padding: '0.35rem 0.75rem',
+                      fontSize: '0.75rem',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '5px'
+                    }}
+                  >
+                    <Navigation size={13} />
+                    <span>{isCapturingGps ? 'Capturando GPS...' : 'Capturar GPS Atual'}</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setFormData(prev => ({ ...prev, lat: '-20.082500', lon: '-44.108500' }))}
+                    className="btn-secondary"
+                    style={{
+                      padding: '0.35rem 0.65rem',
+                      fontSize: '0.72rem',
+                      color: 'var(--text-muted)'
+                    }}
+                    title="Inserir coordenadas centrais do Complexo Minerário Itaminas (Sarzedo/MG)"
+                  >
+                    <span>Centro Sarzedo</span>
+                  </button>
+                </div>
+              </div>
+
               <div style={{
                 display: 'flex',
                 justifyContent: 'flex-end',
@@ -828,6 +1217,27 @@ export const EstruturasEmpreendimentoTab = ({ onNavigateTab }) => {
           </div>
         </div>
       )}
+
+      {/* Modal Interativo de Marcação de Coordenadas no Mapa */}
+      <StructureLocationPickerModal
+        isOpen={locationPickerOpen}
+        onClose={() => {
+          setLocationPickerOpen(false);
+          setDirectPickerEstrutura(null);
+        }}
+        initialCoords={{
+          lat: directPickerEstrutura 
+            ? (directPickerEstrutura.lat ?? directPickerEstrutura.coordenadas?.lat)
+            : formData.lat,
+          lon: directPickerEstrutura 
+            ? (directPickerEstrutura.lon ?? directPickerEstrutura.coordenadas?.lon)
+            : formData.lon
+        }}
+        structureName={directPickerEstrutura ? directPickerEstrutura.nome : (formData.nome || 'Nova Estrutura')}
+        structureSigla={directPickerEstrutura ? directPickerEstrutura.sigla : formData.sigla}
+        existingStructures={estruturas}
+        onConfirm={handleConfirmLocation}
+      />
     </div>
   );
 };

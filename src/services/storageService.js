@@ -1956,10 +1956,22 @@ export const storageService = {
     try {
       const estruturas = this.getEstruturasEmpreendimento();
       const idx = estruturas.findIndex(e => e.id === estrutura.id || e.sigla === estrutura.sigla);
+      const lat = (estrutura.lat !== undefined && estrutura.lat !== '' && !isNaN(Number(estrutura.lat)))
+        ? Number(estrutura.lat)
+        : (estrutura.coordenadas?.lat !== undefined ? Number(estrutura.coordenadas.lat) : undefined);
+      const lon = (estrutura.lon !== undefined && estrutura.lon !== '' && !isNaN(Number(estrutura.lon)))
+        ? Number(estrutura.lon)
+        : (estrutura.coordenadas?.lon !== undefined ? Number(estrutura.coordenadas.lon) : undefined);
+      const normalized = {
+        ...estrutura,
+        lat,
+        lon,
+        coordenadas: (lat !== undefined && lon !== undefined) ? { lat, lon } : (estrutura.coordenadas || undefined)
+      };
       if (idx !== -1) {
-        estruturas[idx] = { ...estruturas[idx], ...estrutura };
+        estruturas[idx] = { ...estruturas[idx], ...normalized };
       } else {
-        estruturas.push(estrutura);
+        estruturas.push(normalized);
       }
       localStorage.setItem(STORAGE_KEYS.ESTRUTURAS_EMPREENDIMENTO, JSON.stringify(estruturas));
       window.dispatchEvent(new CustomEvent('mdsync:estruturas-changed', { detail: estruturas }));
