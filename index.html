@@ -5,7 +5,44 @@
     <link rel="icon" type="image/png" href="./logo_mdsync_icon.png" />
     <link rel="apple-touch-icon" href="./logo_mdsync_icon.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
-    <meta name="description" content="MDSync - Centralizador de Dados Geotécnicos para monitoramento de barragens, cavas e pilhas. Gestão integrada para técnicos, engenheiros, geólogos e gerentes." />
+    
+    <!-- 3. Meta Title, Description & Keywords (SEO Otimizado) -->
+    <title>MDSync | Centralizador de Dados Geotécnicos & Segurança de Barragens</title>
+    <meta name="description" content="MDSync - Plataforma centralizadora de dados geotécnicos para gestão e monitoramento de barragens, pilhas e cavas. Em conformidade com a ANM e PNSB." />
+    <meta name="keywords" content="geotecnia, segurança de barragens, monitoramento geotécnico, ANM, SIGBM, piezometria, pluviometria, vazão, mineração, Itaminas" />
+    <meta name="author" content="MDSync Mining Geotechnical Data" />
+    <meta name="publisher" content="MDSync" />
+
+    <!-- 4. URLs Canônicas -->
+    <link rel="canonical" href="https://maycon97.github.io/MDSync---Mining-Geotechnical-Data/" />
+
+    <!-- 8. Google Search Console & Indexação Robôs -->
+    <meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1" />
+    <meta name="googlebot" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1" />
+    <meta name="google-site-verification" content="mdsync-gsc-verification-pending" id="gsc-meta-verification" />
+
+    <!-- 5. Open Graph & Imagem de Compartilhamento (Facebook, LinkedIn, WhatsApp) -->
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="MDSync Geotecnia" />
+    <meta property="og:title" content="MDSync | Centralizador de Dados Geotécnicos & Segurança de Barragens" />
+    <meta property="og:description" content="Plataforma integrada de dados geotécnicos e monitoramento de estruturas de mineração em tempo real. Em conformidade com a ANM e PNSB." />
+    <meta property="og:url" content="https://maycon97.github.io/MDSync---Mining-Geotechnical-Data/" />
+    <meta property="og:image" content="https://maycon97.github.io/MDSync---Mining-Geotechnical-Data/logo_mdsync.png" />
+    <meta property="og:image:secure_url" content="https://maycon97.github.io/MDSync---Mining-Geotechnical-Data/logo_mdsync.png" />
+    <meta property="og:image:type" content="image/png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="MDSync - Centralizador de Dados Geotécnicos" />
+    <meta property="og:locale" content="pt_BR" />
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="MDSync | Centralizador de Dados Geotécnicos & Segurança de Barragens" />
+    <meta name="twitter:description" content="Plataforma de monitoramento de barragens, pilhas e cavas de mineração. Em conformidade com a ANM." />
+    <meta name="twitter:image" content="https://maycon97.github.io/MDSync---Mining-Geotechnical-Data/logo_mdsync.png" />
+    <meta name="twitter:image:alt" content="MDSync Plataforma Geotécnica" />
+
+    <!-- PWA & Mobile Web App -->
     <meta name="color-scheme" content="light dark" />
     <meta name="theme-color" content="#0284c7" />
     <meta name="mobile-web-app-capable" content="yes" />
@@ -13,26 +50,76 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="apple-mobile-web-app-title" content="MDSync" />
     <link rel="manifest" href="./manifest.json" />
-    <title>MDSync | Centralizador de Dados Geotécnicos</title>
-    
+
     <!-- Prevenção de Cache Stale no GitHub Pages e Navegadores -->
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
     <meta http-equiv="Pragma" content="no-cache" />
     <meta http-equiv="Expires" content="0" />
     
-    <!-- Blindagem de Segurança & Headers de Proteção (Ordens 18 e 19: Security Headers & Forçar HTTPS) -->
+    <!-- 12. Cabeçalhos de Segurança & Blindagem CSP -->
     <meta http-equiv="X-Content-Type-Options" content="nosniff" />
     <meta name="referrer" content="strict-origin-when-cross-origin" />
     <meta http-equiv="Permissions-Policy" content="camera=(self), geolocation=(self), microphone=()" />
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://unpkg.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://unpkg.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: blob: https://*.tile.openstreetmap.org https://unpkg.com https://*.basemaps.cartocdn.com https://*.arcgis.com https://*.arcgisonline.com https://server.arcgisonline.com https://services.arcgisonline.com https://*.google.com https://*.googleapis.com https://mt0.google.com https://mt1.google.com https://mt2.google.com https://mt3.google.com https://survey123.arcgis.com https://github.com https://*.github.com https://*.githubusercontent.com; connect-src 'self' https://api.cometapi.com https://*.tile.openstreetmap.org https://itaminas.fluig.com https://*.arcgis.com https://*.arcgisonline.com https://server.arcgisonline.com https://services.arcgisonline.com https://*.google.com https://*.googleapis.com https://survey123.arcgis.com https://api.github.com https://github.com https://*.github.com http://localhost:* ws://localhost:*; frame-src 'self' https://*.arcgis.com https://survey123.arcgis.com; object-src 'none'; base-uri 'self'; upgrade-insecure-requests;" />
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://unpkg.com https://www.googletagmanager.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://unpkg.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: blob: https://*.tile.openstreetmap.org https://unpkg.com https://*.basemaps.cartocdn.com https://*.arcgis.com https://*.arcgisonline.com https://server.arcgisonline.com https://services.arcgisonline.com https://*.google.com https://*.googleapis.com https://mt0.google.com https://mt1.google.com https://mt2.google.com https://mt3.google.com https://survey123.arcgis.com https://github.com https://*.github.com https://*.githubusercontent.com https://www.google-analytics.com; connect-src 'self' https://api.cometapi.com https://*.tile.openstreetmap.org https://itaminas.fluig.com https://*.arcgis.com https://*.arcgisonline.com https://server.arcgisonline.com https://services.arcgisonline.com https://*.google.com https://*.googleapis.com https://survey123.arcgis.com https://api.github.com https://github.com https://*.github.com https://www.google-analytics.com https://analytics.google.com https://region1.google-analytics.com http://localhost:* ws://localhost:*; frame-src 'self' https://*.arcgis.com https://survey123.arcgis.com; object-src 'none'; base-uri 'self'; upgrade-insecure-requests;" />
     
-    <!-- Ordem 19: Forçar HTTPS em Produção -->
+    <!-- 11. HTTPS e Redirecionamentos Automáticos em Produção -->
     <script>
       (function() {
         if (typeof window !== 'undefined' && window.location && window.location.protocol === 'http:' && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
           window.location.replace('https:' + window.location.href.substring(window.location.protocol.length));
         }
       })();
+    </script>
+
+    <!-- 7. Dados Estruturados Schema.org (JSON-LD) -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@graph": [
+        {
+          "@type": "WebApplication",
+          "@id": "https://maycon97.github.io/MDSync---Mining-Geotechnical-Data/#webapp",
+          "name": "MDSync - Centralizador de Dados Geotécnicos",
+          "url": "https://maycon97.github.io/MDSync---Mining-Geotechnical-Data/",
+          "description": "Centralizador de dados geotécnicos para gestão e monitoramento em tempo real de barragens, pilhas de rejeito e cavas de mineração.",
+          "applicationCategory": "BusinessApplication",
+          "operatingSystem": "All modern browsers (Chrome, Edge, Firefox, Safari), Android, iOS",
+          "browserRequirements": "Requires JavaScript. Requires HTML5.",
+          "offers": {
+            "@type": "Offer",
+            "price": "0",
+            "priceCurrency": "BRL"
+          },
+          "featureList": [
+            "Monitoramento Piezométrico de Nível d'Água",
+            "Monitoramento Pluviométrico e Precipitação",
+            "Medição de Vazão e Drenagem Interna",
+            "Emissão de Laudos de Inspeção Regular ANM / Resolução nº 95/2022",
+            "Gestão de Ocorrências e Chamados Fluig",
+            "Mapeamento GIS e Modelo de Blocos 3D"
+          ]
+        },
+        {
+          "@type": "Organization",
+          "@id": "https://maycon97.github.io/MDSync---Mining-Geotechnical-Data/#org",
+          "name": "MDSync Geotecnia",
+          "url": "https://maycon97.github.io/MDSync---Mining-Geotechnical-Data/",
+          "logo": "https://maycon97.github.io/MDSync---Mining-Geotechnical-Data/logo_mdsync.png"
+        }
+      ]
+    }
+    </script>
+
+    <!-- 9. Google Analytics 4 & Eventos Telemetria -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-MDSYNCGEOT"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-MDSYNCGEOT', {
+        send_page_view: false,
+        cookie_flags: 'SameSite=None;Secure'
+      });
     </script>
     
     <!-- Google Fonts: Inter & JetBrains Mono -->
@@ -51,7 +138,7 @@
         } catch(e) {}
       })();
     </script>
-    <script type="module" crossorigin src="./assets/index-CMg3gqpY.js"></script>
+    <script type="module" crossorigin src="./assets/index-BXCPy3wO.js"></script>
     <link rel="modulepreload" crossorigin href="./assets/rolldown-runtime-WkwZ5CU-.js">
     <link rel="modulepreload" crossorigin href="./assets/vendor-charts-WVtqQaOC.js">
     <link rel="modulepreload" crossorigin href="./assets/vendor-react-BayR8A9J.js">

@@ -1,0 +1,16 @@
+# Robots.txt - MDSync Geotecnia & Centralizador de Dados de Mineração
+# https://maycon97.github.io/MDSync---Mining-Geotechnical-Data/
+
+User-agent: *
+Allow: /
+Allow: /assets/
+Allow: /logo_mdsync.png
+Allow: /logo_mdsync_icon.png
+Allow: /manifest.json
+
+# Proteção de arquivos de configuração e cabeçalhos internos
+Disallow: /_headers
+Disallow: /*.json$
+
+# Referência Oficial do Sitemap XML
+Sitemap: https://maycon97.github.io/MDSync---Mining-Geotechnical-Data/sitemap.xml

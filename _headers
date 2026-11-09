@@ -1,11 +1,14 @@
 /*
+  # Cabeçalhos de Segurança Recomendados (OWASP & Google Best Practices)
+  Strict-Transport-Security: max-age=31536000; includeSubDomains; preload
   X-Frame-Options: SAMEORIGIN
   X-Content-Type-Options: nosniff
   Referrer-Policy: strict-origin-when-cross-origin
+  Permissions-Policy: camera=(self), geolocation=(self), microphone=()
+  Cross-Origin-Opener-Policy: same-origin
 
 /assets/*
   Cache-Control: public, max-age=31536000, immutable
 
 /data/*
   Cache-Control: public, max-age=60, must-revalidate
-
