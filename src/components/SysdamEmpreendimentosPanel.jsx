@@ -365,8 +365,8 @@ export const SysdamEmpreendimentosPanel = ({
       <button
         className="sysdam-collapse-button"
         onClick={onToggleCollapse}
-        title={isCollapsed ? 'Expandir painel de empreendimentos' : 'Ocultar painel de empreendimentos'}
-        aria-label="Alternar painel de empreendimentos"
+        title={isCollapsed ? 'Expandir informações da estrutura' : 'Ocultar informações da estrutura'}
+        aria-label="Alternar painel da estrutura"
       >
         <ChevronLeft size={16} />
       </button>
@@ -376,7 +376,7 @@ export const SysdamEmpreendimentosPanel = ({
         <div className={`sysdam-card-flipper ${isFlipped && selectedEstrutura ? 'flipped' : ''}`}>
           
           {/* ========================================================================= */}
-          {/* LADO A: LISTA DE EMPREENDIMENTOS & ESTRUTURAS GEORREFERENCIADAS          */}
+          {/* LADO A: LISTA DE ESTRUTURAS GEORREFERENCIADAS                            */}
           {/* ========================================================================= */}
           <div className="sysdam-card-front" style={{ backgroundColor: '#0f172a', color: '#f8fafc' }}>
             {/* Header da Busca e Filtros */}
@@ -393,7 +393,7 @@ export const SysdamEmpreendimentosPanel = ({
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem' }}>
                   <Building2 size={16} style={{ color: '#38bdf8' }} />
                   <span style={{ fontWeight: 800, fontSize: '0.82rem', color: '#ffffff', letterSpacing: '0.3px' }}>
-                    Empreendimentos & Estruturas
+                    Estruturas Georreferenciadas
                   </span>
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
@@ -419,7 +419,7 @@ export const SysdamEmpreendimentosPanel = ({
                         display: 'flex',
                         alignItems: 'center'
                       }}
-                      title="Ocultar painel de empreendimentos"
+                      title="Ocultar painel de estruturas"
                     >
                       <X size={15} />
                     </button>

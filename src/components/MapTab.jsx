@@ -48,6 +48,7 @@ import { MapInspectionDetailPanel } from './MapInspectionDetailPanel';
 import { MapFloatingWidget } from './MapFloatingWidget';
 import { RecordIdTemplateModal } from './RecordIdTemplateModal';
 import { InspectionSettingsModal } from './InspectionSettingsModal';
+import { SysdamEmpreendimentosPanel } from './SysdamEmpreendimentosPanel';
 import { storageService } from '../services/storageService';
 import { ENGENHO_SECO_SECTORS } from '../data/engenhoSecoBlockModelData';
 import { EngenhoSecoBlockModelViewer } from './EngenhoSecoBlockModelViewer';
@@ -170,6 +171,8 @@ export const MapTab = ({
   const [selectedEstrutura, setSelectedEstrutura] = useState(() => {
     return estruturas.find(e => e.id === activeStructureId || e.sigla === activeStructureId) || estruturas[0] || null;
   });
+  const [isSiderCollapsed, setIsSiderCollapsed] = useState(true);
+  const [isSiderFlipped, setIsSiderFlipped] = useState(true);
   const [isMapPresetModified, setIsMapPresetModified] = useState(false);
   const [copiedCoords, setCopiedCoords] = useState(false);
   const structureTooltipsRef = useRef([]);
@@ -912,6 +915,9 @@ export const MapTab = ({
           const match = estruturas.find(e => e.id === boundary.id || e.sigla === boundary.id || boundary.id.includes(e.sigla));
           if (match) {
             setSelectedEstrutura(match);
+          } else {
+            const fallback = (structures || []).find(s => s.id === boundary.id || s.sigla === boundary.id);
+            if (fallback) setSelectedEstrutura(fallback);
           }
           setIsSiderCollapsed(false);
           setIsSiderFlipped(true);
@@ -1032,12 +1038,30 @@ export const MapTab = ({
             className: 'leaflet-tooltip-empreendimento'
           });
           
-          structMarker.on('click', () => {
+          structMarker.on('click', (ev) => {
+            if (ev?.originalEvent) {
+              ev.originalEvent.stopPropagation();
+            }
             handleSelectStructure(struct.id || struct.sigla);
             const match = estruturas.find(e => e.id === struct.id || e.sigla === struct.id || struct.id?.includes(e.sigla) || struct.sigla === e.sigla);
             setSelectedEstrutura(match || struct);
             setIsSiderCollapsed(false);
             setIsSiderFlipped(true);
+          });
+
+          structMarker.on('tooltipopen', (e) => {
+            if (e.tooltip && e.tooltip._container) {
+              e.tooltip._container.style.cursor = 'pointer';
+              e.tooltip._container.style.pointerEvents = 'auto';
+              e.tooltip._container.onclick = (ev) => {
+                ev && ev.stopPropagation();
+                handleSelectStructure(struct.id || struct.sigla);
+                const match = estruturas.find(el => el.id === struct.id || el.sigla === struct.id || struct.id?.includes(el.sigla) || struct.sigla === el.sigla);
+                setSelectedEstrutura(match || struct);
+                setIsSiderCollapsed(false);
+                setIsSiderFlipped(true);
+              };
+            }
           });
           
           structLayer.addLayer(structMarker);
@@ -1463,6 +1487,11 @@ export const MapTab = ({
         if (center) {
           map.flyTo(center, ctx.zoom || 16, { duration: 1.2 });
         }
+        if (est || st) {
+          setSelectedEstrutura(est || st);
+          setIsSiderCollapsed(false);
+          setIsSiderFlipped(true);
+        }
       }
       if (ctx.instrumentId) {
         const matchInst = (instruments || []).find(i => i.id === ctx.instrumentId);
@@ -1561,6 +1590,54 @@ export const MapTab = ({
           </button>
         </div>
       )}
+
+      {/* ========================================================
+          Sider Flutuante SysDam: Informações Gerais da Estrutura (3D Flip Card)
+         ======================================================== */}
+      <SysdamEmpreendimentosPanel
+        estruturas={estruturas}
+        selectedEstrutura={selectedEstrutura}
+        onSelectEstrutura={(est) => {
+          setSelectedEstrutura(est);
+          if (est?.id || est?.sigla) {
+            handleSelectStructure(est.id || est.sigla);
+          }
+        }}
+        onFocusStructure={(est) => {
+          if (est?.id || est?.sigla) {
+            handleSelectStructure(est.id || est.sigla);
+          }
+        }}
+        onOpenGeomReport={() => setBlockModelModalOpen(true)}
+        onNavigateTab={onNavigateTab}
+        instruments={instruments}
+        anomalias={anomaliasGeotecnicas}
+        fluigTickets={fluigTickets}
+        isCollapsed={isSiderCollapsed}
+        onToggleCollapse={() => setIsSiderCollapsed(prev => !prev)}
+        isFlipped={isSiderFlipped}
+        setIsFlipped={setIsSiderFlipped}
+        onFlipChange={(flipped) => setIsSiderFlipped(flipped)}
+        onCloseDetails={() => {
+          setIsSiderCollapsed(true);
+          setIsSiderFlipped(false);
+        }}
+        onNavigateModule={(modId, est) => {
+          if (setSystemToast) {
+            setSystemToast({
+              message: `Abrindo módulo [${modId}] da estrutura ${est?.nome || ''}...`,
+              type: 'info'
+            });
+          }
+          const customEvent = new CustomEvent('mdsync:navigate-module', {
+            detail: { moduleId: modId, estrutura: est }
+          });
+          window.dispatchEvent(customEvent);
+          if (onNavigateTab) {
+            onNavigateTab(modId, { structureId: est?.id, estrutura: est?.nome });
+          }
+        }}
+      />
 
       {/* ========================================================
           BARRA SUPERIOR DO MAPA (HUD TOPBAR INTEGRADA ANTI-COLISÃO)
@@ -1792,7 +1869,20 @@ export const MapTab = ({
                 normalizeStructureKey(s.id) === activeStructureId ||
                 normalizeStructureKey(s.sigla) === activeStructureId
               )?.id || activeStructureId || 'TODAS'}
-              onChange={(e) => handleSelectStructure(e.target.value)}
+              onChange={(e) => {
+                handleSelectStructure(e.target.value);
+                if (e.target.value !== 'TODAS') {
+                  const match = (estruturas || []).find(s => s.id === e.target.value || s.sigla === e.target.value) ||
+                                (structures || []).find(s => s.id === e.target.value || s.sigla === e.target.value);
+                  if (match) {
+                    setSelectedEstrutura(match);
+                    setIsSiderCollapsed(false);
+                    setIsSiderFlipped(true);
+                  }
+                } else {
+                  setIsSiderCollapsed(true);
+                }
+              }}
               className="form-select"
               style={{
                 padding: '0.2rem 0.45rem',
@@ -1973,6 +2063,7 @@ export const MapTab = ({
           onClick={() => {
             handleSelectStructure('TODAS');
             setSelectedInstrument(null);
+            setIsSiderCollapsed(true);
           }}
           className="btn-secondary"
           style={{
