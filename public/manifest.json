@@ -4,18 +4,18 @@
   "description": "Sistema centralizador de dados geotécnicos de barragens, piezometria e coletas em campo com suporte offline.",
   "icons": [
     {
-      "src": "/logo_mdsync_icon.png",
+      "src": "./logo_mdsync_icon.png",
       "type": "image/png",
       "sizes": "192x192 512x512",
       "purpose": "any maskable"
     },
     {
-      "src": "/logo_mdsync.png",
+      "src": "./logo_mdsync.png",
       "type": "image/png",
       "sizes": "512x512"
     }
   ],
-  "start_url": "/",
+  "start_url": "./",
   "background_color": "#090d16",
   "theme_color": "#0284c7",
   "display": "standalone",

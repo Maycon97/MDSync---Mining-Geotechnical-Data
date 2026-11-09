@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Página Não Encontrada (404) | MDSync Geotecnia</title>
+    <link rel="icon" type="image/png" href="./logo_mdsync_icon.png" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+      :root {
+        --bg-main: #0a0f1d;
+        --card-bg: rgba(15, 23, 42, 0.85);
+        --accent-cyan: #38bdf8;
+        --accent-blue: #0284c7;
+        --text-white: #f8fafc;
+        --text-muted: #94a3b8;
+        --border-color: rgba(56, 189, 248, 0.25);
+      }
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      body {
+        font-family: 'Inter', system-ui, -apple-system, sans-serif;
+        background-color: var(--bg-main);
+        background-image: 
+          radial-gradient(circle at 50% 20%, rgba(2, 132, 199, 0.15) 0%, transparent 60%),
+          radial-gradient(circle at 80% 80%, rgba(56, 189, 248, 0.08) 0%, transparent 50%);
+        color: var(--text-white);
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 1.5rem;
+      }
+      .card-404 {
+        background: var(--card-bg);
+        border: 1px solid var(--border-color);
+        border-radius: 16px;
+        padding: 2.5rem 2rem;
+        max-width: 500px;
+        width: 100%;
+        text-align: center;
+        box-shadow: 0 20px 45px -10px rgba(0, 0, 0, 0.7), 0 0 25px rgba(56, 189, 248, 0.15);
+        backdrop-filter: blur(12px);
+      }
+      .logo-img {
+        width: 64px;
+        height: 64px;
+        object-fit: contain;
+        margin-bottom: 1.25rem;
+        filter: drop-shadow(0 4px 12px rgba(56, 189, 248, 0.3));
+      }
+      .badge-code {
+        display: inline-block;
+        background: rgba(239, 68, 68, 0.15);
+        color: #f87171;
+        border: 1px solid rgba(239, 68, 68, 0.3);
+        padding: 4px 12px;
+        border-radius: 9999px;
+        font-size: 0.82rem;
+        font-weight: 700;
+        letter-spacing: 0.5px;
+        margin-bottom: 1rem;
+      }
+      h1 {
+        font-size: 1.75rem;
+        font-weight: 800;
+        margin-bottom: 0.75rem;
+        color: var(--text-white);
+      }
+      p {
+        color: var(--text-muted);
+        font-size: 0.95rem;
+        line-height: 1.6;
+        margin-bottom: 1.75rem;
+      }
+      .btn-home {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);
+        color: #ffffff;
+        font-weight: 700;
+        font-size: 0.95rem;
+        padding: 0.75rem 1.75rem;
+        border-radius: 8px;
+        text-decoration: none;
+        box-shadow: 0 4px 14px rgba(2, 132, 199, 0.4);
+        transition: all 0.2s ease;
+      }
+      .btn-home:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(2, 132, 199, 0.6);
+        background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%);
+      }
+      .footer-note {
+        margin-top: 1.75rem;
+        font-size: 0.8rem;
+        color: #64748b;
+      }
+    </style>
+
+    <!-- Script de Resolução de Roteamento SPA no GitHub Pages -->
+    <script>
+      (function() {
+        var baseRepo = '/MDSync---Mining-Geotechnical-Data';
+        var currentPath = window.location.pathname;
+        
+        // Se a rota for uma subrota do GitHub Pages (ex: /MDSync---Mining-Geotechnical-Data/some/path)
+        if (currentPath.indexOf(baseRepo) === 0) {
+          var subPath = currentPath.slice(baseRepo.length);
+          if (subPath && subPath !== '/' && subPath !== '/index.html') {
+            // Redireciona com parâmetro de rota para que o React Router / SPA processe
+            var search = window.location.search;
+            var hash = window.location.hash;
+            var target = baseRepo + '/?p=' + encodeURIComponent(subPath) + (search ? '&' + search.slice(1) : '') + hash;
+            window.location.replace(target);
+          }
+        }
+      })();
+    </script>
+  </head>
+  <body>
+    <div class="card-404">
+      <img src="./logo_mdsync_icon.png" alt="MDSync Geotecnia" class="logo-img" />
+      <div>
+        <span class="badge-code">CÓDIGO 404 · ROTA NÃO ENCONTRADA</span>
+      </div>
+      <h1>Coordenada Inacessível</h1>
+      <p>
+        O recurso, mapa ou módulo geotécnico que você tentou acessar não foi localizado ou foi movido.
+      </p>
+      <a href="./" class="btn-home">
+        Retornar ao Painel MDSync
+      </a>
+      <div class="footer-note">
+        MDSync Centralizador Geotécnico · Gestão em Conformidade ANM
+      </div>
+    </div>
+  </body>
+</html>

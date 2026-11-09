@@ -1,5 +1,6 @@
-import React, { useState, Suspense, lazy } from 'react';
+import React, { useState, useEffect, Suspense, lazy } from 'react';
 import { useGeotechData } from './context/GeotechDataContext';
+import { analyticsService } from './services/analyticsService';
 import { Header } from './components/Header';
 import { HomeTab } from './components/HomeTab';
 import { DashboardTab } from './components/DashboardTab';
@@ -97,6 +98,15 @@ export function App() {
   const [legalModalTab, setLegalModalTab] = useState('privacidade');
   const [mapNavigationContext, setMapNavigationContext] = useState(null);
   const [piezoNavigationContext, setPiezoNavigationContext] = useState(null);
+
+  // Rastreamento Telemetria / Google Analytics 4 (Item 9)
+  useEffect(() => {
+    analyticsService.init();
+  }, []);
+
+  useEffect(() => {
+    analyticsService.trackPageView(`MDSync - ${activeTab.toUpperCase()}`, `/${activeTab}`);
+  }, [activeTab]);
 
   const handleOpenLegalCenter = (tab = 'privacidade') => {
     setLegalModalTab(tab);
