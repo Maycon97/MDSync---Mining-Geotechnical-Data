@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import posthog, { isPostHogConfigured } from '../lib/posthog';
 import { 
   X, 
   Truck, 
@@ -286,6 +287,13 @@ export const VehicleChecklistModal = ({ isOpen, onClose, onSave, currentUser, in
     };
 
     onSave(newRecord);
+    if (isPostHogConfigured) {
+      posthog.capture('vehicle_checklist_saved', {
+        checklist_status: status,
+        has_warning: hasWarning,
+        has_critical_issue: hasCriticalSecurity
+      });
+    }
     onClose();
   };
 

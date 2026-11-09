@@ -2,6 +2,7 @@ import React, { useState, useRef } from 'react';
 import { useGeotechData } from '../context/GeotechDataContext';
 import { storageService } from '../services/storageService';
 import { dataIntegrationService } from '../services/dataIntegrationService';
+import posthog, { isPostHogConfigured } from '../lib/posthog';
 import { 
   FolderInput, 
   Upload, 
@@ -91,6 +92,12 @@ export const ImportacoesTab = ({ onNavigateTab }) => {
         novosRegistros: novos
       });
 
+      if (isPostHogConfigured) {
+        posthog.capture('data_sync_completed', {
+          sync_source: 'pcmi',
+          records_integrated: novos
+        });
+      }
       showToast(`Túnel PCMI sincronizado com sucesso! ${novos} novas leituras integradas.`, 'success');
     }, 900);
   };
@@ -113,6 +120,12 @@ export const ImportacoesTab = ({ onNavigateTab }) => {
         data: new Date().toLocaleString('pt-BR'),
         status: 'CONCLUIDO'
       });
+      if (isPostHogConfigured) {
+        posthog.capture('data_sync_completed', {
+          sync_source: 'jgd',
+          records_integrated: novos
+        });
+      }
       showToast(`Túnel JGD Jangada sincronizado! 21 vertedouros e cotas subterrâneas atualizadas.`, 'success');
     }, 700);
   };
@@ -133,6 +146,12 @@ export const ImportacoesTab = ({ onNavigateTab }) => {
         data: new Date().toLocaleString('pt-BR'),
         status: 'CONCLUIDO'
       });
+      if (isPostHogConfigured) {
+        posthog.capture('data_sync_completed', {
+          sync_source: 'sumps',
+          records_integrated: 91
+        });
+      }
       showToast(`Túnel SUMPs GUT atualizado: 91 sumps georreferenciados vigiados em tempo real.`, 'success');
     }, 600);
   };
@@ -151,6 +170,12 @@ export const ImportacoesTab = ({ onNavigateTab }) => {
     try {
       setIsSyncingQueue(true);
       const res = await syncOfflineQueue();
+      if (isPostHogConfigured) {
+        posthog.capture('data_sync_completed', {
+          sync_source: 'field_queue',
+          records_integrated: res.count
+        });
+      }
       showToast(`Transmissão concluída com sucesso! ${res.count} coletas de campo integradas ao banco central.`, 'success', 5000);
     } catch (err) {
       showToast(`Falha ao sincronizar fila de campo: ${err.message}`, 'error');
@@ -267,6 +292,12 @@ export const ImportacoesTab = ({ onNavigateTab }) => {
             data: new Date().toLocaleString('pt-BR'),
             status: 'CONCLUIDO'
           });
+          if (isPostHogConfigured) {
+            posthog.capture('telemetry_file_imported', {
+              file_type: 'json',
+              records_integrated: recordsCount || 1
+            });
+          }
         } catch (err) {
           showToast(`Erro ao processar arquivo JSON: ${err.message}`, 'error');
         }
@@ -330,6 +361,12 @@ export const ImportacoesTab = ({ onNavigateTab }) => {
             status: 'CONCLUIDO'
           });
 
+          if (isPostHogConfigured) {
+            posthog.capture('telemetry_file_imported', {
+              file_type: fileExt,
+              records_integrated: recordsCount
+            });
+          }
           showToast(`CSV processado com sucesso: ${recordsCount} leituras integradas ao banco master!`, 'success');
         } catch (err) {
           showToast(`Erro ao processar arquivo CSV: ${err.message}`, 'error');
@@ -347,6 +384,12 @@ export const ImportacoesTab = ({ onNavigateTab }) => {
         data: new Date().toLocaleString('pt-BR'),
         status: 'CONCLUIDO'
       });
+      if (isPostHogConfigured) {
+        posthog.capture('telemetry_file_imported', {
+          file_type: fileExt || 'spreadsheet',
+          records_integrated: estimatedRecords
+        });
+      }
       showToast(`Planilha ${fileName} parseada com sucesso! ${estimatedRecords} leituras integradas ao banco master.`, 'success');
     }
   };

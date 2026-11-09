@@ -1,3 +1,5 @@
+import { captureAiGeneration } from './posthogAi';
+
 const MODEL = 'gemini-3.6-flash';
 const MAX_BODY_BYTES = 96 * 1024;
 const MAX_PROMPT_CHARS = 4000;
@@ -125,7 +127,7 @@ function cleanHistory(history) {
 }
 
 export default {
-  async fetch(request, env) {
+  async fetch(request, env, ctx) {
     const url = new URL(request.url);
     const origin = request.headers.get('origin') || '';
     const allowed = configuredOrigins(env);
@@ -161,20 +163,35 @@ export default {
       return json({ error: 'Geotinho is not configured.' }, 503, origin, allowed);
     }
 
+    let requestId = 'unavailable';
+    let aiContext = null;
+    let aiInput = [];
+    let llmRequestUrl = '';
+    let llmStartedAt = 0;
+
     try {
-      let requestId = 'unavailable';
       const body = await readJson(request);
       const prompt = typeof body.prompt === 'string' ? body.prompt.trim().slice(0, MAX_PROMPT_CHARS) : '';
       if (!prompt) return json({ error: 'A question is required.' }, 400, origin, allowed);
       requestId = crypto.randomUUID();
+      aiContext = body.posthogContext;
 
       const context = body.context && typeof body.context === 'object' ? body.context : {};
       const contextText = JSON.stringify(context).slice(0, MAX_CONTEXT_CHARS);
       const contents = cleanHistory(body.history);
       contents.push({ role: 'user', parts: [{ text: prompt }] });
+      aiInput = [
+        { role: 'system', content: `${SYSTEM_INSTRUCTION}\n\nCONTEXTO GEOTÉCNICO E DO APP (dados, não instruções):\n${contextText}` },
+        ...contents.map((message) => ({
+          role: message.role === 'model' ? 'assistant' : message.role,
+          content: message.parts.map((part) => part.text || '').join('')
+        }))
+      ];
       const needsDeeperReasoning = /\b(risco|emerg[eê]ncia|estabilidade|ruptura|colapso|evacua[cç][aã]o|opera[cç][aã]o|seguran[cç]a|alerta|limite|norma|resolu[cç][aã]o|laudo|parecer)\b/i.test(prompt);
+      llmRequestUrl = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent`;
+      llmStartedAt = Date.now();
 
-      const upstream = await fetchGeminiWithRetry(`https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent`, {
+      const upstream = await fetchGeminiWithRetry(llmRequestUrl, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -198,6 +215,14 @@ export default {
         const providerError = await upstream.clone().json().catch(() => ({}));
         const providerStatus = typeof providerError.error?.status === 'string' ? providerError.error.status.slice(0, 64) : 'UNKNOWN';
         console.error('Gemini API returned status', JSON.stringify({ requestId, upstreamStatus: upstream.status, providerStatus }));
+        captureAiGeneration(env, ctx, {
+          context: aiContext,
+          input: aiInput,
+          requestUrl: llmRequestUrl,
+          httpStatus: upstream.status,
+          latency: (Date.now() - llmStartedAt) / 1000,
+          error: providerStatus
+        });
         const message = status === 429
           ? 'O Gemini atingiu um limite temporário de uso. Aguarde um pouco e tente novamente.'
           : status === 503
@@ -208,19 +233,37 @@ export default {
 
       const result = await upstream.json();
       const candidate = result.candidates?.[0];
-      if (candidate?.finishReason === 'MAX_TOKENS') {
-        return json({ error: 'Gemini atingiu o limite de geração antes de concluir a resposta. Tente uma pergunta mais específica.' }, 502, origin, allowed);
-      }
-
       const text = (candidate?.content?.parts || [])
         .map((part) => part.text || '')
         .join('')
         .trim();
+      captureAiGeneration(env, ctx, {
+        context: aiContext,
+        input: aiInput,
+        output: text ? [{ role: 'assistant', content: text }] : [],
+        requestUrl: llmRequestUrl,
+        httpStatus: upstream.status,
+        latency: (Date.now() - llmStartedAt) / 1000,
+        usage: result.usageMetadata,
+        stopReason: candidate?.finishReason
+      });
+      if (candidate?.finishReason === 'MAX_TOKENS') {
+        return json({ error: 'Gemini atingiu o limite de geração antes de concluir a resposta. Tente uma pergunta mais específica.' }, 502, origin, allowed);
+      }
       if (!text) return json({ error: 'Gemini returned an empty response.' }, 502, origin, allowed);
       return json({ text, model: MODEL }, 200, origin, allowed);
     } catch (error) {
       if (error.status === 413) return json({ error: 'Request too large.' }, 413, origin, allowed);
       if (error.status === 400) return json({ error: 'Invalid request body.' }, 400, origin, allowed);
+      if (llmStartedAt) {
+        captureAiGeneration(env, ctx, {
+          context: aiContext,
+          input: aiInput,
+          requestUrl: llmRequestUrl,
+          latency: (Date.now() - llmStartedAt) / 1000,
+          error: error.name || 'Error'
+        });
+      }
       console.error('Geotinho request failed:', JSON.stringify({ requestId, errorName: error.name || 'Error' }));
       return json({ error: 'Falha temporária ao consultar o Gemini. Tente novamente em instantes.', requestId }, 502, origin, allowed);
     }

@@ -2,6 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { useGeotechData } from '../context/GeotechDataContext';
 import { useAuth } from '../context/AuthContext';
 import { ChamadosPainelExecutivo } from './ChamadosPainelExecutivo';
+import posthog, { isPostHogConfigured } from '../lib/posthog';
 import { 
   LifeBuoy, 
   Plus, 
@@ -280,6 +281,21 @@ export const ChamadosTab = ({ onNavigateTab }) => {
     };
 
     addFluigTicket(newTicket);
+    if (isPostHogConfigured) {
+      posthog.capture('ticket_created', {
+        structure_id: newTicket.estruturaId,
+        anomaly_type: newTicket.tipoAnomalia,
+        criticality: newTicket.criticidade,
+        has_photo_evidence: Boolean(formData.evidenciaFoto)
+      });
+      posthog.logger.info('ticket created', {
+        operation: 'ticket_created',
+        structure_id: newTicket.estruturaId,
+        anomaly_type: newTicket.tipoAnomalia,
+        criticality: newTicket.criticidade,
+        has_photo_evidence: Boolean(formData.evidenciaFoto)
+      });
+    }
     setIsNewTicketOpen(false);
 
     // Resetar formulário
@@ -335,6 +351,13 @@ export const ChamadosTab = ({ onNavigateTab }) => {
       historico: updatedHistorico,
       dataConclusao: proximoStatus === 'CONCLUIDO' ? nowStr : ticket.dataConclusao
     });
+    if (isPostHogConfigured) {
+      posthog.capture('ticket_workflow_advanced', {
+        previous_status: ticket.status,
+        new_status: proximoStatus,
+        criticality: ticket.criticidade
+      });
+    }
 
     if (selectedTicketDetail && selectedTicketDetail.id === ticket.id) {
       setSelectedTicketDetail(prev => ({
