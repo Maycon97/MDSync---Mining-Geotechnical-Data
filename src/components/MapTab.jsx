@@ -1573,13 +1573,24 @@ export const MapTab = ({
         selectedEstrutura={selectedEstrutura}
         onSelectEstrutura={(est) => {
           setSelectedEstrutura(est);
-          if (est?.id) {
-            handleSelectStructure(est.id);
+          if (est?.id || est?.sigla) {
+            handleSelectStructure(est.id || est.sigla);
           }
         }}
+        onFocusStructure={(est) => {
+          if (est?.id || est?.sigla) {
+            handleSelectStructure(est.id || est.sigla);
+          }
+        }}
+        onOpenGeomReport={() => setBlockModelModalOpen(true)}
+        onNavigateTab={onNavigateTab}
+        instruments={instruments}
+        anomalias={anomaliasGeotecnicas}
+        fluigTickets={fluigTickets}
         isCollapsed={isSiderCollapsed}
         onToggleCollapse={() => setIsSiderCollapsed(prev => !prev)}
         isFlipped={isSiderFlipped}
+        setIsFlipped={setIsSiderFlipped}
         onFlipChange={(flipped) => setIsSiderFlipped(flipped)}
         onNavigateModule={(modId, est) => {
           if (setSystemToast) {
@@ -1592,6 +1603,9 @@ export const MapTab = ({
             detail: { moduleId: modId, estrutura: est }
           });
           window.dispatchEvent(customEvent);
+          if (onNavigateTab) {
+            onNavigateTab(modId, { structureId: est?.id, estrutura: est?.nome });
+          }
         }}
       />
 

@@ -21,26 +21,128 @@ import {
   CheckCircle2,
   Droplet,
   Flame,
-  ArrowRight
+  ArrowRight,
+  Crosshair,
+  Shield,
+  FileCheck,
+  Send,
+  Info,
+  CheckCircle,
+  Eye,
+  Database
 } from 'lucide-react';
+import { chamadosSyncTunnel } from '../services/chamadosSyncTunnel';
+
+/**
+ * Converte coordenadas WGS-84 (Lat/Lon) para UTM Fuso 23S (SIRGAS 2000 / WGS-84)
+ */
+export function toUtm23s(lat, lon) {
+  if (lat == null || lon == null || isNaN(lat) || isNaN(lon)) return null;
+  const a = 6378137.0;
+  const f = 1 / 298.257223563;
+  const k0 = 0.9996;
+  const lon0 = -45.0 * Math.PI / 180.0;
+  const e2 = 2 * f - f * f;
+  const e_prime2 = e2 / (1 - e2);
+
+  const phi = lat * Math.PI / 180.0;
+  const lambda = lon * Math.PI / 180.0;
+
+  const N = a / Math.sqrt(1 - e2 * Math.sin(phi) * Math.sin(phi));
+  const T = Math.tan(phi) * Math.tan(phi);
+  const C = e_prime2 * Math.cos(phi) * Math.cos(phi);
+  const A = Math.cos(phi) * (lambda - lon0);
+
+  const M = a * (
+    (1 - e2 / 4 - 3 * e2 * e2 / 64 - 5 * e2 * e2 * e2 / 256) * phi -
+    (3 * e2 / 8 + 3 * e2 * e2 / 32 + 45 * e2 * e2 * e2 / 1024) * Math.sin(2 * phi) +
+    (15 * e2 * e2 / 256 + 45 * e2 * e2 * e2 / 1024) * Math.sin(4 * phi) -
+    (35 * e2 * e2 / 3072) * Math.sin(6 * phi)
+  );
+
+  const easting = 500000 + k0 * N * (A + (1 - T + C) * Math.pow(A, 3) / 6 + (5 - 18 * T + T * T + 72 * C - 58 * e_prime2) * Math.pow(A, 5) / 120);
+  const northing = 10000000 + k0 * (M + N * Math.tan(phi) * (Math.pow(A, 2) / 2 + (5 - T + 9 * C + 4 * C * C) * Math.pow(A, 4) / 24 + (61 - 58 * T + T * T + 600 * C - 330 * e_prime2) * Math.pow(A, 6) / 720));
+
+  return { easting: Math.round(easting), northing: Math.round(northing) };
+}
+
+/**
+ * Normaliza e vincula instrumentos, anomalias e chamados à estrutura correta
+ */
+export function matchesStructure(itemEstr, struct) {
+  if (!itemEstr || !struct) return false;
+  const rawItem = String(itemEstr).toUpperCase().trim();
+  const rawId = String(struct.id || '').toUpperCase().trim();
+  const rawSigla = String(struct.sigla || '').toUpperCase().trim();
+  const rawNome = String(struct.nome || '').toUpperCase().trim();
+  const rawNomeCompleto = String(struct.nomeCompleto || '').toUpperCase().trim();
+
+  if (rawItem === rawId || rawItem === rawSigla || rawItem === rawNome || rawItem === rawNomeCompleto) {
+    return true;
+  }
+  if (rawId && (rawItem === rawId || rawItem.startsWith(rawId + '_') || rawItem.startsWith(rawId + ' ') || rawItem.endsWith('_' + rawId) || rawItem.endsWith(' ' + rawId))) {
+    return true;
+  }
+  if (rawSigla && (rawItem === rawSigla || rawItem.startsWith(rawSigla + '_') || rawItem.startsWith(rawSigla + ' ') || rawItem.endsWith('_' + rawSigla) || rawItem.endsWith(' ' + rawSigla))) {
+    return true;
+  }
+  if (rawNome && (rawItem.includes(rawNome) || rawNome.includes(rawItem))) {
+    return true;
+  }
+
+  const normalize = (s) => (s || '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toUpperCase()
+    .replace(/[^A-Z0-9]/g, ' ')
+    .trim();
+
+  const normItem = normalize(rawItem);
+  const normNome = normalize(rawNome);
+
+  const stopWords = ['PDE', 'PILHA', 'CAVA', 'BARRAGEM', 'DIQUE', 'DE', 'DO', 'DA', 'E', 'O', 'A', 'COMPLEXO', 'MINA'];
+  const keywords = normNome.split(/\s+/).filter(w => w.length >= 2 && !stopWords.includes(w));
+
+  if (keywords.length > 0 && keywords.every(kw => normItem.includes(kw))) {
+    return true;
+  }
+
+  const siglaMap = {
+    'MGB': ['MANGABA'],
+    'ES': ['ENGENHO', 'SECO'],
+    'ES1': ['ENGENHO', 'SECO', 'I'],
+    'ES_1': ['ENGENHO', 'SECO', 'I'],
+    'JGD': ['JANGADA'],
+    'JC': ['JACO'],
+    'SMB': ['SAMAMBAIA'],
+    'B1': ['B1'],
+    'B4': ['B4'],
+    'PB2': ['B2'],
+    'B2': ['B2']
+  };
+
+  const mappedKws = siglaMap[rawSigla] || siglaMap[rawId];
+  if (mappedKws && mappedKws.every(kw => normItem.includes(kw))) {
+    return true;
+  }
+
+  return false;
+}
 
 /**
  * SysdamEmpreendimentosPanel
  * 
  * Painel flutuante de empreendimentos e estruturas georreferenciadas
  * inspirado na arquitetura oficial do Portal SysDam (/painel/empreendimentos).
- * 
- * Funcionalidades:
- * - Painel colapsável sobreposto à viewport do Leaflet com aba lateral de 24x80px
- * - Mecânica 3D Flip Card (Lado A: Lista filtrável com busca normalizada e ordenação; Lado B: Ficha completa com lista de serviços/módulos)
- * - Navegação direta para Piezometria, Seções 2D Datamine, Inspeções SYSDAM, Topografia 030-MINA, Chamados PCMI e Cadastro
- * - Vínculo direto com mapa Leaflet para flyTo suave de câmera
  */
 export const SysdamEmpreendimentosPanel = ({
   estruturas = [],
   selectedEstrutura = null,
   onSelectEstrutura,
+  onFocusStructure,
   onNavigateTab,
+  onNavigateModule,
+  onFlipChange,
   instruments = [],
   anomalias = [],
   fluigTickets = [],
@@ -57,6 +159,30 @@ export const SysdamEmpreendimentosPanel = ({
 
   // Normalização de texto sem acentos para busca rápida
   const normalize = (text) => (text || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+
+  // Consolidação de chamados do túnel ou props
+  const allTickets = useMemo(() => {
+    if (fluigTickets && fluigTickets.length > 0) return fluigTickets;
+    return (chamadosSyncTunnel?.getActiveTickets ? chamadosSyncTunnel.getActiveTickets() : []);
+  }, [fluigTickets]);
+
+  // Contagem de instrumentos para uma estrutura
+  const getInstrumentsCount = (struct) => {
+    if (!struct) return 0;
+    return (instruments || []).filter(i => matchesStructure(i.estrutura, struct)).length;
+  };
+
+  // Contagem de anomalias para uma estrutura
+  const getAnomaliesCount = (struct) => {
+    if (!struct) return 0;
+    return (anomalias || []).filter(a => matchesStructure(a.estrutura, struct)).length;
+  };
+
+  // Contagem de chamados para uma estrutura
+  const getTicketsCount = (struct) => {
+    if (!struct) return 0;
+    return (allTickets || []).filter(t => matchesStructure(t.estrutura, struct)).length;
+  };
 
   // Filtragem e ordenação de estruturas
   const filteredEstruturas = useMemo(() => {
@@ -95,44 +221,29 @@ export const SysdamEmpreendimentosPanel = ({
         break;
       case 'INSTRUMENTOS':
         list.sort((a, b) => {
-          const countA = instruments.filter(i => (i.estrutura || '').toUpperCase().includes(a.sigla)).length;
-          const countB = instruments.filter(i => (i.estrutura || '').toUpperCase().includes(b.sigla)).length;
+          const countA = getInstrumentsCount(a);
+          const countB = getInstrumentsCount(b);
           return countB - countA;
         });
         break;
       case 'PADRAO':
       default:
-        // Mantém ordem natural de projeto
         break;
     }
 
     return list;
-  }, [estruturas, selectedCategory, searchQuery, orderBy, instruments]);
-
-  // Contagem de instrumentos para uma estrutura
-  const getInstrumentsCount = (sigla) => {
-    if (!sigla) return 0;
-    const s = sigla.toUpperCase();
-    return instruments.filter(i => (i.estrutura || '').toUpperCase().includes(s)).length;
-  };
-
-  // Contagem de anomalias/ocorrências para uma estrutura
-  const getAnomaliesCount = (sigla) => {
-    if (!sigla) return 0;
-    const s = sigla.toUpperCase();
-    return anomalias.filter(a => (a.estrutura || '').toUpperCase().includes(s)).length;
-  };
+  }, [estruturas, selectedCategory, searchQuery, orderBy, instruments, allTickets]);
 
   // Cores por categoria de estrutura
   const getCategoryColor = (tipo) => {
     switch (tipo) {
       case 'BARRAGEM':
-        return { badgeBg: 'rgba(56, 189, 248, 0.15)', text: '#38bdf8', border: '#0284c7' };
+        return { badgeBg: 'rgba(56, 189, 248, 0.18)', text: '#38bdf8', border: '#0284c7' };
       case 'CAVA':
-        return { badgeBg: 'rgba(168, 85, 247, 0.15)', text: '#c084fc', border: '#8b5cf6' };
+        return { badgeBg: 'rgba(168, 85, 247, 0.18)', text: '#c084fc', border: '#8b5cf6' };
       case 'PILHA':
       default:
-        return { badgeBg: 'rgba(245, 158, 11, 0.15)', text: '#fbbf24', border: '#f59e0b' };
+        return { badgeBg: 'rgba(245, 158, 11, 0.18)', text: '#fbbf24', border: '#f59e0b' };
     }
   };
 
@@ -144,6 +255,9 @@ export const SysdamEmpreendimentosPanel = ({
     if (setIsFlipped) {
       setIsFlipped(true);
     }
+    if (onFlipChange) {
+      onFlipChange(true);
+    }
   };
 
   // Fechar Side B e voltar para Side A
@@ -152,8 +266,96 @@ export const SysdamEmpreendimentosPanel = ({
     if (setIsFlipped) {
       setIsFlipped(false);
     }
+    if (onFlipChange) {
+      onFlipChange(false);
+    }
     if (onCloseDetails) {
       onCloseDetails();
+    }
+  };
+
+  // Telemetria detalhada da estrutura selecionada
+  const structInstruments = useMemo(() => {
+    if (!selectedEstrutura) return [];
+    return (instruments || []).filter(i => matchesStructure(i.estrutura, selectedEstrutura));
+  }, [selectedEstrutura, instruments]);
+
+  const structAnomalies = useMemo(() => {
+    if (!selectedEstrutura) return [];
+    return (anomalias || []).filter(a => matchesStructure(a.estrutura, selectedEstrutura));
+  }, [selectedEstrutura, anomalias]);
+
+  const structTickets = useMemo(() => {
+    if (!selectedEstrutura) return [];
+    return (allTickets || []).filter(t => matchesStructure(t.estrutura, selectedEstrutura));
+  }, [selectedEstrutura, allTickets]);
+
+  // Contagens por tipo de instrumento
+  const pzCount = useMemo(() => {
+    return structInstruments.filter(i => {
+      const t = (i.tipo || '').toUpperCase();
+      return t === 'PZ' || t === 'INA' || t.includes('PIEZ');
+    }).length;
+  }, [structInstruments]);
+
+  const vazaoCount = useMemo(() => {
+    return structInstruments.filter(i => {
+      const t = (i.tipo || '').toUpperCase();
+      return t === 'MV' || t === 'VT' || t.includes('VAZ') || t.includes('DREN');
+    }).length;
+  }, [structInstruments]);
+
+  const alertasCount = useMemo(() => {
+    return structInstruments.filter(i => {
+      const s = String(i.status || '').toLowerCase();
+      return s.includes('alert') || s.includes('atenc') || s.includes('atenç') || s.includes('emerg') || i.nivelAlerta;
+    }).length;
+  }, [structInstruments]);
+
+  const pendingTicketsCount = useMemo(() => {
+    return structTickets.filter(t => {
+      const s = String(t.status || '').toLowerCase();
+      return !s.includes('fech') && !s.includes('concl') && !s.includes('aprov');
+    }).length;
+  }, [structTickets]);
+
+  // Coordenadas e projeção UTM 23S
+  const lat = selectedEstrutura?.coordenadas?.lat ?? selectedEstrutura?.lat;
+  const lon = selectedEstrutura?.coordenadas?.lon ?? selectedEstrutura?.lon;
+  const utm = (lat != null && lon != null) ? toUtm23s(lat, lon) : null;
+
+  // Navegação para módulos operacionais
+  const handleNavigate = (tabKey, extraContext = {}) => {
+    if (!selectedEstrutura) return;
+    const ctx = {
+      structureId: selectedEstrutura.id,
+      sigla: selectedEstrutura.sigla,
+      estrutura: selectedEstrutura.nome,
+      selectedEstrutura,
+      ...extraContext
+    };
+
+    try {
+      if (typeof window !== 'undefined' && window.sessionStorage) {
+        window.sessionStorage.setItem('selected_geotech_structure', JSON.stringify(selectedEstrutura));
+      }
+    } catch (e) {}
+
+    if (onNavigateModule) {
+      onNavigateModule(tabKey, selectedEstrutura);
+    } else if (onNavigateTab) {
+      onNavigateTab(tabKey, ctx);
+    }
+  };
+
+  // Centralizar no mapa
+  const handleCenterMap = (ev) => {
+    ev && ev.stopPropagation();
+    if (!selectedEstrutura) return;
+    if (onFocusStructure) {
+      onFocusStructure(selectedEstrutura);
+    } else if (onSelectEstrutura) {
+      onSelectEstrutura(selectedEstrutura);
     }
   };
 
@@ -176,12 +378,12 @@ export const SysdamEmpreendimentosPanel = ({
           {/* ========================================================================= */}
           {/* LADO A: LISTA DE EMPREENDIMENTOS & ESTRUTURAS GEORREFERENCIADAS          */}
           {/* ========================================================================= */}
-          <div className="sysdam-card-front">
+          <div className="sysdam-card-front" style={{ backgroundColor: '#0f172a', color: '#f8fafc' }}>
             {/* Header da Busca e Filtros */}
             <div style={{
               padding: '0.85rem 0.95rem 0.65rem 0.95rem',
-              borderBottom: '1px solid var(--border-medium, #334155)',
-              backgroundColor: 'var(--bg-secondary, #0f172a)',
+              borderBottom: '1px solid #334155',
+              backgroundColor: '#0f172a',
               display: 'flex',
               flexDirection: 'column',
               gap: '0.55rem'
@@ -189,8 +391,8 @@ export const SysdamEmpreendimentosPanel = ({
               {/* Título Principal */}
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem' }}>
-                  <Building2 size={16} style={{ color: 'var(--primary-accent, #38bdf8)' }} />
-                  <span style={{ fontWeight: 800, fontSize: '0.82rem', color: '#f8fafc', letterSpacing: '0.3px' }}>
+                  <Building2 size={16} style={{ color: '#38bdf8' }} />
+                  <span style={{ fontWeight: 800, fontSize: '0.82rem', color: '#ffffff', letterSpacing: '0.3px' }}>
                     Empreendimentos & Estruturas
                   </span>
                 </div>
@@ -229,13 +431,13 @@ export const SysdamEmpreendimentosPanel = ({
               <div style={{
                 display: 'flex',
                 alignItems: 'center',
-                backgroundColor: 'var(--bg-surface, #1e293b)',
-                border: '1px solid var(--border-medium, #475569)',
+                backgroundColor: '#1e293b',
+                border: '1px solid #475569',
                 borderRadius: '6px',
                 padding: '0.3rem 0.6rem',
                 gap: '0.4rem'
               }}>
-                <Search size={14} style={{ color: 'var(--text-muted, #94a3b8)' }} />
+                <Search size={14} style={{ color: '#94a3b8' }} />
                 <input
                   type="text"
                   value={searchQuery}
@@ -245,7 +447,7 @@ export const SysdamEmpreendimentosPanel = ({
                     backgroundColor: 'transparent',
                     border: 'none',
                     outline: 'none',
-                    color: '#f8fafc',
+                    color: '#ffffff',
                     fontSize: '0.75rem',
                     width: '100%',
                     fontFamily: 'inherit'
@@ -274,12 +476,13 @@ export const SysdamEmpreendimentosPanel = ({
                         style={{
                           padding: '0.15rem 0.45rem',
                           borderRadius: '4px',
-                          border: isActive ? '1px solid #38bdf8' : '1px solid var(--border-subtle, #334155)',
-                          backgroundColor: isActive ? 'rgba(56, 189, 248, 0.2)' : 'transparent',
+                          border: isActive ? '1px solid #38bdf8' : '1px solid #334155',
+                          backgroundColor: isActive ? 'rgba(56, 189, 248, 0.25)' : 'transparent',
                           color: isActive ? '#38bdf8' : '#94a3b8',
                           fontSize: '0.67rem',
                           fontWeight: isActive ? 700 : 500,
-                          cursor: 'pointer'
+                          cursor: 'pointer',
+                          transition: 'all 0.15s ease'
                         }}
                       >
                         {label}
@@ -293,12 +496,13 @@ export const SysdamEmpreendimentosPanel = ({
                   value={orderBy}
                   onChange={(e) => setOrderBy(e.target.value)}
                   style={{
-                    backgroundColor: 'var(--bg-surface, #1e293b)',
-                    border: '1px solid var(--border-medium, #475569)',
+                    backgroundColor: '#1e293b',
+                    border: '1px solid #475569',
                     borderRadius: '4px',
-                    color: '#94a3b8',
+                    color: '#f8fafc',
                     fontSize: '0.65rem',
-                    padding: '0.15rem 0.35rem'
+                    padding: '0.15rem 0.35rem',
+                    outline: 'none'
                   }}
                   title="Ordenar lista de empreendimentos"
                 >
@@ -318,13 +522,14 @@ export const SysdamEmpreendimentosPanel = ({
               padding: '0.65rem',
               display: 'flex',
               flexDirection: 'column',
-              gap: '0.55rem'
+              gap: '0.55rem',
+              backgroundColor: '#0b1329'
             }}>
               {filteredEstruturas.length === 0 ? (
                 <div style={{
                   padding: '2rem 1rem',
                   textAlign: 'center',
-                  color: 'var(--text-muted, #94a3b8)',
+                  color: '#94a3b8',
                   fontSize: '0.75rem'
                 }}>
                   Nenhuma estrutura localizada com os filtros ativos.
@@ -332,8 +537,9 @@ export const SysdamEmpreendimentosPanel = ({
               ) : (
                 filteredEstruturas.map((e) => {
                   const isSelected = selectedEstrutura?.id === e.id || selectedEstrutura?.sigla === e.sigla;
-                  const instCount = getInstrumentsCount(e.sigla);
-                  const anomCount = getAnomaliesCount(e.sigla);
+                  const instCount = getInstrumentsCount(e);
+                  const anomCount = getAnomaliesCount(e);
+                  const chamCount = getTicketsCount(e);
                   const catStyle = getCategoryColor(e.tipo);
 
                   return (
@@ -343,19 +549,25 @@ export const SysdamEmpreendimentosPanel = ({
                       style={{
                         display: 'flex',
                         flexDirection: 'row',
-                        backgroundColor: isSelected ? 'rgba(56, 189, 248, 0.12)' : 'var(--bg-surface, #1e293b)',
-                        border: isSelected ? '1px solid #38bdf8' : '1px solid var(--border-medium, #334155)',
+                        backgroundColor: isSelected ? 'rgba(56, 189, 248, 0.15)' : '#1e293b',
+                        border: isSelected ? '1px solid #38bdf8' : '1px solid #334155',
                         borderRadius: '8px',
                         cursor: 'pointer',
                         overflow: 'hidden',
                         transition: 'all 0.18s ease',
-                        boxShadow: 'var(--shadow-sm)'
+                        boxShadow: '0 2px 6px rgba(0, 0, 0, 0.25)'
                       }}
                       onMouseEnter={(el) => {
-                        if (!isSelected) el.currentTarget.style.borderColor = '#475569';
+                        if (!isSelected) {
+                          el.currentTarget.style.borderColor = '#0284c7';
+                          el.currentTarget.style.transform = 'translateY(-1px)';
+                        }
                       }}
                       onMouseLeave={(el) => {
-                        if (!isSelected) el.currentTarget.style.borderColor = 'var(--border-medium, #334155)';
+                        if (!isSelected) {
+                          el.currentTarget.style.borderColor = '#334155';
+                          el.currentTarget.style.transform = 'none';
+                        }
                       }}
                     >
                       {/* Thumbnail Lateral Georreferenciado */}
@@ -363,7 +575,7 @@ export const SysdamEmpreendimentosPanel = ({
                         width: '92px',
                         minWidth: '92px',
                         backgroundColor: catStyle.badgeBg,
-                        borderRight: '1px solid var(--border-subtle, #334155)',
+                        borderRight: '1px solid #334155',
                         display: 'flex',
                         flexDirection: 'column',
                         alignItems: 'center',
@@ -372,7 +584,7 @@ export const SysdamEmpreendimentosPanel = ({
                         padding: '0.5rem'
                       }}>
                         <span style={{
-                          fontSize: '1.25rem',
+                          fontSize: '1.2rem',
                           fontWeight: 900,
                           color: catStyle.text,
                           letterSpacing: '0.5px'
@@ -380,9 +592,9 @@ export const SysdamEmpreendimentosPanel = ({
                           {e.sigla}
                         </span>
                         <span style={{
-                          fontSize: '0.6rem',
+                          fontSize: '0.58rem',
                           fontWeight: 700,
-                          color: 'var(--text-muted, #94a3b8)',
+                          color: '#94a3b8',
                           textTransform: 'uppercase',
                           marginTop: '2px'
                         }}>
@@ -394,7 +606,7 @@ export const SysdamEmpreendimentosPanel = ({
                             bottom: '4px',
                             fontSize: '0.58rem',
                             fontFamily: 'monospace',
-                            color: '#94a3b8'
+                            color: '#cbd5e1'
                           }}>
                             {e.cotaCrista}m
                           </span>
@@ -423,15 +635,15 @@ export const SysdamEmpreendimentosPanel = ({
                             justifyContent: 'space-between'
                           }}>
                             <span>ITAMINAS MINERAÇÃO</span>
-                            <span style={{ fontSize: '0.6rem', color: '#64748b' }}>Sarzedo / MG</span>
+                            <span style={{ fontSize: '0.6rem', color: '#94a3b8' }}>Sarzedo / MG</span>
                           </div>
 
                           {/* Nome da Estrutura */}
                           <div style={{
                             fontSize: '0.82rem',
                             fontWeight: 800,
-                            color: '#f8fafc',
-                            marginTop: '1px',
+                            color: '#ffffff',
+                            marginTop: '2px',
                             lineHeight: 1.2
                           }}>
                             {e.nome}
@@ -446,7 +658,7 @@ export const SysdamEmpreendimentosPanel = ({
                               fontWeight: 700,
                               padding: '1px 5px',
                               borderRadius: '3px',
-                              backgroundColor: e.dpa === 'Alto' ? 'rgba(239, 68, 68, 0.2)' : 'rgba(245, 158, 11, 0.2)',
+                              backgroundColor: e.dpa === 'Alto' ? 'rgba(239, 68, 68, 0.25)' : 'rgba(245, 158, 11, 0.25)',
                               color: e.dpa === 'Alto' ? '#ef4444' : '#f59e0b'
                             }}>
                               DPA {e.dpa}
@@ -459,7 +671,7 @@ export const SysdamEmpreendimentosPanel = ({
                               fontWeight: 600,
                               padding: '1px 5px',
                               borderRadius: '3px',
-                              backgroundColor: 'rgba(56, 189, 248, 0.15)',
+                              backgroundColor: 'rgba(56, 189, 248, 0.18)',
                               color: '#38bdf8',
                               display: 'flex',
                               alignItems: 'center',
@@ -476,10 +688,27 @@ export const SysdamEmpreendimentosPanel = ({
                               fontWeight: 700,
                               padding: '1px 5px',
                               borderRadius: '3px',
-                              backgroundColor: 'rgba(239, 68, 68, 0.2)',
+                              backgroundColor: 'rgba(239, 68, 68, 0.25)',
                               color: '#ef4444'
                             }}>
                               {anomCount} anom.
+                            </span>
+                          )}
+
+                          {chamCount > 0 && (
+                            <span style={{
+                              fontSize: '0.62rem',
+                              fontWeight: 600,
+                              padding: '1px 5px',
+                              borderRadius: '3px',
+                              backgroundColor: 'rgba(2, 132, 199, 0.2)',
+                              color: '#38bdf8',
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '3px'
+                            }}>
+                              <Wrench size={9} />
+                              {chamCount} chamados
                             </span>
                           )}
                         </div>
@@ -493,13 +722,13 @@ export const SysdamEmpreendimentosPanel = ({
             {/* Rodapé do Painel Frontal */}
             <div style={{
               padding: '0.45rem 0.85rem',
-              borderTop: '1px solid var(--border-medium, #334155)',
-              backgroundColor: 'var(--bg-secondary, #0f172a)',
+              borderTop: '1px solid #334155',
+              backgroundColor: '#0f172a',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'space-between',
               fontSize: '0.68rem',
-              color: 'var(--text-muted, #94a3b8)'
+              color: '#94a3b8'
             }}>
               <span>Complexo Minerário Itaminas</span>
               <span style={{ color: '#38bdf8', fontWeight: 600 }}>SIRGAS 2000 UTM 23S</span>
@@ -509,320 +738,605 @@ export const SysdamEmpreendimentosPanel = ({
           {/* ========================================================================= */}
           {/* LADO B: FICHA COMPLETA DO EMPREENDIMENTO & SERVIÇOS/MÓDULOS (SYSDAM)     */}
           {/* ========================================================================= */}
-          <div className="sysdam-card-back">
+          <div className="sysdam-card-back" style={{ backgroundColor: '#0b1329', color: '#f8fafc' }}>
             {selectedEstrutura ? (
               <div style={{ display: 'flex', flexDirection: 'column', height: '100%', overflowY: 'auto' }}>
                 
-                {/* Header com Imagem / Gradiente e Ação de Fechar */}
+                {/* Header com Gradiente Profundo de Alta Visibilidade */}
                 <div style={{
                   position: 'relative',
-                  minHeight: '140px',
-                  background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0369a1 100%)',
-                  padding: '1rem',
+                  background: 'linear-gradient(135deg, #091e3a 0%, #0f2744 55%, #0369a1 100%)',
+                  padding: '1rem 1rem 0.85rem 1rem',
                   display: 'flex',
                   flexDirection: 'column',
-                  justifyContent: 'flex-end',
-                  borderBottom: '1px solid var(--border-medium, #334155)'
+                  borderBottom: '1px solid #1e3a8a',
+                  boxShadow: '0 4px 12px rgba(0, 0, 0, 0.35)'
                 }}>
                   {/* Botão de Fechar / Voltar à Lista */}
                   <button
                     onClick={handleBackToList}
                     style={{
                       position: 'absolute',
-                      top: '10px',
-                      right: '10px',
+                      top: '12px',
+                      right: '12px',
                       width: '28px',
                       height: '28px',
                       borderRadius: '50%',
-                      backgroundColor: 'rgba(15, 23, 42, 0.8)',
-                      border: '1px solid rgba(255, 255, 255, 0.2)',
+                      backgroundColor: 'rgba(15, 23, 42, 0.85)',
+                      border: '1px solid rgba(255, 255, 255, 0.25)',
                       color: '#ffffff',
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
                       cursor: 'pointer',
-                      zIndex: 10
+                      zIndex: 10,
+                      transition: 'all 0.15s ease'
                     }}
-                    title="Voltar para lista de empreendimentos"
+                    title="Voltar para lista de estruturas"
                   >
                     <X size={15} />
                   </button>
 
-                  {/* Informações Centrais do Header */}
+                  {/* Informações Principais da Estrutura */}
                   <div>
-                    <span style={{
-                      display: 'inline-block',
-                      padding: '2px 8px',
-                      borderRadius: '4px',
-                      backgroundColor: 'rgba(56, 189, 248, 0.25)',
-                      color: '#38bdf8',
-                      fontSize: '0.65rem',
-                      fontWeight: 800,
-                      marginBottom: '4px'
-                    }}>
-                      {selectedEstrutura.sigla} • {selectedEstrutura.tipo}
-                    </span>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap', marginBottom: '6px' }}>
+                      <span style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '4px',
+                        padding: '2px 8px',
+                        borderRadius: '4px',
+                        backgroundColor: 'rgba(56, 189, 248, 0.3)',
+                        color: '#38bdf8',
+                        fontSize: '0.68rem',
+                        fontWeight: 800,
+                        border: '1px solid rgba(56, 189, 248, 0.4)'
+                      }}>
+                        <Building2 size={11} />
+                        {selectedEstrutura.sigla || selectedEstrutura.id} • {selectedEstrutura.tipo}
+                      </span>
+                      {selectedEstrutura.statusDce && (
+                        <span style={{
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '3px',
+                          padding: '2px 7px',
+                          borderRadius: '4px',
+                          backgroundColor: 'rgba(16, 185, 129, 0.25)',
+                          color: '#34d399',
+                          fontSize: '0.64rem',
+                          fontWeight: 700,
+                          border: '1px solid rgba(16, 185, 129, 0.4)'
+                        }}>
+                          <ShieldCheck size={11} />
+                          {selectedEstrutura.statusDce}
+                        </span>
+                      )}
+                    </div>
+
                     <h2 style={{
                       margin: 0,
-                      fontSize: '1.05rem',
-                      fontWeight: 800,
+                      fontSize: '1.18rem',
+                      fontWeight: 900,
                       color: '#ffffff',
-                      textShadow: '0 2px 4px rgba(0,0,0,0.6)'
+                      letterSpacing: '0.3px',
+                      textShadow: '0 2px 4px rgba(0,0,0,0.7)'
                     }}>
                       {selectedEstrutura.nome}
                     </h2>
+
+                    {selectedEstrutura.nomeCompleto && selectedEstrutura.nomeCompleto !== selectedEstrutura.nome && (
+                      <div style={{
+                        fontSize: '0.7rem',
+                        color: '#93c5fd',
+                        marginTop: '2px',
+                        fontStyle: 'italic'
+                      }}>
+                        {selectedEstrutura.nomeCompleto}
+                      </div>
+                    )}
+
                     <div style={{
-                      fontSize: '0.7rem',
-                      color: 'rgba(255, 255, 255, 0.85)',
-                      marginTop: '3px',
+                      fontSize: '0.72rem',
+                      color: '#e2e8f0',
+                      marginTop: '4px',
                       display: 'flex',
                       alignItems: 'center',
-                      gap: '0.4rem'
+                      gap: '0.4rem',
+                      flexWrap: 'wrap'
                     }}>
-                      <MapPin size={12} style={{ color: '#38bdf8' }} />
-                      <span>Sarzedo / MG • Itaminas Mineração S/A</span>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                        <MapPin size={12} style={{ color: '#38bdf8' }} />
+                        <span>Sarzedo / MG • Itaminas Mineração S/A</span>
+                      </div>
+                      <button
+                        onClick={handleCenterMap}
+                        style={{
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '4px',
+                          backgroundColor: 'rgba(56, 189, 248, 0.25)',
+                          border: '1px solid #38bdf8',
+                          color: '#ffffff',
+                          padding: '2px 8px',
+                          borderRadius: '4px',
+                          fontSize: '0.65rem',
+                          fontWeight: 700,
+                          cursor: 'pointer',
+                          marginLeft: 'auto'
+                        }}
+                        title="Centralizar câmera no mapa nesta estrutura"
+                      >
+                        <Crosshair size={11} style={{ color: '#38bdf8' }} />
+                        Centralizar
+                      </button>
                     </div>
                   </div>
                 </div>
 
-                {/* Métricas Técnicas da Estrutura */}
-                <div style={{
-                  padding: '0.65rem 0.85rem',
-                  backgroundColor: 'var(--bg-secondary, #0f172a)',
-                  borderBottom: '1px solid var(--border-medium, #334155)',
-                  display: 'grid',
-                  gridTemplateColumns: 'repeat(3, 1fr)',
-                  gap: '0.5rem',
-                  fontSize: '0.68rem'
-                }}>
-                  <div>
-                    <div style={{ color: '#94a3b8' }}>Cota Crista:</div>
-                    <strong style={{ color: '#f8fafc' }}>{selectedEstrutura.cotaCrista ? `${selectedEstrutura.cotaCrista}m` : '-'}</strong>
+                {/* Coordenadas Georreferenciadas WGS-84 & UTM 23S */}
+                {(lat != null && lon != null) && (
+                  <div style={{
+                    padding: '0.45rem 0.85rem',
+                    backgroundColor: '#0f172a',
+                    borderBottom: '1px solid #334155',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    fontSize: '0.66rem',
+                    color: '#cbd5e1'
+                  }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <span style={{ color: '#38bdf8', fontWeight: 700 }}>WGS-84:</span>
+                      <span style={{ fontFamily: 'monospace' }}>{Number(lat).toFixed(6)}, {Number(lon).toFixed(6)}</span>
+                    </div>
+                    {utm && (
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        <span style={{ color: '#34d399', fontWeight: 700 }}>UTM 23S:</span>
+                        <span style={{ fontFamily: 'monospace' }}>E {utm.easting} / N {utm.northing}</span>
+                      </div>
+                    )}
                   </div>
-                  <div>
-                    <div style={{ color: '#94a3b8' }}>Altura Máx:</div>
-                    <strong style={{ color: '#f8fafc' }}>{selectedEstrutura.alturaMaxima ? `${selectedEstrutura.alturaMaxima}m` : '-'}</strong>
-                  </div>
-                  <div>
-                    <div style={{ color: '#94a3b8' }}>DPA / CRI:</div>
-                    <strong style={{ color: selectedEstrutura.dpa === 'Alto' ? '#ef4444' : '#f59e0b' }}>
-                      {selectedEstrutura.dpa || 'Alto'} / {selectedEstrutura.cri || 'Baixo'}
-                    </strong>
-                  </div>
-                </div>
+                )}
 
-                {/* Lista de Módulos e Serviços Vinculados (Padrão SysDam) */}
+                {/* Dossiê Técnico Completo de Parâmetros Geotécnicos */}
                 <div style={{
-                  flex: 1,
-                  padding: '0.75rem',
+                  padding: '0.75rem 0.85rem',
+                  backgroundColor: '#0f172a',
+                  borderBottom: '1px solid #334155',
                   display: 'flex',
                   flexDirection: 'column',
-                  gap: '0.5rem',
-                  overflowY: 'auto'
+                  gap: '0.6rem'
                 }}>
                   <div style={{
-                    fontSize: '0.7rem',
+                    fontSize: '0.68rem',
                     fontWeight: 800,
                     color: '#94a3b8',
                     textTransform: 'uppercase',
-                    letterSpacing: '0.5px',
-                    marginBottom: '2px'
+                    letterSpacing: '0.5px'
                   }}>
-                    Módulos Operacionais Disponíveis:
+                    Dossiê Técnico & Parâmetros da Estrutura:
+                  </div>
+
+                  {/* Grid de Métricas Técnicas */}
+                  <div style={{
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(3, 1fr)',
+                    gap: '0.45rem'
+                  }}>
+                    <div style={{ backgroundColor: '#1e293b', padding: '0.45rem 0.55rem', borderRadius: '6px', border: '1px solid #334155' }}>
+                      <div style={{ color: '#94a3b8', fontSize: '0.63rem' }}>Cota Crista:</div>
+                      <div style={{ color: '#ffffff', fontWeight: 800, fontSize: '0.76rem', marginTop: '1px' }}>
+                        {selectedEstrutura.cotaCrista ? `${selectedEstrutura.cotaCrista} m` : 'N/A'}
+                      </div>
+                    </div>
+                    <div style={{ backgroundColor: '#1e293b', padding: '0.45rem 0.55rem', borderRadius: '6px', border: '1px solid #334155' }}>
+                      <div style={{ color: '#94a3b8', fontSize: '0.63rem' }}>Altura Máx:</div>
+                      <div style={{ color: '#ffffff', fontWeight: 800, fontSize: '0.76rem', marginTop: '1px' }}>
+                        {selectedEstrutura.alturaMaxima ? `${selectedEstrutura.alturaMaxima} m` : 'N/A'}
+                      </div>
+                    </div>
+                    <div style={{ backgroundColor: '#1e293b', padding: '0.45rem 0.55rem', borderRadius: '6px', border: '1px solid #334155' }}>
+                      <div style={{ color: '#94a3b8', fontSize: '0.63rem' }}>DPA / CRI:</div>
+                      <div style={{
+                        color: selectedEstrutura.dpa === 'Alto' ? '#f87171' : '#fbbf24',
+                        fontWeight: 800,
+                        fontSize: '0.74rem',
+                        marginTop: '1px'
+                      }}>
+                        {selectedEstrutura.dpa || 'Alto'} / {selectedEstrutura.cri || 'Baixo'}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Detalhes Adicionais de Engenharia */}
+                  <div style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '0.35rem',
+                    backgroundColor: '#1e293b',
+                    padding: '0.55rem 0.65rem',
+                    borderRadius: '6px',
+                    border: '1px solid #334155',
+                    fontSize: '0.68rem'
+                  }}>
+                    {selectedEstrutura.faseProjeto && (
+                      <div style={{ display: 'flex', justifyContent: 'space-between', gap: '0.5rem' }}>
+                        <span style={{ color: '#94a3b8' }}>Fase do Projeto:</span>
+                        <strong style={{ color: '#f8fafc', textAlign: 'right' }}>{selectedEstrutura.faseProjeto}</strong>
+                      </div>
+                    )}
+                    {selectedEstrutura.tipoSecao && (
+                      <div style={{ display: 'flex', justifyContent: 'space-between', gap: '0.5rem' }}>
+                        <span style={{ color: '#94a3b8' }}>Tipo de Seção:</span>
+                        <span style={{ color: '#cbd5e1', textAlign: 'right' }}>{selectedEstrutura.tipoSecao}</span>
+                      </div>
+                    )}
+                    {selectedEstrutura.finalidade && (
+                      <div style={{ display: 'flex', justifyContent: 'space-between', gap: '0.5rem' }}>
+                        <span style={{ color: '#94a3b8' }}>Finalidade:</span>
+                        <span style={{ color: '#cbd5e1', textAlign: 'right' }}>{selectedEstrutura.finalidade}</span>
+                      </div>
+                    )}
+                    {selectedEstrutura.estruturaAssoc && (
+                      <div style={{ display: 'flex', justifyContent: 'space-between', gap: '0.5rem' }}>
+                        <span style={{ color: '#94a3b8' }}>Estruturas Assoc.:</span>
+                        <span style={{ color: '#38bdf8', textAlign: 'right' }}>{selectedEstrutura.estruturaAssoc}</span>
+                      </div>
+                    )}
+                    {selectedEstrutura.volumeAtual && (
+                      <div style={{ display: 'flex', justifyContent: 'space-between', gap: '0.5rem' }}>
+                        <span style={{ color: '#94a3b8' }}>Volume Atual:</span>
+                        <strong style={{ color: '#f8fafc', textAlign: 'right' }}>{selectedEstrutura.volumeAtual}</strong>
+                      </div>
+                    )}
+                    {selectedEstrutura.orgaoFiscalizador && (
+                      <div style={{ display: 'flex', justifyContent: 'space-between', gap: '0.5rem' }}>
+                        <span style={{ color: '#94a3b8' }}>Órgão Fiscalizador:</span>
+                        <span style={{ color: '#34d399', fontWeight: 700, textAlign: 'right' }}>{selectedEstrutura.orgaoFiscalizador}</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Telemetria e Indicadores em Tempo Real */}
+                <div style={{
+                  padding: '0.65rem 0.85rem',
+                  backgroundColor: '#0b1329',
+                  borderBottom: '1px solid #1e293b',
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(4, 1fr)',
+                  gap: '0.4rem',
+                  textAlign: 'center'
+                }}>
+                  <div style={{ backgroundColor: '#0f172a', padding: '0.35rem 0.2rem', borderRadius: '5px', border: '1px solid #1e293b' }}>
+                    <div style={{ fontSize: '0.85rem', fontWeight: 900, color: '#38bdf8' }}>{structInstruments.length}</div>
+                    <div style={{ fontSize: '0.58rem', color: '#94a3b8' }}>Instrumentos</div>
+                  </div>
+                  <div style={{ backgroundColor: '#0f172a', padding: '0.35rem 0.2rem', borderRadius: '5px', border: '1px solid #1e293b' }}>
+                    <div style={{ fontSize: '0.85rem', fontWeight: 900, color: '#34d399' }}>{pzCount}</div>
+                    <div style={{ fontSize: '0.58rem', color: '#94a3b8' }}>Piezômetros</div>
+                  </div>
+                  <div style={{ backgroundColor: '#0f172a', padding: '0.35rem 0.2rem', borderRadius: '5px', border: '1px solid #1e293b' }}>
+                    <div style={{ fontSize: '0.85rem', fontWeight: 900, color: structAnomalies.length > 0 ? '#ef4444' : '#34d399' }}>
+                      {structAnomalies.length}
+                    </div>
+                    <div style={{ fontSize: '0.58rem', color: '#94a3b8' }}>Anomalias</div>
+                  </div>
+                  <div style={{ backgroundColor: '#0f172a', padding: '0.35rem 0.2rem', borderRadius: '5px', border: '1px solid #1e293b' }}>
+                    <div style={{ fontSize: '0.85rem', fontWeight: 900, color: structTickets.length > 0 ? '#f59e0b' : '#94a3b8' }}>
+                      {structTickets.length}
+                    </div>
+                    <div style={{ fontSize: '0.58rem', color: '#94a3b8' }}>Chamados</div>
+                  </div>
+                </div>
+
+                {/* Lista de Módulos Operacionais Disponíveis */}
+                <div style={{
+                  flex: 1,
+                  padding: '0.85rem',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '0.6rem',
+                  backgroundColor: '#0b1329'
+                }}>
+                  <div style={{
+                    fontSize: '0.72rem',
+                    fontWeight: 800,
+                    color: '#ffffff',
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.5px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between'
+                  }}>
+                    <span>Módulos Operacionais Disponíveis:</span>
+                    <span style={{ fontSize: '0.62rem', color: '#38bdf8', fontWeight: 600 }}>5 módulos interativos</span>
                   </div>
 
                   {/* 1. Monitoramento Piezométrico */}
                   <div 
-                    onClick={() => onNavigateTab && onNavigateTab('piezometria')}
+                    onClick={() => handleNavigate('piezometria')}
+                    role="button"
+                    tabIndex={0}
                     style={{
-                      padding: '0.6rem 0.75rem',
-                      borderRadius: '6px',
-                      backgroundColor: 'var(--bg-surface, #1e293b)',
-                      border: '1px solid var(--border-medium, #334155)',
+                      padding: '0.7rem 0.85rem',
+                      borderRadius: '8px',
+                      background: 'linear-gradient(135deg, rgba(15, 23, 42, 0.95), rgba(30, 41, 59, 0.95))',
+                      border: '1px solid rgba(16, 185, 129, 0.35)',
+                      borderLeft: '4px solid #10b981',
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'space-between',
                       cursor: 'pointer',
-                      transition: 'background-color 0.15s ease'
+                      transition: 'all 0.18s ease',
+                      boxShadow: '0 2px 8px rgba(0, 0, 0, 0.2)'
+                    }}
+                    onMouseEnter={(el) => {
+                      el.currentTarget.style.borderColor = '#10b981';
+                      el.currentTarget.style.transform = 'translateX(2px)';
+                    }}
+                    onMouseLeave={(el) => {
+                      el.currentTarget.style.borderColor = 'rgba(16, 185, 129, 0.35)';
+                      el.currentTarget.style.transform = 'none';
                     }}
                   >
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.7rem' }}>
                       <div style={{
-                        padding: '6px',
+                        padding: '7px',
                         borderRadius: '6px',
-                        backgroundColor: 'rgba(16, 185, 129, 0.15)',
-                        color: '#10b981'
+                        backgroundColor: 'rgba(16, 185, 129, 0.2)',
+                        color: '#10b981',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center'
                       }}>
-                        <Activity size={16} />
+                        <Activity size={18} />
                       </div>
                       <div>
-                        <div style={{ fontSize: '0.78rem', fontWeight: 800, color: '#f8fafc' }}>
+                        <div style={{ fontSize: '0.82rem', fontWeight: 800, color: '#ffffff', letterSpacing: '0.2px' }}>
                           Monitoramento Piezométrico
                         </div>
-                        <div style={{ fontSize: '0.66rem', color: '#94a3b8' }}>
-                          {getInstrumentsCount(selectedEstrutura.sigla)} instrumentos com leituras e cotas freáticas
+                        <div style={{ fontSize: '0.68rem', color: '#94a3b8', marginTop: '2px' }}>
+                          {structInstruments.length} instrumentos com leituras e cotas freáticas ({pzCount} PZ/INA)
                         </div>
                       </div>
                     </div>
-                    <ArrowRight size={14} style={{ color: '#10b981' }} />
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                      <span style={{ fontSize: '0.65rem', fontWeight: 700, color: '#10b981' }}>Abrir</span>
+                      <ArrowRight size={14} style={{ color: '#10b981' }} />
+                    </div>
                   </div>
 
-                  {/* 3. Inspeções & Anomalias (SYSDAM) */}
+                  {/* 2. Inspeções Regulares & Anomalias (SYSDAM) */}
                   <div 
-                    onClick={() => onNavigateTab && onNavigateTab('anomalias_inspecoes')}
+                    onClick={() => handleNavigate('anomalias_inspecoes')}
+                    role="button"
+                    tabIndex={0}
                     style={{
-                      padding: '0.6rem 0.75rem',
-                      borderRadius: '6px',
-                      backgroundColor: 'var(--bg-surface, #1e293b)',
-                      border: '1px solid var(--border-medium, #334155)',
+                      padding: '0.7rem 0.85rem',
+                      borderRadius: '8px',
+                      background: 'linear-gradient(135deg, rgba(15, 23, 42, 0.95), rgba(30, 41, 59, 0.95))',
+                      border: '1px solid rgba(239, 68, 68, 0.35)',
+                      borderLeft: '4px solid #ef4444',
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'space-between',
                       cursor: 'pointer',
-                      transition: 'background-color 0.15s ease'
+                      transition: 'all 0.18s ease',
+                      boxShadow: '0 2px 8px rgba(0, 0, 0, 0.2)'
+                    }}
+                    onMouseEnter={(el) => {
+                      el.currentTarget.style.borderColor = '#ef4444';
+                      el.currentTarget.style.transform = 'translateX(2px)';
+                    }}
+                    onMouseLeave={(el) => {
+                      el.currentTarget.style.borderColor = 'rgba(239, 68, 68, 0.35)';
+                      el.currentTarget.style.transform = 'none';
                     }}
                   >
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.7rem' }}>
                       <div style={{
-                        padding: '6px',
+                        padding: '7px',
                         borderRadius: '6px',
-                        backgroundColor: 'rgba(239, 68, 68, 0.15)',
-                        color: '#ef4444'
+                        backgroundColor: 'rgba(239, 68, 68, 0.2)',
+                        color: '#ef4444',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center'
                       }}>
-                        <ClipboardCheck size={16} />
+                        <ClipboardCheck size={18} />
                       </div>
                       <div>
-                        <div style={{ fontSize: '0.78rem', fontWeight: 800, color: '#f8fafc' }}>
+                        <div style={{ fontSize: '0.82rem', fontWeight: 800, color: '#ffffff', letterSpacing: '0.2px' }}>
                           Inspeções Regulares & Anomalias
                         </div>
-                        <div style={{ fontSize: '0.66rem', color: '#94a3b8' }}>
-                          {getAnomaliesCount(selectedEstrutura.sigla)} anomalias cadastradas (Portaria ANM 95/2022)
+                        <div style={{ fontSize: '0.68rem', color: '#94a3b8', marginTop: '2px' }}>
+                          {structAnomalies.length} anomalias cadastradas (Portaria ANM 95/2022 e PNSB)
                         </div>
                       </div>
                     </div>
-                    <ArrowRight size={14} style={{ color: '#ef4444' }} />
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                      <span style={{ fontSize: '0.65rem', fontWeight: 700, color: '#ef4444' }}>Abrir</span>
+                      <ArrowRight size={14} style={{ color: '#ef4444' }} />
+                    </div>
                   </div>
 
-                  {/* 4. Topografia Engemec 2026 (030-MINA) */}
+                  {/* 3. Topografia Engemec 2026 (030-MINA) */}
                   <div 
                     onClick={() => {
                       if (onOpenGeomReport) onOpenGeomReport();
-                      else if (onNavigateTab) onNavigateTab('mapa');
+                      else handleNavigate('mapa', { open3D: true });
                     }}
+                    role="button"
+                    tabIndex={0}
                     style={{
-                      padding: '0.6rem 0.75rem',
-                      borderRadius: '6px',
-                      backgroundColor: 'var(--bg-surface, #1e293b)',
-                      border: '1px solid var(--border-medium, #334155)',
+                      padding: '0.7rem 0.85rem',
+                      borderRadius: '8px',
+                      background: 'linear-gradient(135deg, rgba(15, 23, 42, 0.95), rgba(30, 41, 59, 0.95))',
+                      border: '1px solid rgba(245, 158, 11, 0.35)',
+                      borderLeft: '4px solid #f59e0b',
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'space-between',
                       cursor: 'pointer',
-                      transition: 'background-color 0.15s ease'
+                      transition: 'all 0.18s ease',
+                      boxShadow: '0 2px 8px rgba(0, 0, 0, 0.2)'
+                    }}
+                    onMouseEnter={(el) => {
+                      el.currentTarget.style.borderColor = '#f59e0b';
+                      el.currentTarget.style.transform = 'translateX(2px)';
+                    }}
+                    onMouseLeave={(el) => {
+                      el.currentTarget.style.borderColor = 'rgba(245, 158, 11, 0.35)';
+                      el.currentTarget.style.transform = 'none';
                     }}
                   >
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.7rem' }}>
                       <div style={{
-                        padding: '6px',
+                        padding: '7px',
                         borderRadius: '6px',
-                        backgroundColor: 'rgba(245, 158, 11, 0.15)',
-                        color: '#f59e0b'
+                        backgroundColor: 'rgba(245, 158, 11, 0.2)',
+                        color: '#f59e0b',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center'
                       }}>
-                        <Compass size={16} />
+                        <Compass size={18} />
                       </div>
                       <div>
-                        <div style={{ fontSize: '0.78rem', fontWeight: 800, color: '#f8fafc' }}>
+                        <div style={{ fontSize: '0.82rem', fontWeight: 800, color: '#ffffff', letterSpacing: '0.2px' }}>
                           Topografia & Geometria 030-MINA
                         </div>
-                        <div style={{ fontSize: '0.66rem', color: '#94a3b8' }}>
+                        <div style={{ fontSize: '0.68rem', color: '#94a3b8', marginTop: '2px' }}>
                           12 campanhas Engemec 2026 e conformidade NBR 13028
                         </div>
                       </div>
                     </div>
-                    <ArrowRight size={14} style={{ color: '#f59e0b' }} />
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                      <span style={{ fontSize: '0.65rem', fontWeight: 700, color: '#f59e0b' }}>3D</span>
+                      <ArrowRight size={14} style={{ color: '#f59e0b' }} />
+                    </div>
                   </div>
 
-                  {/* 5. Dados Cadastrais & DCE */}
+                  {/* 4. Dados Cadastrais & DCE */}
                   <div 
-                    onClick={() => onNavigateTab && onNavigateTab('estruturas')}
+                    onClick={() => handleNavigate('estruturas')}
+                    role="button"
+                    tabIndex={0}
                     style={{
-                      padding: '0.6rem 0.75rem',
-                      borderRadius: '6px',
-                      backgroundColor: 'var(--bg-surface, #1e293b)',
-                      border: '1px solid var(--border-medium, #334155)',
+                      padding: '0.7rem 0.85rem',
+                      borderRadius: '8px',
+                      background: 'linear-gradient(135deg, rgba(15, 23, 42, 0.95), rgba(30, 41, 59, 0.95))',
+                      border: '1px solid rgba(168, 85, 247, 0.35)',
+                      borderLeft: '4px solid #a855f7',
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'space-between',
                       cursor: 'pointer',
-                      transition: 'background-color 0.15s ease'
+                      transition: 'all 0.18s ease',
+                      boxShadow: '0 2px 8px rgba(0, 0, 0, 0.2)'
+                    }}
+                    onMouseEnter={(el) => {
+                      el.currentTarget.style.borderColor = '#a855f7';
+                      el.currentTarget.style.transform = 'translateX(2px)';
+                    }}
+                    onMouseLeave={(el) => {
+                      el.currentTarget.style.borderColor = 'rgba(168, 85, 247, 0.35)';
+                      el.currentTarget.style.transform = 'none';
                     }}
                   >
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.7rem' }}>
                       <div style={{
-                        padding: '6px',
+                        padding: '7px',
                         borderRadius: '6px',
-                        backgroundColor: 'rgba(168, 85, 247, 0.15)',
-                        color: '#a855f7'
+                        backgroundColor: 'rgba(168, 85, 247, 0.2)',
+                        color: '#a855f7',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center'
                       }}>
-                        <Building2 size={16} />
+                        <Building2 size={18} />
                       </div>
                       <div>
-                        <div style={{ fontSize: '0.78rem', fontWeight: 800, color: '#f8fafc' }}>
+                        <div style={{ fontSize: '0.82rem', fontWeight: 800, color: '#ffffff', letterSpacing: '0.2px' }}>
                           Cadastro Técnico & DCE
                         </div>
-                        <div style={{ fontSize: '0.66rem', color: '#94a3b8' }}>
+                        <div style={{ fontSize: '0.68rem', color: '#94a3b8', marginTop: '2px' }}>
                           Ficha técnica detalhada, seções e órgãos fiscalizadores
                         </div>
                       </div>
                     </div>
-                    <ArrowRight size={14} style={{ color: '#a855f7' }} />
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                      <span style={{ fontSize: '0.65rem', fontWeight: 700, color: '#a855f7' }}>Abrir</span>
+                      <ArrowRight size={14} style={{ color: '#a855f7' }} />
+                    </div>
                   </div>
 
-                  {/* 6. Ordens de Serviço & Chamados PCMI */}
+                  {/* 5. Ordens de Serviço & Chamados PCMI */}
                   <div 
-                    onClick={() => onNavigateTab && onNavigateTab('chamados')}
+                    onClick={() => handleNavigate('chamados')}
+                    role="button"
+                    tabIndex={0}
                     style={{
-                      padding: '0.6rem 0.75rem',
-                      borderRadius: '6px',
-                      backgroundColor: 'var(--bg-surface, #1e293b)',
-                      border: '1px solid var(--border-medium, #334155)',
+                      padding: '0.7rem 0.85rem',
+                      borderRadius: '8px',
+                      background: 'linear-gradient(135deg, rgba(15, 23, 42, 0.95), rgba(30, 41, 59, 0.95))',
+                      border: '1px solid rgba(2, 132, 199, 0.35)',
+                      borderLeft: '4px solid #0284c7',
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'space-between',
                       cursor: 'pointer',
-                      transition: 'background-color 0.15s ease'
+                      transition: 'all 0.18s ease',
+                      boxShadow: '0 2px 8px rgba(0, 0, 0, 0.2)'
+                    }}
+                    onMouseEnter={(el) => {
+                      el.currentTarget.style.borderColor = '#0284c7';
+                      el.currentTarget.style.transform = 'translateX(2px)';
+                    }}
+                    onMouseLeave={(el) => {
+                      el.currentTarget.style.borderColor = 'rgba(2, 132, 199, 0.35)';
+                      el.currentTarget.style.transform = 'none';
                     }}
                   >
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.7rem' }}>
                       <div style={{
-                        padding: '6px',
+                        padding: '7px',
                         borderRadius: '6px',
-                        backgroundColor: 'rgba(2, 132, 199, 0.15)',
-                        color: '#0284c7'
+                        backgroundColor: 'rgba(2, 132, 199, 0.2)',
+                        color: '#38bdf8',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center'
                       }}>
-                        <Wrench size={16} />
+                        <Wrench size={18} />
                       </div>
                       <div>
-                        <div style={{ fontSize: '0.78rem', fontWeight: 800, color: '#f8fafc' }}>
+                        <div style={{ fontSize: '0.82rem', fontWeight: 800, color: '#ffffff', letterSpacing: '0.2px' }}>
                           Chamados & Manutenção PCMI
                         </div>
-                        <div style={{ fontSize: '0.66rem', color: '#94a3b8' }}>
-                          Ordens de serviço de campo e monitoramento de ações
+                        <div style={{ fontSize: '0.68rem', color: '#94a3b8', marginTop: '2px' }}>
+                          {structTickets.length} ordens de serviço ({pendingTicketsCount} em aberto)
                         </div>
                       </div>
                     </div>
-                    <ArrowRight size={14} style={{ color: '#0284c7' }} />
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                      <span style={{ fontSize: '0.65rem', fontWeight: 700, color: '#38bdf8' }}>Abrir</span>
+                      <ArrowRight size={14} style={{ color: '#38bdf8' }} />
+                    </div>
                   </div>
                 </div>
 
-                {/* Rodapé com Botão Voltar */}
+                {/* Rodapé com Botão Voltar & Ações Rápidas */}
                 <div style={{
-                  padding: '0.55rem 0.85rem',
-                  borderTop: '1px solid var(--border-medium, #334155)',
-                  backgroundColor: 'var(--bg-secondary, #0f172a)',
+                  padding: '0.65rem 0.85rem',
+                  borderTop: '1px solid #334155',
+                  backgroundColor: '#0f172a',
                   display: 'flex',
                   alignItems: 'center',
-                  justifyContent: 'space-between'
+                  justifyContent: 'space-between',
+                  gap: '0.5rem'
                 }}>
                   <button
                     onClick={handleBackToList}
@@ -838,12 +1352,52 @@ export const SysdamEmpreendimentosPanel = ({
                       fontWeight: 700
                     }}
                   >
-                    <ChevronLeft size={15} />
+                    <ChevronLeft size={16} />
                     <span>Voltar à lista de estruturas</span>
                   </button>
-                  <span style={{ fontSize: '0.65rem', color: '#64748b' }}>
-                    Portal de Empreendimentos
-                  </span>
+
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <button
+                      onClick={handleCenterMap}
+                      style={{
+                        padding: '0.3rem 0.6rem',
+                        backgroundColor: 'rgba(56, 189, 248, 0.15)',
+                        border: '1px solid #38bdf8',
+                        borderRadius: '4px',
+                        color: '#38bdf8',
+                        fontSize: '0.67rem',
+                        fontWeight: 700,
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '4px'
+                      }}
+                      title="Centralizar no mapa Leaflet"
+                    >
+                      <Crosshair size={12} />
+                      <span>Focar</span>
+                    </button>
+                    <button
+                      onClick={() => handleNavigate('campo')}
+                      style={{
+                        padding: '0.3rem 0.6rem',
+                        backgroundColor: '#0284c7',
+                        border: '1px solid #38bdf8',
+                        borderRadius: '4px',
+                        color: '#ffffff',
+                        fontSize: '0.67rem',
+                        fontWeight: 700,
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '4px'
+                      }}
+                      title="Iniciar nova coleta de campo para esta estrutura"
+                    >
+                      <ClipboardCheck size={12} />
+                      <span>Vistoria</span>
+                    </button>
+                  </div>
                 </div>
               </div>
             ) : (
@@ -852,7 +1406,7 @@ export const SysdamEmpreendimentosPanel = ({
                 alignItems: 'center',
                 justifyContent: 'center',
                 height: '100%',
-                color: 'var(--text-muted, #94a3b8)',
+                color: '#94a3b8',
                 fontSize: '0.75rem'
               }}>
                 Nenhum empreendimento selecionado.
