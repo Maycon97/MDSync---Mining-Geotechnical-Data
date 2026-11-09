@@ -81,7 +81,7 @@ export const argonChatService = {
     return Boolean(this.getEndpoint());
   },
 
-  async sendMessage({ prompt, history = [], context = {} }) {
+  async sendMessage({ prompt, history = [], context = {}, posthogContext }) {
     const endpoint = this.getEndpoint();
     if (!endpoint) {
       throw new Error('O endpoint do Geotinho ainda não foi configurado. Informe a URL do Cloudflare Worker nas configurações.');
@@ -103,7 +103,8 @@ export const argonChatService = {
           sender: message.sender === 'user' ? 'user' : 'assistant',
           text: String(message.text || '').slice(0, 1800)
         })),
-        context: DATA_QUESTION.test(prompt) ? sanitizeContext(context) : {}
+        context: DATA_QUESTION.test(prompt) ? sanitizeContext(context) : {},
+        posthogContext
       }),
       signal: AbortSignal.timeout(65000)
     });

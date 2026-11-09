@@ -1,6 +1,7 @@
 import React from 'react';
 import { useGeotechData } from '../context/GeotechDataContext';
 import { useAuth } from '../context/AuthContext';
+import posthog, { isPostHogConfigured } from '../lib/posthog';
 import { 
   X, 
   Printer, 
@@ -38,6 +39,13 @@ export const ReportModal = ({ isOpen, onClose }) => {
   };
 
   const handlePrint = () => {
+    if (isPostHogConfigured) {
+      posthog.capture('report_print_requested', {
+        structure_id: currentStructure.id || activeStructureId,
+        critical_instrument_count: criticalInstruments.length,
+        anomaly_count: anomalies.length
+      });
+    }
     window.print();
   };
 

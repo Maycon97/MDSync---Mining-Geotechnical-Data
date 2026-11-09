@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { useGeotechData } from '../context/GeotechDataContext';
 import { useAuth } from '../context/AuthContext';
+import posthog, { isPostHogConfigured } from '../lib/posthog';
 import { 
   Wrench, 
   Plus, 
@@ -84,6 +85,17 @@ export const OrdensServicoTab = () => {
     };
 
     addOrdemServico(newOs);
+    if (isPostHogConfigured) {
+      posthog.capture('service_order_created', {
+        structure_id: newOs.estruturaId,
+        priority: newOs.prioridade
+      });
+      posthog.logger.info('service order created', {
+        operation: 'service_order_created',
+        structure_id: newOs.estruturaId,
+        priority: newOs.prioridade
+      });
+    }
     setIsNewOsOpen(false);
   };
 

@@ -1,5 +1,6 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
 import { storageService } from '../services/storageService';
+import posthog, { isPostHogConfigured } from '../lib/posthog';
 
 const AuthContext = createContext(null);
 
@@ -191,6 +192,27 @@ export const AuthProvider = ({ children }) => {
     } catch {}
     return { attempts: 0, lockedUntil: null };
   });
+  const posthogUserIdRef = useRef(null);
+
+  const identifyPostHogUser = (user) => {
+    if (!isPostHogConfigured || !user?.id || posthogUserIdRef.current === user.id) return;
+
+    if (posthogUserIdRef.current && posthogUserIdRef.current !== user.id) {
+      posthog.reset();
+    }
+
+    posthog.identify(user.id, {
+      email: user.email,
+      name: user.nome,
+      role: ROLES[user.roleKey]?.title || user.roleKey
+    });
+    posthogUserIdRef.current = user.id;
+  };
+
+  // Restabelece a identidade persistida uma vez após uma atualização da página.
+  useEffect(() => {
+    identifyPostHogUser(currentUser);
+  }, []);
 
   // Salvar usuário ativo quando alterado
   useEffect(() => {
@@ -246,6 +268,12 @@ export const AuthProvider = ({ children }) => {
     localStorage.setItem(RATE_LIMIT_KEY, JSON.stringify(resetRL));
 
     const updatedUser = { ...foundUser, ultimoAcesso: new Date().toISOString() };
+    identifyPostHogUser(updatedUser);
+    if (isPostHogConfigured) {
+      posthog.capture('user_logged_in', {
+        role_key: updatedUser.roleKey
+      });
+    }
     setCurrentUser(updatedUser);
     try {
       localStorage.setItem(ACTIVE_USER_KEY, JSON.stringify(updatedUser));
@@ -289,6 +317,12 @@ export const AuthProvider = ({ children }) => {
       localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify(updatedUsers));
     } catch (e) {
       console.warn('[AuthContext] Falha ao persistir USERS_STORAGE_KEY no cadastro:', e);
+    }
+    identifyPostHogUser(newUser);
+    if (isPostHogConfigured) {
+      posthog.capture('user_registered', {
+        role_key: newUser.roleKey
+      });
     }
     setCurrentUser(newUser);
     try {
@@ -341,6 +375,10 @@ export const AuthProvider = ({ children }) => {
 
   // Desconexão limpa de sessão
   const logout = () => {
+    if (isPostHogConfigured) {
+      posthog.reset();
+      posthogUserIdRef.current = null;
+    }
     localStorage.removeItem(ACTIVE_USER_KEY);
   };
 
@@ -349,6 +387,12 @@ export const AuthProvider = ({ children }) => {
     if (ROLES[newRoleKey]) {
       const match = users.find(u => u.roleKey === newRoleKey);
       if (match) {
+        identifyPostHogUser(match);
+        if (isPostHogConfigured) {
+          posthog.capture('user_role_switched', {
+            role_key: match.roleKey
+          });
+        }
         setCurrentUser(match);
         try {
           localStorage.setItem(ACTIVE_USER_KEY, JSON.stringify(match));
@@ -360,6 +404,11 @@ export const AuthProvider = ({ children }) => {
           ...currentUser,
           roleKey: newRoleKey
         };
+        if (isPostHogConfigured) {
+          posthog.capture('user_role_switched', {
+            role_key: updated.roleKey
+          });
+        }
         setCurrentUser(updated);
         try {
           localStorage.setItem(ACTIVE_USER_KEY, JSON.stringify(updated));

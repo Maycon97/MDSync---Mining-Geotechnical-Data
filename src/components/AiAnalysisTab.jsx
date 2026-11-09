@@ -84,6 +84,7 @@ Como posso te ajudar hoje?
   const [argonEndpointError, setArgonEndpointError] = useState('');
 
   const messagesEndRef = useRef(null);
+  const chatSessionIdRef = useRef(crypto.randomUUID());
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -156,7 +157,12 @@ Como posso te ajudar hoje?
       const result = await argonChatService.sendMessage({
         prompt: textToSend,
         history: messages,
-        context
+        context,
+        posthogContext: currentUser?.id ? {
+          distinctId: currentUser.id,
+          sessionId: chatSessionIdRef.current,
+          traceId: crypto.randomUUID()
+        } : undefined
       });
 
       const assistantMsg = {

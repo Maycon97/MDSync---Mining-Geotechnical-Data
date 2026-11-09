@@ -6,6 +6,7 @@ import 'leaflet.markercluster/dist/MarkerCluster.css';
 import 'leaflet.markercluster/dist/MarkerCluster.Default.css';
 import 'leaflet.markercluster';
 
+import './lib/posthog';
 import './index.css';
 import { AuthProvider } from './context/AuthContext';
 import { GeotechDataProvider } from './context/GeotechDataContext';

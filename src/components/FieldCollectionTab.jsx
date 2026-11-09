@@ -6,6 +6,7 @@ import { useGeoLocation } from '../hooks/useGeoLocation';
 import { useCameraPhoto } from '../hooks/useCameraPhoto';
 import { useSiteWeather } from '../hooks/useSiteWeather';
 import { aiGeotechService } from '../services/aiGeotechService';
+import posthog, { isPostHogConfigured } from '../lib/posthog';
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -588,6 +589,23 @@ export const FieldCollectionTab = ({ preSelectedInstrument, initialSubTab = 'lei
     };
 
     addReading(newReading);
+    if (isPostHogConfigured) {
+      posthog.capture('instrument_reading_recorded', {
+        instrument_type: currentInst.tipo,
+        structure_id: selectedStructId,
+        reading_status: evalRes.status,
+        has_photo: Boolean(readingPhoto.photoData),
+        countercheck_required: isDeltaSuperior3cm
+      });
+      posthog.logger.info('instrument reading recorded', {
+        operation: 'instrument_reading_recorded',
+        instrument_type: currentInst.tipo,
+        structure_id: selectedStructId,
+        reading_status: evalRes.status,
+        has_photo: Boolean(readingPhoto.photoData),
+        countercheck_required: isDeltaSuperior3cm
+      });
+    }
 
     confetti({ particleCount: 50, spread: 60, origin: { y: 0.7 } });
     setReadingSuccessToast(`Leitura de ${currentInst.tipo}-${currentInst.id} registrada com sucesso! Cota: ${evalRes.cotaCalculada || valNum} m`);
