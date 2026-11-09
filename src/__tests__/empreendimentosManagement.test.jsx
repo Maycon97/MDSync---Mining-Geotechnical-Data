@@ -112,12 +112,23 @@ describe('Gestão Corporativa de Empreendimentos (SaaS Comercial)', () => {
     // Verify main titles and KPIs
     expect(container.textContent).toContain('Gestão de Empreendimentos & Complexos Minerários');
     expect(container.textContent).toContain('MDSYNC ENTERPRISE · SAAS COMERCIAL');
-    expect(container.textContent).toContain('Cadastrar Novo Empreendimento');
     expect(container.textContent).toContain('Complexo Minerário Itaminas');
     expect(container.textContent).toContain('Itaminas Mineração S/A');
     expect(container.textContent).toContain('17.214.288/0001-38');
     expect(container.textContent).toContain('Sarzedo / MG');
     expect(container.textContent).toContain('Maycon Douglas');
+
+    // Verify animated add button (+) with btn-structure-add class
+    const addBtn = container.querySelector('.btn-structure-add');
+    expect(addBtn).not.toBeNull();
+    expect(addBtn.getAttribute('title')).toContain('Cadastrar novo empreendimento');
+    expect(addBtn.querySelector('.icon-plus-animated')).not.toBeNull();
+
+    // Verify clicking opens create enterprise modal
+    await act(async () => {
+      addBtn.click();
+    });
+    expect(container.textContent).toContain('Cadastrar Novo Empreendimento');
 
     // Clean up
     await act(async () => {

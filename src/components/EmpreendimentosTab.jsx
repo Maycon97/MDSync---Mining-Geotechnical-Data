@@ -360,18 +360,31 @@ export const EmpreendimentosTab = ({ onNavigateTab }) => {
                 Multi-Site Ativo
               </span>
             </div>
-            <h1 style={{
-              margin: '4px 0 0',
-              fontSize: '1.45rem',
-              fontWeight: 900,
-              color: '#ffffff',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '10px'
-            }}>
-              <Building2 size={24} style={{ color: '#38bdf8' }} />
-              Gestão de Empreendimentos & Complexos Minerários
-            </h1>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
+              <h1 style={{
+                margin: '4px 0 0',
+                fontSize: '1.45rem',
+                fontWeight: 900,
+                color: '#ffffff',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '10px'
+              }}>
+                <Building2 size={24} style={{ color: '#38bdf8' }} />
+                Gestão de Empreendimentos & Complexos Minerários
+              </h1>
+              <button
+                type="button"
+                onClick={handleOpenCreateModal}
+                className="btn-structure-add"
+                title="Cadastrar novo empreendimento (+)"
+                aria-label="Cadastrar novo empreendimento"
+              >
+                <span className="icon-plus-animated">
+                  <Plus size={17} strokeWidth={2.8} />
+                </span>
+              </button>
+            </div>
             <p style={{
               margin: '6px 0 0',
               fontSize: '0.82rem',
@@ -383,37 +396,21 @@ export const EmpreendimentosTab = ({ onNavigateTab }) => {
             </p>
           </div>
 
-          {/* Botão de Criação de Empreendimento */}
-          <button
-            onClick={handleOpenCreateModal}
-            className="btn-structure-add"
-            style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '8px',
-              padding: '0.7rem 1.25rem',
-              borderRadius: '8px',
-              backgroundColor: '#0284c7',
-              color: '#ffffff',
-              border: '1px solid #38bdf8',
-              fontWeight: 800,
-              fontSize: '0.84rem',
-              cursor: 'pointer',
-              boxShadow: '0 4px 16px rgba(2, 132, 199, 0.4)',
-              transition: 'all 0.2s ease'
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.backgroundColor = '#0369a1';
-              e.currentTarget.style.transform = 'translateY(-1px)';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.backgroundColor = '#0284c7';
-              e.currentTarget.style.transform = 'none';
-            }}
-          >
-            <Plus size={18} />
-            <span>Cadastrar Novo Empreendimento</span>
-          </button>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', alignSelf: 'center' }}>
+            <span style={{ fontSize: '0.78rem', color: '#94a3b8' }}>
+              SaaS Multi-Empresas: <strong style={{ color: '#ffffff' }}>Ativo</strong>
+            </span>
+            <span style={{
+              fontSize: '0.72rem',
+              fontWeight: 700,
+              padding: '0.25rem 0.65rem',
+              borderRadius: '12px',
+              backgroundColor: 'rgba(56, 189, 248, 0.15)',
+              color: '#38bdf8'
+            }}>
+              {empreendimentos.length} Empreendimentos
+            </span>
+          </div>
         </div>
 
         {/* Métricas Top KPIs */}
