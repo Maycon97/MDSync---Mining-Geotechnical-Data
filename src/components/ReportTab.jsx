@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { useGeotechData } from '../context/GeotechDataContext';
+import { useGeotechData, normalizeStructureKey } from '../context/GeotechDataContext';
 import { useAuth } from '../context/AuthContext';
 import { 
   Printer, 
@@ -31,6 +31,7 @@ export const ReportTab = ({ onNavigateTab }) => {
     readingsPiezometria, 
     anomalies, 
     pluviometria, 
+    fluigTickets = [],
     stats,
     setSystemToast 
   } = useGeotechData();
@@ -113,8 +114,90 @@ export const ReportTab = ({ onNavigateTab }) => {
     );
   }, [anomalies, currentStructure]);
 
+  // Ocorrências / Chamados Fluig vinculados à estrutura (Ficha de Inspeção Regular ANM)
+  const structureTickets = useMemo(() => {
+    return (fluigTickets || []).filter(t => {
+      const eName = t.estr || t.estrutura || '';
+      return eName === currentStructure.nome || 
+             normalizeStructureKey(eName) === normalizeStructureKey(currentStructure.id);
+    });
+  }, [fluigTickets, currentStructure]);
+
   const handlePrint = () => {
     window.print();
+  };
+
+  // Exportar Laudo Regulatório Oficial ANM em Planilha Formatada (delimitador ;)
+  const handleExportAnmCsv = () => {
+    const dataEmissao = new Date().toLocaleDateString('pt-BR');
+    const horaEmissao = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+
+    const metadataLines = [
+      '# ====================================================================================================',
+      '# LAUDO REGULATÓRIO OFICIAL DE CONFORMIDADE E MONITORAMENTO GEOTÉCNICO - PADRÃO ANM / SIGBM',
+      '# ====================================================================================================',
+      '# EMPREENDEDOR;ITAMINAS COMÉRCIO DE MINÉRIOS S.A.',
+      '# COMPLEXO MINERÁRIO;COMPLEXO JANGADA / ENGENHO SECO - SARZEDO/IBIRITÉ - MG',
+      '# ÓRGÃO FISCALIZADOR ALVO;AGÊNCIA NACIONAL DE MINERAÇÃO (ANM) / FEAM / MPMG',
+      '# NORMATIVA APLICÁVEL;Resolução ANM nº 95/2022, Portaria ANM nº 70.389/2017 e Lei nº 12.334/2010 (PNSB)',
+      `# ESTRUTURA INSPECIONADA;${currentStructure.nome} (ID: ${currentStructure.id})`,
+      `# CATEGORIA / TIPO;${currentStructure.categoria || 'Barragem/Pilha'} • ${currentStructure.tipo || 'Obra Geotécnica'}`,
+      `# CLASSE DE RISCO (CRI / DPA);${currentStructure.categoriaRisco || 'CRI Baixo'} / ${currentStructure.danoPotencial || 'DPA Alto'}`,
+      `# LAUDO TÉCNICO Nº;${reportCode}`,
+      `# DATA DE EMISSÃO;${dataEmissao} às ${horaEmissao}`,
+      `# RESPONSÁVEL TÉCNICO;${currentUser.nome} (${currentUser.registro})`,
+      `# HASH DE AUTENTICIDADE DIGITAL;${authHash}`,
+      '# ====================================================================================================',
+      '',
+      '# SEÇÃO 1: PANORAMA DA INSTRUMENTAÇÃO GEOTÉCNICA (PIEZÔMETROS, INAS, VERTEDOUROS)',
+      'Instrumento;Tipo;Seção;Condição Histórica;Leitura Piu Elétrico (m);Cota Piezométrica (m);Limite Atenção (m);Limite Emergência (m);Status Calculado'
+    ];
+
+    const instRows = structureInstruments.map(i => [
+      `"${i.tipo}-${i.id}"`,
+      `"${i.tipo}"`,
+      `"${i.secao || ''}"`,
+      `"${i.condicaoHistorica || 'Operacional'}"`,
+      i.ultimaLeituraPiu ? String(i.ultimaLeituraPiu).replace('.', ',') : '',
+      i.ultimaCota ? Number(i.ultimaCota).toFixed(2).replace('.', ',') : '',
+      i.limiteAtencao ? Number(i.limiteAtencao).toFixed(2).replace('.', ',') : '',
+      i.limiteEmergencia ? Number(i.limiteEmergencia).toFixed(2).replace('.', ',') : '',
+      `"${i.statusCalculado || 'NORMAL'}"`
+    ].join(';'));
+
+    const anomaliaHeader = [
+      '',
+      '# SEÇÃO 2: QUADRO DE ANOMALIAS E OCORRÊNCIAS REGULATÓRIAS (FICHA DE INSPEÇÃO ANM / FLUIG)',
+      'Protocolo;Estrutura;Criticidade ANM;Status Operacional;Data Abertura;Data Limite;Condição Observada / Descrição;Ação Corretiva Mitigatória'
+    ];
+
+    const anomaliaRows = structureTickets.map(t => [
+      `"${t.proto || t.protocolo}"`,
+      `"${t.estr || t.estrutura}"`,
+      `"${t.crit || 'B3'}"`,
+      `"${t.status || t.statusCh || 'Em Andamento'}"`,
+      `"${t.abertura || t.dataIdentificacao || ''}"`,
+      `"${t.limite || t.dataLimite || ''}"`,
+      `"${String(t.acaoCorretiva || t.titulo || '').replace(/"/g, '""')}"`,
+      `"${String(t.requerido || t.planoAcao || '').replace(/"/g, '""')}"`
+    ].join(';'));
+
+    const csvContent = '\uFEFF' + [
+      ...metadataLines,
+      ...instRows,
+      ...anomaliaHeader,
+      ...anomaliaRows
+    ].join('\n');
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.setAttribute('href', url);
+    link.setAttribute('download', `Laudo_Regulatorio_ANM_${currentStructure.id}_${reportCode}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
   };
 
   const handleSaveReport = () => {
@@ -197,6 +280,17 @@ export const ReportTab = ({ onNavigateTab }) => {
             >
               <Check size={16} style={{ color: 'var(--geo-normal)' }} />
               <span>Registrar Laudo</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={handleExportAnmCsv}
+              className="btn-secondary"
+              style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', fontSize: '0.8rem', padding: '0.5rem 0.85rem' }}
+              title="Exportar laudo e base de monitoramento em planilha formatada para Excel (Padrão ANM ponto-e-vírgula)"
+            >
+              <Download size={16} />
+              <span>Planilha ANM (.csv)</span>
             </button>
 
             <button
@@ -543,11 +637,91 @@ export const ReportTab = ({ onNavigateTab }) => {
           )}
         </div>
 
+        {/* Bloco 3: Quadro de Anomalias & Demandas Corretivas (Ficha de Inspeção Regular ANM / Fluig) */}
+        <div style={{ marginBottom: '1.5rem' }}>
+          <h4 style={{ fontSize: '0.92rem', fontWeight: 800, color: '#0f172a', borderBottom: '1px solid #e2e8f0', paddingBottom: '0.4rem', marginBottom: '0.75rem' }}>
+            3. Controle de Anomalias Geotécnicas e Demandas Corretivas (Ficha de Inspeção ANM)
+          </h4>
+          {structureTickets.length === 0 ? (
+            <div style={{
+              padding: '0.75rem 1rem',
+              borderRadius: '6px',
+              backgroundColor: '#f8fafc',
+              border: '1px solid #e2e8f0',
+              fontSize: '0.78rem',
+              color: '#15803d',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.5rem'
+            }}>
+              <CheckCircle2 size={16} />
+              <span>Nenhuma anomalia crítica aberta para esta estrutura no período. Manutenção preventiva em conformidade.</span>
+            </div>
+          ) : (
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.73rem', textAlign: 'left' }}>
+              <thead>
+                <tr style={{ backgroundColor: '#f1f5f9', borderBottom: '2px solid #cbd5e1' }}>
+                  <th style={{ padding: '0.45rem 0.5rem', width: '75px' }}>Protocolo</th>
+                  <th style={{ padding: '0.45rem 0.5rem', width: '70px', textAlign: 'center' }}>Criticidade</th>
+                  <th style={{ padding: '0.45rem 0.5rem' }}>Condição Observada & Ação Corretiva</th>
+                  <th style={{ padding: '0.45rem 0.5rem', width: '85px', textAlign: 'center' }}>Prazo Limite</th>
+                  <th style={{ padding: '0.45rem 0.5rem', width: '85px', textAlign: 'center' }}>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {structureTickets.slice(0, 5).map((t, idx) => {
+                  const isCrit = t.crit === 'A1' || t.crit === 'A2';
+                  const isConcl = String(t.status || t.statusCh || '').toLowerCase().includes('conclu') || 
+                                  String(t.status || t.statusCh || '').toLowerCase().includes('finaliz');
+                  return (
+                    <tr key={t.proto || idx} style={{ borderBottom: '1px solid #e2e8f0' }}>
+                      <td style={{ padding: '0.4rem 0.5rem', fontWeight: 800, color: '#0284c7' }}>
+                        {t.proto || t.protocolo}
+                      </td>
+                      <td style={{ padding: '0.4rem 0.5rem', textAlign: 'center' }}>
+                        <span style={{
+                          padding: '0.12rem 0.35rem',
+                          borderRadius: '4px',
+                          fontSize: '0.68rem',
+                          fontWeight: 800,
+                          backgroundColor: isCrit ? '#fee2e2' : '#fef3c7',
+                          color: isCrit ? '#b91c1c' : '#b45309'
+                        }}>
+                          {t.crit || 'B3'}
+                        </span>
+                      </td>
+                      <td style={{ padding: '0.4rem 0.5rem' }}>
+                        <div style={{ fontWeight: 600, color: '#0f172a' }}>{t.acaoCorretiva || t.titulo || 'Inspeção Regular'}</div>
+                        <div style={{ fontSize: '0.65rem', color: '#64748b' }}>{t.requerido || t.planoAcao}</div>
+                      </td>
+                      <td style={{ padding: '0.4rem 0.5rem', textAlign: 'center', color: '#475569' }}>
+                        {t.limite ? t.limite.split('-').reverse().join('/') : (t.dataLimite || '—')}
+                      </td>
+                      <td style={{ padding: '0.4rem 0.5rem', textAlign: 'center' }}>
+                        <span style={{
+                          padding: '0.12rem 0.4rem',
+                          borderRadius: '4px',
+                          fontSize: '0.66rem',
+                          fontWeight: 700,
+                          backgroundColor: isConcl ? '#dcfce7' : '#e0f2fe',
+                          color: isConcl ? '#15803d' : '#0369a1'
+                        }}>
+                          {isConcl ? 'Concluído' : 'Em Execução'}
+                        </span>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          )}
+        </div>
+
         {/* Bloco 4: Registro Fotográfico de Anomalias de Campo (Inspect) */}
         {structureAnomalies.length > 0 && (
           <div style={{ marginBottom: '1.5rem' }}>
             <h4 style={{ fontSize: '0.92rem', fontWeight: 800, color: '#0f172a', borderBottom: '1px solid #e2e8f0', paddingBottom: '0.4rem', marginBottom: '0.75rem' }}>
-              3. Evidências Fotográficas de Anomalias Registradas no Campo (Inspect)
+              4. Evidências Fotográficas de Anomalias Registradas no Campo (Inspect)
             </h4>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '0.75rem' }}>
               {structureAnomalies.slice(0, 3).map((anom, idx) => (
@@ -583,7 +757,7 @@ export const ReportTab = ({ onNavigateTab }) => {
             color: countEmergencia > 0 ? '#991b1b' : (countAtencao > 0 ? '#92400e' : '#166534'), 
             margin: '0 0 0.4rem' 
           }}>
-            4. Parecer Técnico Conclusivo & Diagnóstico de Estabilidade
+            5. Parecer Técnico Conclusivo & Diagnóstico de Estabilidade
           </h5>
           <p style={{ 
             margin: 0, 

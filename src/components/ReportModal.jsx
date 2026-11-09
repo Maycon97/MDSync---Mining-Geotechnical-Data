@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import { 
   X, 
   Printer, 
+  Download,
   FileText, 
   ShieldCheck, 
   CheckCircle2, 
@@ -11,9 +12,9 @@ import {
   Flame, 
   Calendar, 
   UserCheck, 
-  Building2,
-  Droplets,
-  Camera
+  Building2, 
+  Droplets, 
+  Camera 
 } from 'lucide-react';
 
 export const ReportModal = ({ isOpen, onClose }) => {
@@ -39,6 +40,51 @@ export const ReportModal = ({ isOpen, onClose }) => {
 
   const handlePrint = () => {
     window.print();
+  };
+
+  const handleExportAnmCsv = () => {
+    const dataEmissao = new Date().toLocaleDateString('pt-BR');
+    const horaEmissao = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+    const reportCode = `ANM-${Math.floor(1000 + Math.random() * 9000)}`;
+
+    const metadataLines = [
+      '# ====================================================================================================',
+      '# LAUDO REGULATÓRIO OFICIAL DE CONFORMIDADE E MONITORAMENTO GEOTÉCNICO - PADRÃO ANM / SIGBM',
+      '# ====================================================================================================',
+      '# EMPREENDEDOR;ITAMINAS COMÉRCIO DE MINÉRIOS S.A.',
+      '# COMPLEXO MINERÁRIO;COMPLEXO JANGADA / ENGENHO SECO - SARZEDO/IBIRITÉ - MG',
+      '# ÓRGÃO FISCALIZADOR ALVO;AGÊNCIA NACIONAL DE MINERAÇÃO (ANM) / FEAM / MPMG',
+      '# NORMATIVA APLICÁVEL;Resolução ANM nº 95/2022, Portaria ANM nº 70.389/2017 e Lei nº 12.334/2010 (PNSB)',
+      `# ESTRUTURA INSPECIONADA;${currentStructure.nome} (ID: ${currentStructure.id || activeStructureId})`,
+      `# CLASSE DE RISCO (CRI / DPA);${currentStructure.categoriaRisco || 'CRI Baixo'} / ${currentStructure.danoPotencial || 'DPA Alto'}`,
+      `# DATA DE EMISSÃO;${dataEmissao} às ${horaEmissao}`,
+      `# RESPONSÁVEL TÉCNICO;${currentUser.nome} (${currentUser.registro})`,
+      '# ====================================================================================================',
+      '',
+      'Instrumento;Tipo;Condição Histórica;Leitura Piu Elétrico (m);Cota Piezométrica (m);Limite Atenção (m);Limite Emergência (m);Status Calculado'
+    ];
+
+    const instRows = filteredInstruments.map(i => [
+      `"${i.tipo}-${i.id}"`,
+      `"${i.tipo}"`,
+      `"${i.condicaoHistorica || 'Operacional'}"`,
+      i.ultimaLeituraPiu ? String(i.ultimaLeituraPiu).replace('.', ',') : '',
+      i.ultimaCota ? Number(i.ultimaCota).toFixed(2).replace('.', ',') : '',
+      i.limiteAtencao ? Number(i.limiteAtencao).toFixed(2).replace('.', ',') : '',
+      i.limiteEmergencia ? Number(i.limiteEmergencia).toFixed(2).replace('.', ',') : '',
+      `"${i.statusCalculado || 'NORMAL'}"`
+    ].join(';'));
+
+    const csvContent = '\uFEFF' + [...metadataLines, ...instRows].join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.setAttribute('href', url);
+    link.setAttribute('download', `Laudo_ANM_${currentStructure.id || 'Estrutura'}_${reportCode}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
   };
 
   const criticalInstruments = filteredInstruments.filter(i => i.statusCalculado === 'ATENÇÃO' || i.statusCalculado === 'EMERGÊNCIA');
@@ -74,6 +120,23 @@ export const ReportModal = ({ isOpen, onClose }) => {
             </span>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <button
+              type="button"
+              onClick={handleExportAnmCsv}
+              className="btn-secondary"
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.4rem',
+                padding: '0.45rem 0.85rem',
+                fontSize: '0.82rem',
+                fontWeight: 600
+              }}
+              title="Exportar laudo e leituras em planilha formatada para Excel (Padrão ANM ponto-e-vírgula)"
+            >
+              <Download size={15} />
+              <span>Planilha ANM (.csv)</span>
+            </button>
             <button
               onClick={handlePrint}
               className="btn-primary"

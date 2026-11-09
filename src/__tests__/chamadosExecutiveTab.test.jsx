@@ -179,6 +179,35 @@ describe('ChamadosPainelExecutivo Component Mount', () => {
     const fileInput = container.querySelector('input[type="file"][accept="image/*"]');
     expect(fileInput).not.toBeNull();
   });
+
+  it('should render the official ANM Regulatory Report button and modal', async () => {
+    // Check if the "Laudo Oficial ANM (A4/PDF)" button exists
+    const anmBtn = Array.from(container.querySelectorAll('button')).find(b => 
+      b.textContent.includes('Laudo Oficial ANM') || b.textContent.includes('Laudo ANM')
+    );
+    expect(anmBtn).toBeDefined();
+
+    // Open the ANM report modal
+    await act(async () => {
+      anmBtn.click();
+    });
+
+    // Check modal contents
+    expect(document.body.textContent).toContain('Agência Nacional de Mineração • ANM / SIGBM');
+    expect(document.body.textContent).toContain('ITAMINAS COMÉRCIO DE MINÉRIOS S.A.');
+    expect(document.body.textContent).toContain('Resolução ANM nº 95/2022');
+    expect(document.body.textContent).toContain('Panorama Executivo das Ocorrências Inspecionadas');
+    expect(document.body.textContent).toContain('Parecer Técnico Conclusivo');
+    expect(document.body.textContent).toContain('Código de Autenticação Digital Regulatório');
+
+    // Close modal
+    const closeBtn = document.body.querySelector('.printable-report-card button[aria-label="Fechar laudo"]');
+    if (closeBtn) {
+      await act(async () => {
+        closeBtn.click();
+      });
+    }
+  });
 });
 
 describe('Túnel de Conexão Automática — chamadosSyncTunnel', () => {

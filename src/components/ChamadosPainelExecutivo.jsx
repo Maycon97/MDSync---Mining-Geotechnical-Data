@@ -3,6 +3,7 @@ import L from '../utils/leafletCompat';
 import logoItaminas from '../assets/logo_itaminas.png';
 import { chamadosSyncTunnel } from '../services/chamadosSyncTunnel';
 import { createChamadoMarkerHtml, createChamadoPopupContent } from '../utils/chamadoMarkerFormatter';
+import { ChamadosRelatorioAnmModal } from './ChamadosRelatorioAnmModal';
 import {
   CONTROLE_CHAMADOS_DATA,
   STATUS_COLORS,
@@ -37,6 +38,8 @@ import {
   Layers,
   Activity,
   FileSpreadsheet,
+  FileText,
+  Printer,
   Building2,
   Flame,
   Info,
@@ -57,6 +60,7 @@ export const ChamadosPainelExecutivo = ({ onNavigateTab, onOpenNewTicket, onOpen
   const [isDraggingFile, setIsDraggingFile] = useState(false);
   const [syncToastMessage, setSyncToastMessage] = useState(null);
   const [photoEnlargeModal, setPhotoEnlargeModal] = useState(null);
+  const [isRelatorioAnmModalOpen, setIsRelatorioAnmModalOpen] = useState(false);
   const fileInputRef = useRef(null);
 
   // Escuta atualizações automáticas via BroadcastChannel e Eventos Globais do Túnel
@@ -472,30 +476,90 @@ export const ChamadosPainelExecutivo = ({ onNavigateTab, onOpenNewTicket, onOpen
     }
   }, [georefTickets]);
 
-  // Exportar chamados filtrados para CSV
+  // Exportar chamados e anomalias filtradas no padrão regulatório oficial ANM / SIGBM (Excel Brasil - delimitador ;)
   const handleExportCSV = () => {
-    const headers = ['Protocolo', 'Estrutura', 'Tipo', 'Criticidade', 'Status', 'Etapa_Fluig', 'MesAno', 'Abertura', 'Limite', 'Latitude', 'Longitude'];
-    const rows = filteredTickets.map(t => [
-      t.proto || '',
-      `"${t.estr || ''}"`,
-      `"${t.tipo || ''}"`,
-      t.crit || '',
-      `"${t.status || ''}"`,
-      `"${t.statusCh || ''}"`,
-      t.mesano || '',
-      t.abertura || '',
-      t.limite || '',
-      t.lat || '',
-      t.lon || ''
-    ]);
-    const csvContent = 'data:text/csv;charset=utf-8,\uFEFF' + [headers.join(','), ...rows.map(e => e.join(','))].join('\n');
-    const encodedUri = encodeURI(csvContent);
+    const dataEmissao = new Date().toLocaleDateString('pt-BR');
+    const horaEmissao = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+    const authCode = `ANM-PCMI-${Math.random().toString(36).substring(2, 10).toUpperCase()}`;
+
+    // Cabeçalho Oficial do Órgão Fiscalizador (ANM / FEAM / PNSB)
+    const metadataLines = [
+      '# ====================================================================================================',
+      '# RELATÓRIO TÉCNICO DE GESTÃO DE ANOMALIAS E CONTROLE DE OCORRÊNCIAS GEOTÉCNICAS - PADRÃO ANM / SIGBM',
+      '# ====================================================================================================',
+      '# EMPREENDEDOR;ITAMINAS COMÉRCIO DE MINÉRIOS S.A.',
+      '# COMPLEXO MINERÁRIO;COMPLEXO JANGADA / ENGENHO SECO - SARZEDO/IBIRITÉ - MG',
+      '# ÓRGÃO FISCALIZADOR ALVO;AGÊNCIA NACIONAL DE MINERAÇÃO (ANM) / FEAM / MPMG',
+      '# NORMATIVA APLICÁVEL;Resolução ANM nº 95/2022, Portaria ANM nº 70.389/2017 e Lei nº 12.334/2010 (PNSB)',
+      `# COMPETÊNCIA / PERÍODO;${selectedMes || 'TODOS'}`,
+      `# ESTRUTURA FILTRADA;${selectedEstrutura || 'TODAS AS ESTRUTURAS'}`,
+      `# DATA DE EMISSÃO;${dataEmissao} às ${horaEmissao}`,
+      `# TOTAL DE OCORRÊNCIAS;${filteredTickets.length} registros`,
+      `# CÓDIGO DE AUTENTICIDADE DIGITAL;${authCode}`,
+      '# RESPONSÁVEL TÉCNICO;Engenheiro Geotécnico Responsável (CREA-MG)',
+      '# ====================================================================================================',
+      ''
+    ];
+
+    const headers = [
+      'Protocolo Oficial Fluig/PCMI',
+      'Estrutura Geotécnica',
+      'Tipologia da Estrutura',
+      'Criticidade ANM',
+      'Classificação de Risco (Severidade)',
+      'Status Operacional',
+      'Etapa de Tramitação (Fluig)',
+      'Competência Mês/Ano',
+      'Data de Identificação/Abertura',
+      'Prazo Regulatório Limite',
+      'Latitude (SIRGAS 2000)',
+      'Longitude (SIRGAS 2000)',
+      'Descrição da Anomalia / Condição Observada',
+      'Ação Corretiva Recomendada',
+      'Plano de Ação Mitigatório',
+      'Órgão Notificado / Tramitação'
+    ];
+
+    const cleanText = (str) => `"${String(str || '').replace(/"/g, '""').replace(/\r?\n/g, ' ')}"`;
+
+    const rows = filteredTickets.map(t => {
+      let criticidadeDesc = 'C - Monitoramento';
+      if (t.crit === 'A1') criticidadeDesc = 'A1 - Imediato (Risco Iminente)';
+      else if (t.crit === 'A2') criticidadeDesc = 'A2 - Urgente (Ação Imediata)';
+      else if (t.crit === 'B1') criticidadeDesc = 'B1 - Alta Prioridade (15 dias)';
+      else if (t.crit === 'B2') criticidadeDesc = 'B2 - Média Prioridade (30 dias)';
+      else if (t.crit === 'B3') criticidadeDesc = 'B3 - Regular (120 dias)';
+
+      return [
+        cleanText(t.proto || t.protocolo),
+        cleanText(t.estr || t.estrutura),
+        cleanText(t.tipo),
+        cleanText(t.crit || 'B3'),
+        cleanText(criticidadeDesc),
+        cleanText(t.status),
+        cleanText(t.statusCh),
+        cleanText(t.mesano),
+        cleanText(t.abertura ? t.abertura.split('-').reverse().join('/') : (t.dataIdentificacao || '')),
+        cleanText(t.limite ? t.limite.split('-').reverse().join('/') : (t.dataLimite || '')),
+        cleanText(t.lat),
+        cleanText(t.lon),
+        cleanText(t.acaoCorretiva || t.titulo || 'Inspeção visual geotécnica'),
+        cleanText(t.requerido || t.acaoCorretiva || 'Manutenção corretiva'),
+        cleanText(t.planoAcao || 'Em conformidade com plano de ação geotécnico da unidade'),
+        cleanText('ANM / FEAM / SIGBM')
+      ].join(';');
+    });
+
+    const csvContent = '\uFEFF' + metadataLines.join('\n') + [headers.join(';'), ...rows].join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
-    link.setAttribute('href', encodedUri);
-    link.setAttribute('download', `Controle_Chamados_Itaminas_${selectedMes}.csv`);
+    link.setAttribute('href', url);
+    link.setAttribute('download', `Relatorio_Fiscalizacao_ANM_Chamados_${selectedMes}_${new Date().toISOString().split('T')[0]}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+    URL.revokeObjectURL(url);
   };
 
   // Filtragem da tabela analítica
@@ -1037,10 +1101,37 @@ export const ChamadosPainelExecutivo = ({ onNavigateTab, onOpenNewTicket, onOpen
           Limpar
         </button>
 
-        {/* Exportar CSV */}
+        {/* Laudo Oficial ANM (A4/PDF) */}
+        <button
+          onClick={() => setIsRelatorioAnmModalOpen(true)}
+          title="Gerar e imprimir Laudo Oficial de Fiscalização (Padrão ANM / SIGBM A4/PDF)"
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '6px',
+            fontFamily: 'inherit',
+            background: 'linear-gradient(135deg, rgba(2, 132, 199, 0.35), rgba(3, 105, 161, 0.45))',
+            border: '1px solid rgba(56, 189, 248, 0.5)',
+            color: '#ffffff',
+            borderRadius: '8px',
+            padding: '6px 14px',
+            fontSize: '0.8rem',
+            fontWeight: 700,
+            cursor: 'pointer',
+            transition: 'all 0.15s',
+            boxShadow: '0 2px 8px rgba(2, 132, 199, 0.25)'
+          }}
+          onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-1px)'; e.currentTarget.style.borderColor = '#38bdf8'; }}
+          onMouseLeave={e => { e.currentTarget.style.transform = 'none'; e.currentTarget.style.borderColor = 'rgba(56, 189, 248, 0.5)'; }}
+        >
+          <FileText size={14} style={{ color: '#71d1f8' }} />
+          <span>Laudo Oficial ANM (A4/PDF)</span>
+        </button>
+
+        {/* Exportar Planilha Formatada ANM */}
         <button
           onClick={handleExportCSV}
-          title="Exportar chamados filtrados para CSV"
+          title="Exportar planilha formatada para Excel (Padrão ANM com delimitador ponto-e-vírgula)"
           style={{
             display: 'flex',
             alignItems: 'center',
@@ -1056,9 +1147,11 @@ export const ChamadosPainelExecutivo = ({ onNavigateTab, onOpenNewTicket, onOpen
             cursor: 'pointer',
             transition: 'all 0.15s'
           }}
+          onMouseEnter={e => { e.currentTarget.style.color = '#fff'; e.currentTarget.style.borderColor = '#71d1f8'; }}
+          onMouseLeave={e => { e.currentTarget.style.color = '#71d1f8'; e.currentTarget.style.borderColor = 'rgba(2, 132, 199, 0.35)'; }}
         >
           <Download size={13} />
-          Exportar CSV
+          <span>Planilha ANM (.csv)</span>
         </button>
 
         {/* Contador */}
@@ -1721,7 +1814,31 @@ export const ChamadosPainelExecutivo = ({ onNavigateTab, onOpenNewTicket, onOpen
               </div>
 
               <button
+                type="button"
+                onClick={() => setIsRelatorioAnmModalOpen(true)}
+                title="Gerar e imprimir Laudo Oficial de Fiscalização (Padrão ANM / SIGBM A4/PDF)"
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  padding: '7px 14px',
+                  backgroundColor: 'linear-gradient(135deg, rgba(2, 132, 199, 0.35), rgba(3, 105, 161, 0.45))',
+                  border: '1px solid rgba(56, 189, 248, 0.5)',
+                  borderRadius: '8px',
+                  color: '#ffffff',
+                  fontSize: '0.82rem',
+                  fontWeight: 700,
+                  cursor: 'pointer'
+                }}
+              >
+                <FileText size={14} style={{ color: '#71d1f8' }} />
+                <span>Laudo ANM (A4/PDF)</span>
+              </button>
+
+              <button
+                type="button"
                 onClick={handleExportCSV}
+                title="Exportar planilha formatada para Excel (Padrão ANM com delimitador ponto-e-vírgula)"
                 style={{
                   display: 'flex',
                   alignItems: 'center',
@@ -1737,7 +1854,7 @@ export const ChamadosPainelExecutivo = ({ onNavigateTab, onOpenNewTicket, onOpen
                 }}
               >
                 <Download size={14} />
-                Exportar
+                <span>Planilha ANM (.csv)</span>
               </button>
             </div>
           </div>
@@ -2457,6 +2574,16 @@ export const ChamadosPainelExecutivo = ({ onNavigateTab, onOpenNewTicket, onOpen
           </div>
         </div>
       )}
+
+      {/* Modal de Laudo Oficial ANM / SIGBM */}
+      <ChamadosRelatorioAnmModal
+        isOpen={isRelatorioAnmModalOpen}
+        onClose={() => setIsRelatorioAnmModalOpen(false)}
+        tickets={filteredTickets}
+        selectedMes={selectedMes}
+        selectedEstrutura={selectedEstrutura}
+        onExportCsv={handleExportCSV}
+      />
 
     </div>
   );

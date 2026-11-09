@@ -417,48 +417,66 @@ export const CronogramaSection = ({ onNavigateTab }) => {
     }
   }, [activeTab, filteredActs, todayDate]);
 
-  // Exportação CSV formatada
+  // Exportação CSV formatada no padrão oficial regulatório ANM / PCM (delimitador ;)
   const handleExportCSV = () => {
     const headers = [
-      'ID',
-      'Estrutura',
+      'ID Atividade',
+      'Estrutura Geotécnica',
       'Mês Planejado',
-      'Dia',
+      'Dia do Cronograma',
       'Data Planejada',
-      'Ação / Atividade',
-      'Ciclo',
+      'Ação / Atividade Geotécnica',
+      'Ciclo Operacional',
       'Data Realizada',
-      'Desvio / Causa',
-      'Status',
-      'Justificativa',
-      'Latitude',
-      'Longitude'
+      'Desvio / Causa de Atraso',
+      'Status Operacional',
+      'Justificativa Técnica',
+      'Latitude SIRGAS 2000',
+      'Longitude SIRGAS 2000'
     ];
 
+    const cleanField = (val) => `"${String(val || '').replace(/"/g, '""')}"`;
+
     const rows = filteredActs.map(item => [
-      item.id || '',
-      `"${(item.estr || item.estrutura || '').replace(/"/g, '""')}"`,
-      `"${item.mes || ''}"`,
-      item.dia || '',
-      item.plan || item.dataPlanejada || '',
-      `"${(item.acao || '').replace(/"/g, '""')}"`,
-      item.ciclo || '',
-      item.dataRealizada || '',
-      `"${(item.desvio || '').replace(/"/g, '""')}"`,
-      `"${(item.status || '').replace(/"/g, '""')}"`,
-      `"${(item.justificativa || '').replace(/"/g, '""')}"`,
-      item.lat || '',
-      item.lon || ''
+      cleanField(item.id),
+      cleanField(item.estr || item.estrutura),
+      cleanField(item.mes),
+      cleanField(item.dia),
+      cleanField(item.plan || item.dataPlanejada),
+      cleanField(item.acao),
+      cleanField(item.ciclo),
+      cleanField(item.dataRealizada),
+      cleanField(item.desvio),
+      cleanField(item.status),
+      cleanField(item.justificativa),
+      cleanField(item.lat),
+      cleanField(item.lon)
     ]);
 
-    const csvContent = 'data:text/csv;charset=utf-8,\uFEFF' + [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
-    const encodedUri = encodeURI(csvContent);
+    const metadataLines = [
+      '# ====================================================================================================',
+      '# CRONOGRAMA EXECUTIVO E CONTROLE DE ATIVIDADES GEOTÉCNICAS - PCM ITAMINAS (PADRÃO ANM / PNSB)',
+      '# ====================================================================================================',
+      '# EMPREENDEDOR;ITAMINAS COMÉRCIO DE MINÉRIOS S.A.',
+      '# COMPLEXO MINERÁRIO;COMPLEXO JANGADA / ENGENHO SECO - SARZEDO/IBIRITÉ - MG',
+      '# ÓRGÃO FISCALIZADOR ALVO;AGÊNCIA NACIONAL DE MINERAÇÃO (ANM) / FEAM / MPMG',
+      `# COMPETÊNCIA / MÊS;${calYM}`,
+      `# DATA DE EMISSÃO;${new Date().toLocaleDateString('pt-BR')}`,
+      `# TOTAL DE ATIVIDADES;${filteredActs.length} registros`,
+      '# ====================================================================================================',
+      ''
+    ];
+
+    const csvContent = '\uFEFF' + metadataLines.join('\n') + [headers.join(';'), ...rows.map(r => r.join(';'))].join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
-    link.setAttribute('href', encodedUri);
+    link.setAttribute('href', url);
     link.setAttribute('download', `Painel_Executivo_Cronograma_PCM_Itaminas_${calYM}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+    URL.revokeObjectURL(url);
   };
 
   // Paginação de tabela analítica
