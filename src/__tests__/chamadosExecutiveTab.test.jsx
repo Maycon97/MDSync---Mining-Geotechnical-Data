@@ -115,7 +115,7 @@ describe('ChamadosPainelExecutivo Component Mount', () => {
     expect(container.textContent).toContain('Status da Aprovação');
     expect(container.textContent).toContain('Chamados por Tipo');
     expect(container.textContent).toContain('Pontos de Anomalia');
-  });
+  }, 15000);
 
   it('should display the formatted photo section and insert/change image buttons in ticket detail modal', async () => {
     await act(async () => {

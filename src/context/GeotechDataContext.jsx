@@ -227,7 +227,17 @@ export const GeotechDataProvider = ({ children }) => {
     };
   }, [realOnline, simulatedOffline]);
 
-  const showToast = (message, type = 'info', duration = 4000) => {
+  // Auto-dismiss do System Toast limitado estritamente a 7 segundos (7000ms)
+  useEffect(() => {
+    if (systemToast) {
+      const timer = setTimeout(() => {
+        setSystemToast(null);
+      }, 7000);
+      return () => clearTimeout(timer);
+    }
+  }, [systemToast]);
+
+  const showToast = (message, type = 'info', duration = 7000) => {
     setSystemToast({ message, type });
     if (duration > 0) {
       setTimeout(() => {

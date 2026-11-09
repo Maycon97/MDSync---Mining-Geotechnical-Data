@@ -76,7 +76,7 @@ export const PluviometriaTab = ({ onNavigateTab }) => {
           setPluvData(feedJson);
           if (showNotification) {
             setSyncToast(`Base de dados sincronizada! ${feedJson.totalLeituras || feedJson.daily.length} registros atualizados.`);
-            setTimeout(() => setSyncToast(null), 4000);
+            setTimeout(() => setSyncToast(null), 7000);
           }
         }
       }

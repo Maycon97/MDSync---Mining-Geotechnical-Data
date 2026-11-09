@@ -454,7 +454,7 @@ export const FirSurvey123Form = ({ initialEstrutura, onSuccess, compact = false 
       onSuccess(newFirRecord);
     }
 
-    setTimeout(() => setToastMessage(null), 6000);
+    setTimeout(() => setToastMessage(null), 7000);
   };
 
   return (

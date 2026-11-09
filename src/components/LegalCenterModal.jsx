@@ -49,7 +49,7 @@ export const LegalCenterModal = ({ isOpen, onClose, initialTab = 'privacidade' }
 
   const showToast = (msg) => {
     setToastMessage(msg);
-    setTimeout(() => setToastMessage(''), 3500);
+    setTimeout(() => setToastMessage(''), 7000);
   };
 
   // Exportar dados do titular (Item 16: LGPD Art. 18, II e V - Portabilidade)

@@ -74,7 +74,7 @@ export const RecordIdTemplateModal = ({ isOpen, onClose, onSave }) => {
   const handleCopyPreview = () => {
     navigator.clipboard?.writeText(preview);
     setToastMessage('Copiado para área de transferência!');
-    setTimeout(() => setToastMessage(''), 2500);
+    setTimeout(() => setToastMessage(''), 7000);
   };
 
   if (!isOpen) return null;

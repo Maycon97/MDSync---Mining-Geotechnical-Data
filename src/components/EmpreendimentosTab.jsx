@@ -82,7 +82,7 @@ export const EmpreendimentosTab = ({ onNavigateTab }) => {
 
   const showToast = (msg, type = 'success') => {
     setToastMessage({ msg, type });
-    setTimeout(() => setToastMessage(null), 3500);
+    setTimeout(() => setToastMessage(null), 7000);
   };
 
   // Filtragem

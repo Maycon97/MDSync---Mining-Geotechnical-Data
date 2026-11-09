@@ -66,7 +66,7 @@ export const ChamadosPainelExecutivo = ({ onNavigateTab, onOpenNewTicket, onOpen
         setRawTickets(payload.tickets);
         setTunnelStatus(chamadosSyncTunnel.getStatus());
         setSyncToastMessage(`Túnel Sincronizado: ${payload.tickets.length} chamados atualizados em tempo real!`);
-        setTimeout(() => setSyncToastMessage(null), 5000);
+        setTimeout(() => setSyncToastMessage(null), 7000);
       }
     });
 
@@ -108,7 +108,7 @@ export const ChamadosPainelExecutivo = ({ onNavigateTab, onOpenNewTicket, onOpen
       if (res) {
         setSyncToastMessage(`Túnel Conectado: monitorando ${res.name} ativamente!`);
         setTunnelStatus(chamadosSyncTunnel.getStatus());
-        setTimeout(() => setSyncToastMessage(null), 5000);
+        setTimeout(() => setSyncToastMessage(null), 7000);
       }
     } catch (err) {
       console.warn('File System Access API fallback para seletor padrão:', err);
@@ -129,14 +129,14 @@ export const ChamadosPainelExecutivo = ({ onNavigateTab, onOpenNewTicket, onOpen
     } catch (err) {
       setSyncToastMessage(`Erro ao processar: ${err.message}`);
     }
-    setTimeout(() => setSyncToastMessage(null), 5000);
+    setTimeout(() => setSyncToastMessage(null), 7000);
     e.target.value = '';
   };
 
   const handleResetTunnel = () => {
     chamadosSyncTunnel.resetToBaseData();
     setSyncToastMessage('Base Oficial Itaminas (248 chamados) restaurada com sucesso!');
-    setTimeout(() => setSyncToastMessage(null), 4000);
+    setTimeout(() => setSyncToastMessage(null), 7000);
   };
 
   const handleDropFile = async (e) => {
@@ -152,7 +152,7 @@ export const ChamadosPainelExecutivo = ({ onNavigateTab, onOpenNewTicket, onOpen
     } catch (err) {
       setSyncToastMessage(`Erro no drag & drop: ${err.message}`);
     }
-    setTimeout(() => setSyncToastMessage(null), 5000);
+    setTimeout(() => setSyncToastMessage(null), 7000);
   };
 
   // Filtros
@@ -202,7 +202,7 @@ export const ChamadosPainelExecutivo = ({ onNavigateTab, onOpenNewTicket, onOpen
       chamadosSyncTunnel.updateTickets([updatedTicket], 'Inserção de Registro Fotográfico');
       setTicketPhotoError(false);
       setSyncToastMessage(`Foto da anomalia do Chamado #${targetProto} anexada e sincronizada!`);
-      setTimeout(() => setSyncToastMessage(null), 4000);
+      setTimeout(() => setSyncToastMessage(null), 7000);
     };
     reader.readAsDataURL(file);
     e.target.value = '';
@@ -230,7 +230,7 @@ export const ChamadosPainelExecutivo = ({ onNavigateTab, onOpenNewTicket, onOpen
     chamadosSyncTunnel.updateTickets([updatedTicket], 'Remoção de Registro Fotográfico');
     setTicketPhotoError(false);
     setSyncToastMessage(`Foto removida do Chamado #${targetProto}.`);
-    setTimeout(() => setSyncToastMessage(null), 4000);
+    setTimeout(() => setSyncToastMessage(null), 7000);
   };
 
   // Map refs

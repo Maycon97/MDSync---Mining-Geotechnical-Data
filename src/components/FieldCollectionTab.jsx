@@ -595,7 +595,7 @@ export const FieldCollectionTab = ({ preSelectedInstrument, initialSubTab = 'lei
     setReadingNotes('');
     setContraprovaConfirmed(false);
     readingPhoto.clearPhoto();
-    setTimeout(() => setReadingSuccessToast(null), 5000);
+    setTimeout(() => setReadingSuccessToast(null), 7000);
   };
 
   return (

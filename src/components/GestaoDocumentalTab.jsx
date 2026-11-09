@@ -173,7 +173,7 @@ export const GestaoDocumentalTab = ({ onNavigateTab }) => {
     // Abrir janela sobreposta com os dados do documento recém-arquivado
     setSelectedDocDetail(novoDocCriado);
     setToastMessage(`Documento "${novoDocCriado.titulo}" arquivado com sucesso no acervo técnico!`);
-    setTimeout(() => setToastMessage(null), 5000);
+    setTimeout(() => setToastMessage(null), 7000);
 
     setNovoDoc({
       titulo: '',

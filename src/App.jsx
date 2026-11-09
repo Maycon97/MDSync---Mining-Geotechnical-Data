@@ -515,7 +515,8 @@ export function App() {
             backgroundColor: systemToast.type === 'success' ? '#065f46' : (systemToast.type === 'warning' ? '#92400e' : (systemToast.type === 'error' ? '#991b1b' : '#1e293b')),
             color: '#ffffff',
             border: '1px solid rgba(255, 255, 255, 0.2)',
-            animation: 'fadeInUp 0.3s ease-out'
+            animation: 'fadeInUp 0.3s ease-out',
+            overflow: 'hidden'
           }}
         >
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
@@ -526,10 +527,24 @@ export function App() {
           </div>
           <button 
             onClick={() => setSystemToast(null)}
-            style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.7)', cursor: 'pointer' }}
+            style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.7)', cursor: 'pointer', display: 'flex', alignItems: 'center', padding: '4px' }}
+            title="Fechar notificação"
           >
             <X size={16} />
           </button>
+
+          {/* Barra de Progresso Visual de 7 Segundos */}
+          <div 
+            style={{
+              position: 'absolute',
+              bottom: 0,
+              left: 0,
+              height: '3px',
+              backgroundColor: 'rgba(255, 255, 255, 0.45)',
+              animation: 'toastProgress7s 7s linear forwards',
+              pointerEvents: 'none'
+            }}
+          />
         </div>
       )}
 

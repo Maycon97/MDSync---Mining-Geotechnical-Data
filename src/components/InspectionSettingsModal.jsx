@@ -362,7 +362,7 @@ export const InspectionSettingsModal = ({ isOpen, onClose, onSave }) => {
                   onClick={() => {
                     setPinEditing(false);
                     setToastMessage('PIN configurado temporariamente!');
-                    setTimeout(() => setToastMessage(''), 2000);
+                    setTimeout(() => setToastMessage(''), 7000);
                   }}
                   className="btn-subtle"
                   style={{ padding: '0.2rem 0.5rem', fontSize: '0.7rem' }}

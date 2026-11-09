@@ -3531,3 +3531,14 @@ button:active:not(:disabled),
   }
 }
 
+/* Animação do timer de 7 segundos para pop-ups e toasts informativos */
+@keyframes toastProgress7s {
+  from {
+    width: 100%;
+  }
+  to {
+    width: 0%;
+  }
+}
+
+
