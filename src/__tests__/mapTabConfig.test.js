@@ -46,4 +46,18 @@ describe('MapTab GIS Configuration & Boundaries', () => {
     expect(MapTab).toBeDefined();
     expect(typeof MapTab).toBe('function');
   });
+
+  it('should verify structure balloons are styled for on-demand click presentation rather than permanent display', async () => {
+    const fs = await import('fs');
+    const path = await import('path');
+    const mapTabCode = fs.readFileSync(path.resolve(__dirname, '../components/MapTab.jsx'), 'utf-8');
+    
+    // Check that permanent: true is NOT attached to structure markers
+    expect(mapTabCode).not.toMatch(/structMarker\.bindTooltip\([^)]*permanent:\s*true/);
+    
+    // Check that on-demand popup is bound to structure markers with sysdam-structure-popup
+    expect(mapTabCode).toContain("className: 'sysdam-structure-popup'");
+    expect(mapTabCode).toContain('structMarker.bindPopup');
+    expect(mapTabCode).toContain('structMarker.openPopup');
+  });
 });

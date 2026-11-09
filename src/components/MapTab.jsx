@@ -175,7 +175,6 @@ export const MapTab = ({
   const [isSiderFlipped, setIsSiderFlipped] = useState(true);
   const [isMapPresetModified, setIsMapPresetModified] = useState(false);
   const [copiedCoords, setCopiedCoords] = useState(false);
-  const structureTooltipsRef = useRef([]);
   const structuresLayerRef = useRef(null);
 
   // Catálogo unificado de estruturas (banco mestre + cadastradas pelo usuário com geolocalização)
@@ -621,17 +620,6 @@ export const MapTab = ({
       const currentCenter = map.getCenter();
       setMapZoom(currentZoom);
 
-      // Controle de visibilidade de tooltips dos empreendimentos no zoom (Padrão SysDam zoomend)
-      if (structureTooltipsRef.current && structureTooltipsRef.current.length > 0) {
-        structureTooltipsRef.current.forEach(m => {
-          if (currentZoom < 14) {
-            m.closeTooltip && m.closeTooltip();
-          } else {
-            m.openTooltip && m.openTooltip();
-          }
-        });
-      }
-
       // Verificação se enquadramento foi modificado em relação ao preset salvo
       try {
         const savedRaw = localStorage.getItem('mdsync_map_preset');
@@ -975,13 +963,11 @@ export const MapTab = ({
     try {
       const layer = markersLayerRef.current;
       layer.clearLayers();
-      structureTooltipsRef.current = [];
 
     // 1. Badges das Estruturas da Mina (LayerGroup dedicado - NUNCA entra em cluster de instrumentos)
     if (structuresLayerRef.current) {
       const structLayer = structuresLayerRef.current;
       structLayer.clearLayers();
-      structureTooltipsRef.current = [];
 
       const combinedStructuresMap = new globalThis.Map();
       (structures || []).forEach(s => {
@@ -1023,8 +1009,9 @@ export const MapTab = ({
             zIndexOffset: isCurrentActive ? 1200 : 500
           });
 
-          structMarker.bindTooltip(`
-            <div style="font-family: 'Inter', system-ui, -apple-system, sans-serif; font-size: 11px; padding: 4px 7px; text-align: center; border-radius: 6px;">
+          // Balão Georreferenciado Oficial: exibido exclusivamente sob demanda ao clicar na estrutura
+          const balloonContent = `
+            <div style="font-family: 'Inter', system-ui, -apple-system, sans-serif; font-size: 11px; padding: 2px 4px; text-align: center; border-radius: 6px; cursor: pointer;">
               <div style="display: flex; align-items: center; justify-content: center; gap: 5px; margin-bottom: 2px;">
                 <span style="width: 8px; height: 8px; border-radius: 50%; background: ${pinColor}; box-shadow: 0 0 6px ${pinColor}; display: inline-block;"></span>
                 <strong style="color: #ffffff; letter-spacing: 0.2px;">${struct.nome}</strong> 
@@ -1032,17 +1019,22 @@ export const MapTab = ({
               </div>
               <span style="color: #94a3b8; font-size: 10px; font-family: monospace;">Lat: ${Number(struct.lat).toFixed(6)} | Lon: ${Number(struct.lon).toFixed(6)}</span>
             </div>
-          `, {
-            permanent: true,
-            direction: 'top',
-            offset: [0, -44],
-            className: 'leaflet-tooltip-empreendimento'
+          `;
+
+          structMarker.bindPopup(balloonContent, {
+            className: 'sysdam-structure-popup',
+            offset: [0, -42],
+            closeButton: false,
+            autoClose: true,
+            closeOnClick: true,
+            autoPan: false
           });
           
           structMarker.on('click', (ev) => {
             if (ev?.originalEvent) {
               ev.originalEvent.stopPropagation();
             }
+            structMarker.openPopup();
             handleSelectStructure(struct.id || struct.sigla);
             const match = estruturas.find(e => e.id === struct.id || e.sigla === struct.id || struct.id?.includes(e.sigla) || struct.sigla === e.sigla);
             setSelectedEstrutura(match || struct);
@@ -1050,11 +1042,10 @@ export const MapTab = ({
             setIsSiderFlipped(true);
           });
 
-          structMarker.on('tooltipopen', (e) => {
-            if (e.tooltip && e.tooltip._container) {
-              e.tooltip._container.style.cursor = 'pointer';
-              e.tooltip._container.style.pointerEvents = 'auto';
-              e.tooltip._container.onclick = (ev) => {
+          structMarker.on('popupopen', (e) => {
+            if (e.popup && e.popup._container) {
+              e.popup._container.style.cursor = 'pointer';
+              e.popup._container.onclick = (ev) => {
                 ev && ev.stopPropagation();
                 handleSelectStructure(struct.id || struct.sigla);
                 const match = estruturas.find(el => el.id === struct.id || el.sigla === struct.id || struct.id?.includes(el.sigla) || struct.sigla === el.sigla);
@@ -1066,7 +1057,14 @@ export const MapTab = ({
           });
           
           structLayer.addLayer(structMarker);
-          structureTooltipsRef.current.push(structMarker);
+
+          if (isCurrentActive) {
+            setTimeout(() => {
+              try {
+                structMarker.openPopup();
+              } catch {}
+            }, 40);
+          }
         }
       });
     }
