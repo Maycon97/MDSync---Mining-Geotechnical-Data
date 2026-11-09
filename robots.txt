@@ -14,3 +14,4 @@ Disallow: /*.json$
 
 # Referência Oficial do Sitemap XML
 Sitemap: https://maycon97.github.io/MDSync---Mining-Geotechnical-Data/sitemap.xml
+
