@@ -149,14 +149,22 @@ export const FlowRateTab = ({ onNavigateTab }) => {
     const combined = [...(readingsVertedouro || []), ...(readingsVazao || [])];
     const instNorm = normalizeStructureKey(currentInst.estrutura);
     const instIdStr = String(currentInst.id || '').trim();
+    const currTipo = String(currentInst.tipo || '').toUpperCase();
 
     return combined
       .filter(r => {
+        // 1. Se tiver uid idêntico, match direto
         if (r.uid && currentInst.uid && r.uid === currentInst.uid) return true;
-        const rNorm = normalizeStructureKey(r.estrutura);
         const rIdStr = String(r.id || '').trim();
         const rTipo = String(r.tipo || '').toUpperCase();
-        const currTipo = String(currentInst.tipo || '').toUpperCase();
+
+        // 2. Vertedouros (VT): IDs são códigos seriais únicos em toda a mina (ex: JGD_VZ_ENG_09/01, JGDENMM062)
+        if ((currTipo === 'VT' || rTipo === 'VT') && rIdStr === instIdStr) {
+          return true;
+        }
+
+        // 3. Medidores de Vazão (MV): validar estrutura normalizada e ID (ex: MV 1 B1 vs MV 1 B4 vs MV 1 Jacó)
+        const rNorm = normalizeStructureKey(r.estrutura);
         return rNorm === instNorm && rIdStr === instIdStr && (rTipo === currTipo || !rTipo);
       })
       .sort((a, b) => new Date(a.data) - new Date(b.data));
@@ -392,8 +400,10 @@ export const FlowRateTab = ({ onNavigateTab }) => {
                 <button
                   type="button"
                   onClick={() => onNavigateTab('mapa', {
-                    filterType: currentInst?.tipo || 'VERTEDOURO',
+                    filterType: currentInst?.tipo || 'VT',
                     instrumentId: currentInst?.id,
+                    instrumentUid: currentInst?.uid,
+                    structureId: currentInst?.estrutura,
                     coords: currentInst?.lat && currentInst?.lon ? [currentInst.lat, currentInst.lon] : undefined,
                     zoom: 17
                   })}

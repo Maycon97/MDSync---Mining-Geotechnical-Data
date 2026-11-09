@@ -732,6 +732,7 @@ export const MapTab = ({
     return instruments.filter(inst => {
       if (!inst.lat || !inst.lon) return false;
       if (activeStructureId !== 'TODAS' && 
+          normalizeStructureKey(inst.estrutura) !== normalizeStructureKey(activeStructureId) &&
           inst.estrutura?.replace(/\s+/g, '_') !== activeStructureId && 
           inst.estrutura !== activeStructureId) {
         return false;
@@ -1493,10 +1494,18 @@ export const MapTab = ({
           setIsSiderFlipped(true);
         }
       }
-      if (ctx.instrumentId) {
-        const matchInst = (instruments || []).find(i => i.id === ctx.instrumentId);
+      if (ctx.instrumentId || ctx.instrumentUid) {
+        const matchInst = (instruments || []).find(i => {
+          if (ctx.instrumentUid && i.uid === ctx.instrumentUid) return true;
+          if (ctx.structureId && normalizeStructureKey(i.estrutura) !== normalizeStructureKey(ctx.structureId)) return false;
+          return i.id === ctx.instrumentId;
+        }) || (instruments || []).find(i => i.id === ctx.instrumentId);
+
         if (matchInst) {
           setSelectedInstrument(matchInst);
+          if (matchInst.lat && matchInst.lon && !ctx.coords) {
+            map.flyTo([matchInst.lat, matchInst.lon], ctx.zoom || 18, { duration: 1.2 });
+          }
         }
       }
     }

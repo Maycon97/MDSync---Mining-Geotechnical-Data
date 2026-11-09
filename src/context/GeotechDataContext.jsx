@@ -19,6 +19,16 @@ export const STRUCTURE_KEY_MAP = {
   'PDE ES1': 'PDE_ES1',
   'PDE_ES1': 'PDE_ES1',
   'PDE ENGENHO SECO I': 'PDE_ES1',
+  'PDE ENGENHO SECO 1': 'PDE_ES1',
+  'PDE_ES_1': 'PDE_ES1',
+  'PDE ES 1': 'PDE_ES1',
+  'ES2': 'ENGENHO_SECO',
+  'PDE_ES2': 'ENGENHO_SECO',
+  'PDE ES2': 'ENGENHO_SECO',
+  'PDE_ES_2': 'ENGENHO_SECO',
+  'PDE ES 2': 'ENGENHO_SECO',
+  'PDE ENGENHO SECO II': 'ENGENHO_SECO',
+  'PDE ENGENHO SECO 2': 'ENGENHO_SECO',
   'JC': 'PDE_JACÓ',
   'JACO': 'PDE_JACÓ',
   'JACÓ': 'PDE_JACÓ',
@@ -42,7 +52,11 @@ export const STRUCTURE_KEY_MAP = {
   'CAVA_JANGADA': 'JANGADA',
   'PDE ES SMB': 'PDE_ES_SMB',
   'PDE_ES_SMB': 'PDE_ES_SMB',
-  'PDE SAMAMBAIA': 'PDE_ES_SMB'
+  'SMB': 'PDE_ES_SMB',
+  'SAM': 'PDE_ES_SMB',
+  'SAMAMBAIA': 'PDE_ES_SMB',
+  'PDE SAMAMBAIA': 'PDE_ES_SMB',
+  'PDE_SAMAMBAIA': 'PDE_ES_SMB'
 };
 
 export const normalizeStructureKey = (rawId) => {

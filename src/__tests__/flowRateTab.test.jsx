@@ -105,9 +105,23 @@ describe('FlowRateTab & Flow Rate Geotechnical Data Verification', () => {
       const jcMv = flowInsts.find(i => i.uid === 'PDE_JACÓ_MV_1');
       expect(jcMv).toBeDefined();
 
-      // Verify Jangada VT weirs exist
+      // Verify consolidation according to official Basemap_HIDRO:
+      // 14 VT weirs distributed across their true geotechnical structures:
+      // - 7 in Cava Jangada
+      // - 3 in Engenho Seco
+      // - 1 in PDE Mangaba
+      // - 3 in PDE Samambaia
       const jgdVts = flowInsts.filter(i => i.estrutura === 'JANGADA' && i.tipo === 'VT');
-      expect(jgdVts.length).toBe(14);
+      expect(jgdVts.length).toBe(7);
+
+      const engVts = flowInsts.filter(i => i.estrutura === 'ENGENHO SECO' && i.tipo === 'VT');
+      expect(engVts.length).toBe(3);
+
+      const manVts = flowInsts.filter(i => i.estrutura === 'PDE MANGABA' && i.tipo === 'VT');
+      expect(manVts.length).toBe(1);
+
+      const samVts = flowInsts.filter(i => i.estrutura === 'PDE SAMAMBAIA' && i.tipo === 'VT');
+      expect(samVts.length).toBe(3);
 
       // Verify readings count
       expect(masterData.leiturasVazao.length).toBeGreaterThanOrEqual(325);
@@ -144,6 +158,37 @@ describe('FlowRateTab & Flow Rate Geotechnical Data Verification', () => {
       // Instrument select should contain flow options
       const instSelect = selects[1];
       expect(instSelect.options.length).toBeGreaterThan(0);
+
+      // Click "Ver no Georeferenciamento" and verify parameters passed to MapTab
+      act(() => {
+        geoBtn.click();
+      });
+      expect(mockNavigate).toHaveBeenCalledWith('mapa', expect.objectContaining({
+        filterType: expect.any(String),
+        instrumentId: expect.any(String),
+        structureId: expect.any(String)
+      }));
+    });
+
+    it('verifies that PDE_ES_2 normalizes to ENGENHO_SECO and displays Engenho Seco weirs without error banner', async () => {
+      const { normalizeStructureKey } = await import('../context/GeotechDataContext');
+      expect(normalizeStructureKey('PDE_ES_2')).toBe('ENGENHO_SECO');
+      expect(normalizeStructureKey('PDE_ES2')).toBe('ENGENHO_SECO');
+      expect(normalizeStructureKey('PDE ES 2')).toBe('ENGENHO_SECO');
+      expect(normalizeStructureKey('PDE_MANGABA')).toBe('PDE_MANGABA');
+      expect(normalizeStructureKey('MGB')).toBe('PDE_MANGABA');
+      expect(normalizeStructureKey('SMB')).toBe('PDE_ES_SMB');
+      expect(normalizeStructureKey('PDE SAMAMBAIA')).toBe('PDE_ES_SMB');
+
+      // Check instruments belonging to Engenho Seco
+      const engWeirs = masterData.instrumentos.filter(i => 
+        normalizeStructureKey(i.estrutura) === 'ENGENHO_SECO' && i.tipo === 'VT'
+      );
+      expect(engWeirs.length).toBe(3);
+      const engIds = engWeirs.map(i => i.id);
+      expect(engIds).toContain('JGD_VZ_ENG_09/01');
+      expect(engIds).toContain('JGD_VZ_ENG_12/01');
+      expect(engIds).toContain('JGD_VZ_ENG_57/02');
     });
   });
 });
