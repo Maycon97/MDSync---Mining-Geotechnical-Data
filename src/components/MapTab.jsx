@@ -2558,7 +2558,12 @@ export const MapTab = ({
               <span>Coletar</span>
             </button>
             <button
-              onClick={() => onNavigateTab && onNavigateTab('piezometria')}
+              onClick={() => onNavigateTab && onNavigateTab('piezometria', {
+                structureId: selectedInstrument?.estrutura,
+                instrumentId: selectedInstrument?.id,
+                uid: selectedInstrument?.uid,
+                tipo: selectedInstrument?.tipo
+              })}
               className="btn-secondary"
               style={{ flex: 1, minWidth: '95px', fontSize: '0.75rem', padding: '0.45rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px' }}
               title="Abrir gráficos e curvas piezométricas"

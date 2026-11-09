@@ -41,7 +41,64 @@ ChartJS.register(
   Filler
 );
 
-export const PiezometryTab = ({ onNavigateTab }) => {
+export const CANONICAL_STRUCTURE_MAP = {
+  'B1': 'BARRAGEM B1',
+  'BARRAGEM B1': 'BARRAGEM B1',
+  'BARRAGEM_B1': 'BARRAGEM B1',
+  'B4': 'BARRAGEM B4',
+  'BARRAGEM B4': 'BARRAGEM B4',
+  'BARRAGEM_B4': 'BARRAGEM B4',
+  'ES': 'ENGENHO SECO',
+  'ENGENHO SECO': 'ENGENHO SECO',
+  'ENGENHO_SECO': 'ENGENHO SECO',
+  'CAVA ENGENHO SECO': 'ENGENHO SECO',
+  'CAVA_ENGENHO_SECO': 'ENGENHO SECO',
+  'JGD': 'JANGADA',
+  'JANGADA': 'JANGADA',
+  'CAVA JANGADA': 'JANGADA',
+  'CAVA_JANGADA': 'JANGADA',
+  'ES1': 'PDE ES1',
+  'PDE ES1': 'PDE ES1',
+  'PDE_ES1': 'PDE ES1',
+  'PDE ENGENHO SECO I': 'PDE ES1',
+  'PDE ENGENHO SECO 1': 'PDE ES1',
+  'JC': 'PDE JACÓ',
+  'JACO': 'PDE JACÓ',
+  'JACÓ': 'PDE JACÓ',
+  'PDE JACÓ': 'PDE JACÓ',
+  'PDE JACO': 'PDE JACÓ',
+  'PDE_JACÓ': 'PDE JACÓ',
+  'PDE_JACO': 'PDE JACÓ',
+  'MG': 'PDE MANGABA',
+  'MGB': 'PDE MANGABA',
+  'MANGABA': 'PDE MANGABA',
+  'PDE MANGABA': 'PDE MANGABA',
+  'PDE_MANGABA': 'PDE MANGABA',
+  'B2': 'PILHA B2',
+  'PB2': 'PILHA B2',
+  'PILHA B2': 'PILHA B2',
+  'PILHA_B2': 'PILHA B2',
+  'PDR B2': 'PILHA B2',
+  'PDR_B2': 'PILHA B2',
+  'PDE ES SMB': 'PDE ES SMB',
+  'PDE_ES_SMB': 'PDE ES SMB',
+  'PDE SAMAMBAIA': 'PDE ES SMB',
+  'SAMAMBAIA': 'PDE ES SMB'
+};
+
+export const resolveCanonicalStructure = (raw) => {
+  if (!raw || raw === 'TODAS' || raw === 'todas') return 'TODAS';
+  const clean = String(raw).trim().toUpperCase();
+  if (CANONICAL_STRUCTURE_MAP[clean]) return CANONICAL_STRUCTURE_MAP[clean];
+  const slug = clean.replace(/\s+/g, '_');
+  if (CANONICAL_STRUCTURE_MAP[slug]) return CANONICAL_STRUCTURE_MAP[slug];
+  for (const [key, val] of Object.entries(CANONICAL_STRUCTURE_MAP)) {
+    if (clean === key || clean === val.toUpperCase()) return val;
+  }
+  return raw;
+};
+
+export const PiezometryTab = ({ onNavigateTab, navigationContext }) => {
   const { structures, instruments, readingsPiezometria, activeStructureId, selectStructure } = useGeotechData();
 
   // Helper para formatar valores numéricos com casas decimais fixas (evita 827.6510000000001)
@@ -54,32 +111,76 @@ export const PiezometryTab = ({ onNavigateTab }) => {
   // 1. Estruturas com instrumentos piezométricos disponíveis
   const availableStructures = useMemo(() => {
     const structs = new Set();
-    instruments.forEach(i => {
+    (instruments || []).forEach(i => {
       if (i.tipo === 'INA' || i.tipo === 'PZ') {
-        structs.add(i.estrutura);
+        const canonical = resolveCanonicalStructure(i.estrutura);
+        structs.add(canonical);
       }
     });
     return ['TODAS', ...Array.from(structs).sort()];
   }, [instruments]);
 
-  // Estado do Filtro de Estrutura
+  // Estado do Filtro de Estrutura (inicializado com contexto de navegação, estrutura ativa ou padrão BARRAGEM B1)
   const [selectedStructure, setSelectedStructure] = useState(() => {
-    return activeStructureId !== 'TODAS' ? activeStructureId : 'BARRAGEM B1';
+    const fromContext = navigationContext?.structureId || navigationContext?.estrutura || navigationContext?.sigla;
+    if (fromContext) {
+      return resolveCanonicalStructure(fromContext);
+    }
+    if (activeStructureId && activeStructureId !== 'TODAS') {
+      return resolveCanonicalStructure(activeStructureId);
+    }
+    return 'BARRAGEM B1';
   });
+
+  // Reagir a mudanças no navigationContext
+  useEffect(() => {
+    if (!navigationContext) return;
+    const target = navigationContext.structureId || navigationContext.estrutura || navigationContext.sigla;
+    if (target) {
+      const canonical = resolveCanonicalStructure(target);
+      setSelectedStructure(canonical);
+      setSelectedSection('TODAS');
+    }
+  }, [navigationContext]);
+
+  // Reagir a mudanças na estrutura ativa global
+  useEffect(() => {
+    if (activeStructureId && activeStructureId !== 'TODAS') {
+      const canonical = resolveCanonicalStructure(activeStructureId);
+      setSelectedStructure(canonical);
+      setSelectedSection('TODAS');
+    }
+  }, [activeStructureId]);
+
+  // Se a estrutura atual não tiver nenhum piezômetro cadastrado e a lista de estruturas já carregou,
+  // ajusta para a primeira válida ou 'TODAS' para nunca deixar o painel quebrado
+  useEffect(() => {
+    if (availableStructures.length > 1 && selectedStructure !== 'TODAS' && !availableStructures.includes(selectedStructure)) {
+      setSelectedStructure('TODAS');
+      setSelectedSection('TODAS');
+    }
+  }, [availableStructures, selectedStructure]);
 
   // 2. Instrumentos piezométricos filtrados pela Estrutura selecionada
   const piezoInstruments = useMemo(() => {
-    return instruments.filter(i => {
-      const isPiezo = i.tipo === 'INA' || i.tipo === 'PZ';
-      if (!isPiezo) return false;
-      if (selectedStructure !== 'TODAS') {
-        const match = i.estrutura === selectedStructure || 
-                      i.estrutura.replace(/\s+/g, '_') === selectedStructure ||
-                      i.estrutura.toUpperCase() === selectedStructure.toUpperCase();
-        if (!match) return false;
-      }
-      return true;
+    const allPiezo = (instruments || []).filter(i => i.tipo === 'INA' || i.tipo === 'PZ');
+    if (selectedStructure === 'TODAS') return allPiezo;
+
+    const filtered = allPiezo.filter(i => {
+      const instCanonical = resolveCanonicalStructure(i.estrutura);
+      const selCanonical = resolveCanonicalStructure(selectedStructure);
+      return instCanonical === selCanonical || 
+             i.estrutura === selectedStructure || 
+             i.estrutura.replace(/\s+/g, '_') === selectedStructure ||
+             i.estrutura.toUpperCase() === selectedStructure.toUpperCase();
     });
+
+    // Failsafe: se por algum motivo a estrutura filtrada não possuir piezômetros, retorna todos para evitar tela em branco
+    if (filtered.length === 0) {
+      return allPiezo;
+    }
+
+    return filtered;
   }, [instruments, selectedStructure]);
 
   // 3. Seções disponíveis para a estrutura selecionada
@@ -96,13 +197,53 @@ export const PiezometryTab = ({ onNavigateTab }) => {
   // Filtrar por seção
   const sectionFilteredInsts = useMemo(() => {
     if (selectedSection === 'TODAS') return piezoInstruments;
-    return piezoInstruments.filter(i => i.secao === selectedSection);
+    const filtered = piezoInstruments.filter(i => i.secao === selectedSection);
+    return filtered.length > 0 ? filtered : piezoInstruments;
   }, [piezoInstruments, selectedSection]);
 
   // 4. Instrumento ativo
-  const [selectedInstUid, setSelectedInstUid] = useState(() => piezoInstruments[0]?.uid || '');
+  const [selectedInstUid, setSelectedInstUid] = useState(() => {
+    if (navigationContext?.instrumentId || navigationContext?.uid) {
+      const targetId = navigationContext.instrumentId || navigationContext.uid;
+      const found = (instruments || []).find(i => 
+        (i.id === targetId || i.uid === targetId) && (i.tipo === 'INA' || i.tipo === 'PZ')
+      );
+      if (found) return found.uid;
+    }
+    return piezoInstruments[0]?.uid || '';
+  });
 
-  // Se a lista filtrada mudar e o instrumento atual não estiver nela, seleciona o primeiro
+  // Atualizar quando navigationContext trouxer instrumento específico
+  useEffect(() => {
+    if (navigationContext?.instrumentId || navigationContext?.uid) {
+      const targetId = navigationContext.instrumentId || navigationContext.uid;
+      const target = (instruments || []).find(i => 
+        (i.id === targetId || i.uid === targetId) && (i.tipo === 'INA' || i.tipo === 'PZ')
+      );
+      if (target) {
+        setSelectedStructure(resolveCanonicalStructure(target.estrutura));
+        setSelectedSection('TODAS');
+        setSelectedInstUid(target.uid);
+      }
+    }
+  }, [navigationContext, instruments]);
+
+  // Instrumento ativo resolvido com robustez máxima
+  const currentInst = useMemo(() => {
+    if (selectedInstUid && sectionFilteredInsts.length > 0) {
+      const found = sectionFilteredInsts.find(i => i.uid === selectedInstUid || i.id === selectedInstUid);
+      if (found) return found;
+    }
+    if (selectedInstUid && piezoInstruments.length > 0) {
+      const found = piezoInstruments.find(i => i.uid === selectedInstUid || i.id === selectedInstUid);
+      if (found) return found;
+    }
+    if (sectionFilteredInsts.length > 0) return sectionFilteredInsts[0];
+    if (piezoInstruments.length > 0) return piezoInstruments[0];
+    return (instruments || []).find(i => i.tipo === 'INA' || i.tipo === 'PZ') || null;
+  }, [sectionFilteredInsts, selectedInstUid, piezoInstruments, instruments]);
+
+  // Se a lista de instrumentos filtrados mudar e o instrumento selecionado não pertencer a ela, seleciona o primeiro
   useEffect(() => {
     if (sectionFilteredInsts.length > 0) {
       const exists = sectionFilteredInsts.some(i => i.uid === selectedInstUid);
@@ -112,9 +253,12 @@ export const PiezometryTab = ({ onNavigateTab }) => {
     }
   }, [sectionFilteredInsts, selectedInstUid]);
 
-  const currentInst = useMemo(() => {
-    return sectionFilteredInsts.find(i => i.uid === selectedInstUid) || sectionFilteredInsts[0] || piezoInstruments[0];
-  }, [sectionFilteredInsts, selectedInstUid, piezoInstruments]);
+  // Se o instrumento ativo mudar e o UID selecionado estiver dessincronizado, re-sincroniza
+  useEffect(() => {
+    if (currentInst?.uid && selectedInstUid !== currentInst.uid) {
+      setSelectedInstUid(currentInst.uid);
+    }
+  }, [currentInst, selectedInstUid]);
 
   // 5. Filtros de Data de Início e Data de Final
   const [dataInicio, setDataInicio] = useState('');
@@ -124,9 +268,16 @@ export const PiezometryTab = ({ onNavigateTab }) => {
   const { filteredReadings, statsIntervalo } = useMemo(() => {
     if (!currentInst) return { filteredReadings: [], statsIntervalo: null };
 
-    const allForInst = readingsPiezometria
-      .filter(r => r.uid === currentInst.uid || 
-        (r.estrutura === currentInst.estrutura && String(r.id) === String(currentInst.id) && r.tipo === currentInst.tipo))
+    const normCurrentStruct = resolveCanonicalStructure(currentInst.estrutura);
+    const allForInst = (readingsPiezometria || [])
+      .filter(r => {
+        if (r.uid && currentInst.uid && r.uid === currentInst.uid) return true;
+        const normRStruct = resolveCanonicalStructure(r.estrutura);
+        const matchStruct = normRStruct === normCurrentStruct || r.estrutura === currentInst.estrutura;
+        const matchId = String(r.id || '').trim().toUpperCase() === String(currentInst.id || '').trim().toUpperCase();
+        const matchTipo = !r.tipo || r.tipo === currentInst.tipo;
+        return matchStruct && matchId && matchTipo;
+      })
       .sort((a, b) => new Date(a.data) - new Date(b.data));
 
     let filtered = allForInst;
@@ -165,6 +316,37 @@ export const PiezometryTab = ({ onNavigateTab }) => {
       }
     };
   }, [readingsPiezometria, currentInst, dataInicio, dataFim]);
+
+  // Handlers para atalhos rápidos de período (calculados dinamicamente a partir das leituras do instrumento)
+  const handleQuickPeriodDays = (days) => {
+    if (!currentInst) return;
+    const allForInst = (readingsPiezometria || []).filter(r => 
+      r.uid === currentInst.uid || 
+      (resolveCanonicalStructure(r.estrutura) === resolveCanonicalStructure(currentInst.estrutura) && String(r.id) === String(currentInst.id))
+    ).sort((a, b) => new Date(a.data) - new Date(b.data));
+
+    let baseDate = new Date();
+    if (allForInst.length > 0 && allForInst[allForInst.length - 1].data) {
+      const parsed = new Date(allForInst[allForInst.length - 1].data);
+      if (!isNaN(parsed.getTime())) baseDate = parsed;
+    } else if (currentInst.ultimaData) {
+      const parsed = new Date(currentInst.ultimaData);
+      if (!isNaN(parsed.getTime())) baseDate = parsed;
+    }
+
+    const endStr = baseDate.toISOString().split('T')[0];
+    const startDate = new Date(baseDate);
+    startDate.setDate(startDate.getDate() - days);
+    const startStr = startDate.toISOString().split('T')[0];
+
+    setDataInicio(startStr);
+    setDataFim(endStr);
+  };
+
+  const handleQuickYear = (year) => {
+    setDataInicio(`${year}-01-01`);
+    setDataFim(`${year}-12-31`);
+  };
 
   // 7. Configuração dos dados do Gráfico
   const chartData = useMemo(() => {
@@ -380,7 +562,7 @@ export const PiezometryTab = ({ onNavigateTab }) => {
               Estrutura
             </label>
             <select
-              value={selectedStructure}
+              value={availableStructures.includes(selectedStructure) ? selectedStructure : 'TODAS'}
               onChange={(e) => {
                 setSelectedStructure(e.target.value);
                 setSelectedSection('TODAS');
@@ -416,17 +598,20 @@ export const PiezometryTab = ({ onNavigateTab }) => {
           <div>
             <label style={{ display: 'block', fontSize: '0.72rem', fontWeight: 700, color: 'var(--text-main)', marginBottom: '0.3rem' }}>
               <Filter size={13} style={{ display: 'inline', marginRight: '4px', verticalAlign: 'middle', color: '#10b981' }} />
-              Instrumento
+              Instrumento ({sectionFilteredInsts.length})
             </label>
             <select
-              value={currentInst?.uid || ''}
+              value={currentInst?.uid || selectedInstUid || ''}
               onChange={(e) => setSelectedInstUid(e.target.value)}
               className="form-select font-mono"
               style={{ width: '100%', padding: '0.45rem 0.65rem', fontSize: '0.8rem', fontWeight: 700 }}
             >
+              {sectionFilteredInsts.length === 0 && (
+                <option value="">Nenhum instrumento disponível</option>
+              )}
               {sectionFilteredInsts.map(i => (
-                <option key={i.uid} value={i.uid}>
-                  {i.tipo} {i.id} ({i.secao ? 'Seção ' + i.secao : i.estrutura}) - {i.statusCalculado}
+                <option key={i.uid || i.id} value={i.uid || i.id}>
+                  {selectedStructure === 'TODAS' ? `[${i.estrutura}] ` : ''}{i.tipo} {i.id} {i.secao ? `(Seção ${i.secao})` : ''} - {i.statusCalculado || 'NORMAL'}
                 </option>
               ))}
             </select>
@@ -481,10 +666,7 @@ export const PiezometryTab = ({ onNavigateTab }) => {
             
             <button
               type="button"
-              onClick={() => {
-                setDataInicio('2026-08-08');
-                setDataFim('2026-09-08');
-              }}
+              onClick={() => handleQuickPeriodDays(30)}
               className="btn-ghost"
               style={{ padding: '0.2rem 0.55rem', fontSize: '0.72rem', borderRadius: '5px' }}
             >
@@ -493,10 +675,7 @@ export const PiezometryTab = ({ onNavigateTab }) => {
 
             <button
               type="button"
-              onClick={() => {
-                setDataInicio('2026-06-08');
-                setDataFim('2026-09-08');
-              }}
+              onClick={() => handleQuickPeriodDays(90)}
               className="btn-ghost"
               style={{ padding: '0.2rem 0.55rem', fontSize: '0.72rem', borderRadius: '5px' }}
             >
@@ -505,10 +684,7 @@ export const PiezometryTab = ({ onNavigateTab }) => {
 
             <button
               type="button"
-              onClick={() => {
-                setDataInicio('2026-01-01');
-                setDataFim('2026-12-31');
-              }}
+              onClick={() => handleQuickYear(2026)}
               className="btn-ghost"
               style={{ padding: '0.2rem 0.55rem', fontSize: '0.72rem', borderRadius: '5px' }}
             >
@@ -517,14 +693,23 @@ export const PiezometryTab = ({ onNavigateTab }) => {
 
             <button
               type="button"
-              onClick={() => {
-                setDataInicio('2025-01-01');
-                setDataFim('2025-12-31');
-              }}
+              onClick={() => handleQuickYear(2025)}
               className="btn-ghost"
               style={{ padding: '0.2rem 0.55rem', fontSize: '0.72rem', borderRadius: '5px' }}
             >
               Ano 2025
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                setDataInicio('');
+                setDataFim('');
+              }}
+              className="btn-ghost"
+              style={{ padding: '0.2rem 0.55rem', fontSize: '0.72rem', borderRadius: '5px' }}
+            >
+              Todas as Leituras
             </button>
 
             {(dataInicio || dataFim) && (
@@ -550,7 +735,7 @@ export const PiezometryTab = ({ onNavigateTab }) => {
                 Exibindo <strong>{filteredReadings.length}</strong> leituras
                 {dataInicio || dataFim ? (
                   <span> ({dataInicio ? 'de ' + dataInicio.split('-').reverse().join('/') : ''} {dataFim ? 'até ' + dataFim.split('-').reverse().join('/') : ''})</span>
-                ) : ' (amostra recente)'}
+                ) : ` (amostra recente de ${statsIntervalo?.totalGeral || filteredReadings.length} registros)`}
                 {statsIntervalo && statsIntervalo.minCota != null && statsIntervalo.maxCota != null && (
                   <span style={{ color: 'var(--primary-accent)' }}> • Cotas: {statsIntervalo.minCota.toFixed(2)} m a {statsIntervalo.maxCota.toFixed(2)} m</span>
                 )}
@@ -627,13 +812,24 @@ export const PiezometryTab = ({ onNavigateTab }) => {
             <p style={{ fontSize: '0.78rem', color: 'var(--text-faint)', marginTop: '4px' }}>
               Tente expandir o intervalo de datas ou selecionar outro instrumento piezométrico.
             </p>
-            {(dataInicio || dataFim) && (
+            {(dataInicio || dataFim) ? (
               <button 
                 onClick={() => { setDataInicio(''); setDataFim(''); }}
-                className="btn-secondary"
-                style={{ marginTop: '0.75rem', fontSize: '0.8rem' }}
+                className="btn-primary"
+                style={{ marginTop: '0.75rem', fontSize: '0.8rem', padding: '0.4rem 0.85rem' }}
               >
-                Limpar Filtro de Datas
+                Ver Todas as Leituras Deste Instrumento
+              </button>
+            ) : (
+              <button
+                onClick={() => {
+                  setSelectedStructure('TODAS');
+                  setSelectedSection('TODAS');
+                }}
+                className="btn-secondary"
+                style={{ marginTop: '0.75rem', fontSize: '0.8rem', padding: '0.4rem 0.85rem' }}
+              >
+                Ver Piezômetros de Todas as Estruturas
               </button>
             )}
           </div>

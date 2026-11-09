@@ -96,6 +96,7 @@ export function App() {
   const [legalModalOpen, setLegalModalOpen] = useState(false);
   const [legalModalTab, setLegalModalTab] = useState('privacidade');
   const [mapNavigationContext, setMapNavigationContext] = useState(null);
+  const [piezoNavigationContext, setPiezoNavigationContext] = useState(null);
 
   const handleOpenLegalCenter = (tab = 'privacidade') => {
     setLegalModalTab(tab);
@@ -111,6 +112,14 @@ export function App() {
         setMapNavigationContext({ structureId: contextOrSubTab });
       } else {
         setMapNavigationContext(null);
+      }
+    } else if (targetTab === 'piezometria') {
+      if (contextOrSubTab && typeof contextOrSubTab === 'object') {
+        setPiezoNavigationContext(contextOrSubTab);
+      } else if (typeof contextOrSubTab === 'string') {
+        setPiezoNavigationContext({ structureId: contextOrSubTab });
+      } else {
+        setPiezoNavigationContext(null);
       }
     } else if (contextOrSubTab && typeof contextOrSubTab === 'string') {
       setColetaInitialSubTab(contextOrSubTab);
@@ -368,7 +377,10 @@ export function App() {
         )}
 
         {activeTab === 'piezometria' && (
-          <PiezometryTab onNavigateTab={handleNavigateTab} />
+          <PiezometryTab 
+            onNavigateTab={handleNavigateTab} 
+            navigationContext={piezoNavigationContext}
+          />
         )}
 
         {activeTab === 'vazao' && (
