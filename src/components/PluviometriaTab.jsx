@@ -1183,7 +1183,7 @@ export const PluviometriaTab = ({ onNavigateTab }) => {
             </div>
           </div>
         ) : (
-        <div style={{
+        <div className="pluvio-dual-grid" style={{
           position: 'relative',
           zIndex: 1,
           display: 'grid',

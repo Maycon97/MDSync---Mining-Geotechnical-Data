@@ -145,9 +145,9 @@ export const CentralComunicacaoTab = ({ onNavigateTab }) => {
         </div>
       </div>
 
-      <div style={{
+      <div className="comunicacao-grid" style={{
         display: 'grid',
-        gridTemplateColumns: 'minmax(300px, 1fr) minmax(320px, 1.8fr)',
+        gridTemplateColumns: 'minmax(min(100%, 300px), 1fr) minmax(min(100%, 320px), 1.8fr)',
         gap: '1.25rem',
         alignItems: 'start'
       }}>

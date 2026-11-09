@@ -372,9 +372,9 @@ export const EstruturasEmpreendimentoTab = ({ onNavigateTab }) => {
       </div>
 
       {/* Grid Principal Mestre-Detalhe (Layout SYSDAM) */}
-      <div style={{
+      <div className="estruturas-master-grid" style={{
         display: 'grid',
-        gridTemplateColumns: 'minmax(320px, 480px) 1fr',
+        gridTemplateColumns: 'minmax(min(100%, 320px), 480px) 1fr',
         gap: '1.25rem',
         alignItems: 'start'
       }}>

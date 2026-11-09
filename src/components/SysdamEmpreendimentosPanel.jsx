@@ -584,10 +584,14 @@ export const SysdamEmpreendimentosPanel = ({
                         padding: '0.5rem'
                       }}>
                         <span style={{
-                          fontSize: '1.2rem',
+                          fontSize: (e.sigla && e.sigla.length > 6) ? '0.78rem' : (e.sigla && e.sigla.length > 4) ? '0.92rem' : '1.18rem',
                           fontWeight: 900,
                           color: catStyle.text,
-                          letterSpacing: '0.5px'
+                          letterSpacing: '0.3px',
+                          textAlign: 'center',
+                          wordBreak: 'break-word',
+                          lineHeight: 1.1,
+                          padding: '0 2px'
                         }}>
                           {e.sigla}
                         </span>

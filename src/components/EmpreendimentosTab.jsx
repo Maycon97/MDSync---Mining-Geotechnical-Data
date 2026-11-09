@@ -533,7 +533,7 @@ export const EmpreendimentosTab = ({ onNavigateTab }) => {
       {/* Grid de Cards dos Empreendimentos */}
       <div style={{
         display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fill, minmax(480px, 1fr))',
+        gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 420px), 1fr))',
         gap: '1.25rem'
       }}>
         {filteredList.length === 0 ? (
@@ -939,7 +939,7 @@ export const EmpreendimentosTab = ({ onNavigateTab }) => {
                 <div style={{ fontSize: '0.75rem', fontWeight: 800, color: '#38bdf8', textTransform: 'uppercase', marginBottom: '0.65rem' }}>
                   1. Identificação Corporativa & Registro
                 </div>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '0.75rem' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 260px), 1fr))', gap: '0.75rem' }}>
                   <div>
                     <label style={{ display: 'block', color: '#cbd5e1', marginBottom: '3px', fontWeight: 600 }}>
                       Nome do Empreendimento / Complexo *
@@ -1032,7 +1032,7 @@ export const EmpreendimentosTab = ({ onNavigateTab }) => {
                 <div style={{ fontSize: '0.75rem', fontWeight: 800, color: '#38bdf8', textTransform: 'uppercase', marginBottom: '0.65rem' }}>
                   2. Regulação ANM, Minério & Licenciamento
                 </div>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.75rem' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 200px), 1fr))', gap: '0.75rem' }}>
                   <div>
                     <label style={{ display: 'block', color: '#cbd5e1', marginBottom: '3px', fontWeight: 600 }}>
                       Processo ANM / SIGBM
@@ -1186,7 +1186,7 @@ export const EmpreendimentosTab = ({ onNavigateTab }) => {
                     {isCapturingGps ? 'Capturando GPS...' : 'Capturar GPS Atual'}
                   </button>
                 </div>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '0.75rem' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 150px), 1fr))', gap: '0.75rem' }}>
                   <div>
                     <label style={{ display: 'block', color: '#cbd5e1', marginBottom: '3px', fontWeight: 600 }}>
                       Município *
@@ -1273,7 +1273,7 @@ export const EmpreendimentosTab = ({ onNavigateTab }) => {
                       }}
                     />
                   </div>
-                  <div style={{ gridColumn: 'span 4' }}>
+                  <div style={{ gridColumn: '1 / -1' }}>
                     <label style={{ display: 'block', color: '#cbd5e1', marginBottom: '3px', fontWeight: 600 }}>
                       Bacia Hidrográfica
                     </label>
@@ -1301,7 +1301,7 @@ export const EmpreendimentosTab = ({ onNavigateTab }) => {
                 <div style={{ fontSize: '0.75rem', fontWeight: 800, color: '#38bdf8', textTransform: 'uppercase', marginBottom: '0.65rem' }}>
                   4. Responsável Técnico Geotécnico (RT) & Contatos
                 </div>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '0.75rem' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 260px), 1fr))', gap: '0.75rem' }}>
                   <div>
                     <label style={{ display: 'block', color: '#cbd5e1', marginBottom: '3px', fontWeight: 600 }}>
                       Nome do RT Geotecnia

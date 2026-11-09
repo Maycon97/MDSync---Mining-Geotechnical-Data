@@ -434,7 +434,7 @@ Assinado digitalmente por autoridade credenciada ICP-Brasil.
           </div>
 
           {/* Grid de Documentos */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(360px, 1fr))', gap: '1rem' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 340px), 1fr))', gap: '1rem' }}>
             {docsFiltrados.map(doc => (
               <div key={doc.id} className="card-panel" style={{
                 padding: '1.15rem',
@@ -544,7 +544,7 @@ Assinado digitalmente por autoridade credenciada ICP-Brasil.
       {/* SUB-ABA 2: LEGISLAÇÃO APLICADA */}
       {activeSubTab === 'legislacao' && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(420px, 1fr))', gap: '1rem' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 340px), 1fr))', gap: '1rem' }}>
             {LEGISLACOES.map(leg => (
               <div key={leg.id} className="card-panel" style={{ padding: '1.25rem', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
                 <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '0.5rem' }}>

@@ -653,7 +653,7 @@ export const AnomaliasInspecoesTab = ({ onNavigateTab }) => {
           </div>
 
           {/* Cards das Anomalias Piezométricas */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(360px, 1fr))', gap: '1rem' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 320px), 1fr))', gap: '1rem' }}>
             {anomalies.map(anom => {
               const isResolvida = anom.status === 'RESOLVIDA';
               const corStatus = isResolvida ? '#10b981' : '#ef4444';
@@ -844,7 +844,7 @@ export const AnomaliasInspecoesTab = ({ onNavigateTab }) => {
           </div>
 
           {/* Listagem de Anomalias */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(340px, 1fr))', gap: '0.85rem' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 320px), 1fr))', gap: '0.85rem' }}>
             {anomaliasFiltradas.length === 0 ? (
               <div className="card-panel" style={{ gridColumn: '1 / -1', textAlign: 'center', padding: '2rem' }}>
                 <CheckCircle2 size={36} style={{ color: 'var(--geo-normal)', margin: '0 auto 0.5rem' }} />
@@ -981,7 +981,7 @@ export const AnomaliasInspecoesTab = ({ onNavigateTab }) => {
       {/* ABA 2: INSPEÇÕES REGULARES & ESPECIAIS (ISR / ISE) */}
       {activeSubTab === 'inspecoes' && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(360px, 1fr))', gap: '1rem' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 320px), 1fr))', gap: '1rem' }}>
             {inspecoesGeotecnicas.map(insp => {
               const isISR = insp.tipo === 'ISR';
 
@@ -1065,7 +1065,7 @@ export const AnomaliasInspecoesTab = ({ onNavigateTab }) => {
       {/* ABA 3: PLANOS DE AÇÃO 5W2H */}
       {activeSubTab === 'planos' && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(360px, 1fr))', gap: '1rem' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 320px), 1fr))', gap: '1rem' }}>
             {planosAcao.map(plano => {
               return (
                 <div key={plano.id} className="card-panel" style={{ padding: '1.15rem', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>

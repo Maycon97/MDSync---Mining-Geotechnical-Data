@@ -72,3 +72,4 @@ describe('Map Structure Pin Click & General Information (Side B)', () => {
     expect(onCloseDetails).toHaveBeenCalledTimes(1);
   });
 });
+

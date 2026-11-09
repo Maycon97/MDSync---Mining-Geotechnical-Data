@@ -945,7 +945,7 @@ export const DashboardTab = ({ onNavigateTab }) => {
           {/* PAINEL DE DESTAQUES OPERACIONAIS (RADAR, SUMPS E FATOR DE SEGURANÇA) */}
           <div style={{
             display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(360px, 1fr))',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 320px), 1fr))',
             gap: '1rem'
           }}>
             {/* Monitoramento Georadar SSR929 FX */}

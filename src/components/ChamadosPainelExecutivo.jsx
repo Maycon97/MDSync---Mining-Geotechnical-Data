@@ -1190,7 +1190,7 @@ export const ChamadosPainelExecutivo = ({ onNavigateTab, onOpenNewTicket, onOpen
 
       {/* CORPO PRINCIPAL COM CONTEÚDO CONDICIONAL */}
       {activeTabSubView === 'dashboard' && (
-        <div style={{
+        <div className="chamados-executivo-grid" style={{
           display: 'grid',
           gridTemplateColumns: 'minmax(300px, 1fr) minmax(320px, 1.15fr) minmax(380px, 1.35fr)',
           gap: '1rem',
