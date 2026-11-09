@@ -40,6 +40,7 @@ const LegalCenterModal = lazy(() => import('./components/LegalCenterModal').then
 const AnomaliasInspecoesTab = lazy(() => import('./components/AnomaliasInspecoesTab').then(m => ({ default: m.AnomaliasInspecoesTab })));
 const GestaoDocumentalTab = lazy(() => import('./components/GestaoDocumentalTab').then(m => ({ default: m.GestaoDocumentalTab })));
 const CentralComunicacaoTab = lazy(() => import('./components/CentralComunicacaoTab').then(m => ({ default: m.CentralComunicacaoTab })));
+const EmpreendimentosTab = lazy(() => import('./components/EmpreendimentosTab').then(m => ({ default: m.EmpreendimentosTab })));
 const EstruturasEmpreendimentoTab = lazy(() => import('./components/EstruturasEmpreendimentoTab').then(m => ({ default: m.EstruturasEmpreendimentoTab })));
 const MobileInspectionView = lazy(() => import('./components/MobileInspectionView').then(m => ({ default: m.MobileInspectionView })));
 const EngenhoSecoBlockModelViewer = lazy(() => import('./components/EngenhoSecoBlockModelViewer').then(m => ({ default: m.EngenhoSecoBlockModelViewer })));
@@ -406,6 +407,10 @@ export function App() {
           <ProfileSettingsTab onNavigateTab={handleNavigateTab} />
         )}
 
+        {activeTab === 'empreendimentos' && (
+          <EmpreendimentosTab onNavigateTab={handleNavigateTab} />
+        )}
+
         {activeTab === 'estruturas_empreendimento' && (
           <EstruturasEmpreendimentoTab onNavigateTab={handleNavigateTab} />
         )}
@@ -426,7 +431,7 @@ export function App() {
           'lotes_relatorios', 'clientes', 'contratos', 'mapa', 'campo',
           'fila_sync', 'anomalias_inspecoes', 'checklist', 'chamados', 'piezometria',
           'vazao', 'pluviometria', 'documentos', 'comunicacao', 'laudo', 'historico', 'ia',
-          'cadastro', 'configuracoes_perfil', 'estruturas_empreendimento', 'mobile_inspecao',
+          'cadastro', 'configuracoes_perfil', 'empreendimentos', 'estruturas_empreendimento', 'mobile_inspecao',
           'engenho_seco_modelo'
         ].includes(activeTab) && (
           <div className="card-panel" style={{ padding: '2.5rem', textAlign: 'center' }}>

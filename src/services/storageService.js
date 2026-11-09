@@ -38,6 +38,8 @@ const STORAGE_KEYS = {
   RECORD_ID_TEMPLATE: 'mdsync_record_id_template',
   INSPECTION_RULES: 'mdsync_inspection_rules',
   ESTRUTURAS_EMPREENDIMENTO: 'mdsync_estruturas_empreendimento',
+  EMPREENDIMENTOS_CADASTRO: 'mdsync_empreendimentos_cadastro',
+  ACTIVE_EMPREENDIMENTO: 'mdsync_active_empreendimento',
   IMPORTACOES_PCMI: 'mdsync_importacoes_pcmi'
 };
 
@@ -2157,6 +2159,187 @@ export const storageService = {
       return true;
     } catch (e) {
       console.error('Erro ao excluir estrutura:', e);
+      return false;
+    }
+  },
+
+  // ============================================================
+  // GESTÃO CORPORATIVA DE EMPREENDIMENTOS (SAAS MULTI-SITE)
+  // ============================================================
+  getEmpreendimentos() {
+    const defaultEmpreendimentos = [
+      {
+        id: 'EMP-ITAMINAS',
+        codigo: 'ITM-01',
+        nome: 'Complexo Minerário Itaminas',
+        razaoSocial: 'Itaminas Mineração S/A',
+        cnpj: '17.214.288/0001-38',
+        processoAnm: '830.123/1982',
+        sigla: 'ITAMINAS',
+        substanciaMineral: 'Minério de Ferro (Hematita e Itabirito)',
+        municipio: 'Sarzedo',
+        uf: 'MG',
+        baciaHidrografica: 'Bacia do Rio Paraopeba',
+        faseOperacional: 'Em Operação Regular',
+        statusOperacional: 'Ativo',
+        coordenadas: {
+          lat: -20.088788,
+          lon: -44.092452,
+          fusoUtm: '23S',
+          datum: 'SIRGAS 2000',
+          easting: 594830,
+          northing: 7778640
+        },
+        responsavelTecnico: {
+          nome: 'Maycon Douglas M.D. Nascimento',
+          titulo: 'Engenheiro Geotécnico Responsável (RT)',
+          crea: 'CREA-MG 214.892/D',
+          art: 'ART-GEOTEC-2026-0988',
+          email: 'maycon.nascimento@itaminas.com.br',
+          telefone: '(31) 3577-9000'
+        },
+        licenciamento: {
+          orgaoAmbiental: 'FEAM & SUPRAM Central',
+          licencaOperacao: 'LO nº 042/2022',
+          validadeLo: '2028-12-31',
+          statusDceGeral: '100% Conforme (PNSB)',
+          paebmProtocolado: true,
+          dataUltimoSimulado: '2026-05-18'
+        },
+        descricao: 'Complexo minerário de lavra a céu aberto, plantas de beneficiamento e parque de estruturas geotécnicas monitoradas conforme a Resolução ANM nº 95/2022.',
+        estruturasCount: 9,
+        ativo: true,
+        dataCadastro: '2024-01-15'
+      }
+    ];
+
+    try {
+      if (typeof window !== 'undefined' && typeof localStorage !== 'undefined') {
+        const data = localStorage.getItem(STORAGE_KEYS.EMPREENDIMENTOS_CADASTRO);
+        if (data) {
+          const parsed = JSON.parse(data);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            return parsed;
+          }
+        }
+      }
+      return defaultEmpreendimentos;
+    } catch (e) {
+      console.error('Erro ao recuperar empreendimentos:', e);
+      return defaultEmpreendimentos;
+    }
+  },
+
+  getActiveEmpreendimento() {
+    try {
+      const list = this.getEmpreendimentos();
+      const activeId = typeof localStorage !== 'undefined' 
+        ? localStorage.getItem(STORAGE_KEYS.ACTIVE_EMPREENDIMENTO)
+        : null;
+      if (activeId) {
+        const found = list.find(e => e.id === activeId || e.sigla === activeId);
+        if (found) return found;
+      }
+      return list[0] || null;
+    } catch (e) {
+      return this.getEmpreendimentos()[0] || null;
+    }
+  },
+
+  setActiveEmpreendimento(id) {
+    try {
+      if (typeof localStorage !== 'undefined') {
+        localStorage.setItem(STORAGE_KEYS.ACTIVE_EMPREENDIMENTO, id);
+      }
+      window.dispatchEvent(new CustomEvent('mdsync:active-empreendimento-changed', { detail: id }));
+      return true;
+    } catch (e) {
+      return false;
+    }
+  },
+
+  saveEmpreendimento(empData) {
+    try {
+      const list = [...this.getEmpreendimentos()];
+      const cleanSigla = (empData.sigla || 'EMP').toUpperCase().trim();
+      const cleanId = empData.id || `EMP-${cleanSigla}-${Date.now().toString(36).toUpperCase()}`;
+      const lat = (empData.lat !== undefined && empData.lat !== '' && !isNaN(Number(empData.lat)))
+        ? Number(empData.lat)
+        : (empData.coordenadas?.lat !== undefined ? Number(empData.coordenadas.lat) : undefined);
+      const lon = (empData.lon !== undefined && empData.lon !== '' && !isNaN(Number(empData.lon)))
+        ? Number(empData.lon)
+        : (empData.coordenadas?.lon !== undefined ? Number(empData.coordenadas.lon) : undefined);
+
+      const normalized = {
+        ...empData,
+        id: cleanId,
+        codigo: empData.codigo || cleanSigla,
+        nome: (empData.nome || 'Novo Empreendimento').trim(),
+        razaoSocial: (empData.razaoSocial || empData.nome || '').trim(),
+        cnpj: empData.cnpj || '',
+        processoAnm: empData.processoAnm || '',
+        sigla: cleanSigla,
+        substanciaMineral: empData.substanciaMineral || 'Minério de Ferro',
+        municipio: empData.municipio || 'Sarzedo',
+        uf: empData.uf || 'MG',
+        baciaHidrografica: empData.baciaHidrografica || 'Bacia do Rio Paraopeba',
+        faseOperacional: empData.faseOperacional || 'Em Operação Regular',
+        statusOperacional: empData.statusOperacional || 'Ativo',
+        coordenadas: (lat !== undefined && lon !== undefined) ? {
+          lat,
+          lon,
+          fusoUtm: '23S',
+          datum: 'SIRGAS 2000'
+        } : (empData.coordenadas || null),
+        responsavelTecnico: {
+          nome: empData.responsavelTecnico?.nome || empData.rtNome || 'Eng. Responsável',
+          titulo: empData.responsavelTecnico?.titulo || 'Engenheiro Geotécnico Responsável',
+          crea: empData.responsavelTecnico?.crea || empData.rtCrea || '',
+          art: empData.responsavelTecnico?.art || empData.rtArt || '',
+          email: empData.responsavelTecnico?.email || empData.rtEmail || '',
+          telefone: empData.responsavelTecnico?.telefone || empData.rtTelefone || ''
+        },
+        licenciamento: {
+          orgaoAmbiental: empData.licenciamento?.orgaoAmbiental || empData.orgaoAmbiental || 'ANM & FEAM',
+          licencaOperacao: empData.licenciamento?.licencaOperacao || empData.licencaOperacao || '',
+          validadeLo: empData.licenciamento?.validadeLo || empData.validadeLo || '',
+          statusDceGeral: empData.licenciamento?.statusDceGeral || 'Conforme PNSB',
+          paebmProtocolado: empData.licenciamento?.paebmProtocolado ?? true
+        },
+        descricao: empData.descricao || '',
+        estruturasCount: empData.estruturasCount ?? 0,
+        ativo: empData.ativo ?? true,
+        dataCadastro: empData.dataCadastro || new Date().toISOString().split('T')[0]
+      };
+
+      const idx = list.findIndex(e => e.id === cleanId || (e.sigla && e.sigla.toUpperCase() === cleanSigla));
+      if (idx !== -1) {
+        list[idx] = { ...list[idx], ...normalized };
+      } else {
+        list.push(normalized);
+      }
+
+      localStorage.setItem(STORAGE_KEYS.EMPREENDIMENTOS_CADASTRO, JSON.stringify(list));
+      window.dispatchEvent(new CustomEvent('mdsync:empreendimentos-changed', { detail: list }));
+      return normalized;
+    } catch (e) {
+      console.error('Erro ao salvar empreendimento:', e);
+      return null;
+    }
+  },
+
+  deleteEmpreendimento(id) {
+    try {
+      const list = this.getEmpreendimentos();
+      if (list.length <= 1) {
+        throw new Error('Não é permitido excluir o único empreendimento cadastrado.');
+      }
+      const updated = list.filter(e => e.id !== id && e.sigla !== id);
+      localStorage.setItem(STORAGE_KEYS.EMPREENDIMENTOS_CADASTRO, JSON.stringify(updated));
+      window.dispatchEvent(new CustomEvent('mdsync:empreendimentos-changed', { detail: updated }));
+      return true;
+    } catch (e) {
+      console.error('Erro ao excluir empreendimento:', e);
       return false;
     }
   }

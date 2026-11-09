@@ -15,6 +15,7 @@ const TAB_TITLES = {
   anomalias_inspecoes: 'Anomalias & ISR',
   campo: 'Coleta de Campo (Inspect)',
   mobile_inspecao: 'Inspeção de Campo',
+  empreendimentos: 'Gestão de Empreendimentos',
   estruturas_empreendimento: 'Estruturas do Empreendimento',
   engenho_seco_modelo: 'Modelo 3D (Engenho Seco)',
   coletas: 'Coletas de Campo',

@@ -48,7 +48,6 @@ import { MapInspectionDetailPanel } from './MapInspectionDetailPanel';
 import { MapFloatingWidget } from './MapFloatingWidget';
 import { RecordIdTemplateModal } from './RecordIdTemplateModal';
 import { InspectionSettingsModal } from './InspectionSettingsModal';
-import { SysdamEmpreendimentosPanel } from './SysdamEmpreendimentosPanel';
 import { storageService } from '../services/storageService';
 import { ENGENHO_SECO_SECTORS } from '../data/engenhoSecoBlockModelData';
 import { EngenhoSecoBlockModelViewer } from './EngenhoSecoBlockModelViewer';
@@ -171,8 +170,6 @@ export const MapTab = ({
   const [selectedEstrutura, setSelectedEstrutura] = useState(() => {
     return estruturas.find(e => e.id === activeStructureId || e.sigla === activeStructureId) || estruturas[0] || null;
   });
-  const [isSiderCollapsed, setIsSiderCollapsed] = useState(true);
-  const [isSiderFlipped, setIsSiderFlipped] = useState(false);
   const [isMapPresetModified, setIsMapPresetModified] = useState(false);
   const [copiedCoords, setCopiedCoords] = useState(false);
   const structureTooltipsRef = useRef([]);
@@ -1566,93 +1563,12 @@ export const MapTab = ({
       )}
 
       {/* ========================================================
-          Sider Flutuante SysDam: Empreendimentos, 3D Flip Card & Módulos
-         ======================================================== */}
-      <SysdamEmpreendimentosPanel
-        estruturas={estruturas}
-        selectedEstrutura={selectedEstrutura}
-        onSelectEstrutura={(est) => {
-          setSelectedEstrutura(est);
-          if (est?.id || est?.sigla) {
-            handleSelectStructure(est.id || est.sigla);
-          }
-        }}
-        onFocusStructure={(est) => {
-          if (est?.id || est?.sigla) {
-            handleSelectStructure(est.id || est.sigla);
-          }
-        }}
-        onOpenGeomReport={() => setBlockModelModalOpen(true)}
-        onNavigateTab={onNavigateTab}
-        instruments={instruments}
-        anomalias={anomaliasGeotecnicas}
-        fluigTickets={fluigTickets}
-        isCollapsed={isSiderCollapsed}
-        onToggleCollapse={() => setIsSiderCollapsed(prev => !prev)}
-        isFlipped={isSiderFlipped}
-        setIsFlipped={setIsSiderFlipped}
-        onFlipChange={(flipped) => setIsSiderFlipped(flipped)}
-        onNavigateModule={(modId, est) => {
-          if (setSystemToast) {
-            setSystemToast({
-              message: `Abrindo módulo [${modId}] da estrutura ${est?.nome || ''}...`,
-              type: 'info'
-            });
-          }
-          const customEvent = new CustomEvent('mdsync:navigate-module', {
-            detail: { moduleId: modId, estrutura: est }
-          });
-          window.dispatchEvent(customEvent);
-          if (onNavigateTab) {
-            onNavigateTab(modId, { structureId: est?.id, estrutura: est?.nome });
-          }
-        }}
-      />
-
-      {/* ========================================================
           BARRA SUPERIOR DO MAPA (HUD TOPBAR INTEGRADA ANTI-COLISÃO)
          ======================================================== */}
       <div className="map-hud-topbar">
         {/* 1. TOP-LEFT HUD: Botões Estratégicos de Abertura de Conteúdos */}
         <div className="map-hud-top-left">
-          {/* Botão 1: Empreendimentos & Estruturas (Abre painel lateral 3D) */}
-          <button
-            onClick={() => setIsSiderCollapsed(prev => !prev)}
-            className={`btn-subtle map-hud-trigger ${!isSiderCollapsed ? 'active-glow' : ''}`}
-            style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '5px',
-              padding: '0.3rem 0.65rem',
-              borderRadius: '10px',
-              backgroundColor: !isSiderCollapsed ? 'rgba(56, 189, 248, 0.24)' : 'rgba(15, 23, 42, 0.85)',
-              color: !isSiderCollapsed ? '#38bdf8' : '#e2e8f0',
-              border: !isSiderCollapsed ? '1px solid #38bdf8' : '1px solid rgba(255, 255, 255, 0.12)',
-              fontSize: '0.74rem',
-              fontWeight: 700,
-              cursor: 'pointer',
-              boxShadow: '0 4px 14px rgba(0, 0, 0, 0.4)',
-              backdropFilter: 'blur(16px)',
-              transition: 'all 0.2s ease',
-              whiteSpace: 'nowrap'
-            }}
-          title="Abrir Painel de Empreendimentos e Estruturas"
-        >
-          <Building2 size={15} style={{ color: '#38bdf8' }} />
-          <span>Empreendimentos</span>
-          <span style={{
-            backgroundColor: 'rgba(56, 189, 248, 0.25)',
-            color: '#38bdf8',
-            padding: '1px 6px',
-            borderRadius: '999px',
-            fontSize: '0.65rem',
-            fontWeight: 800
-          }}>
-            {estruturas.length}
-          </span>
-        </button>
-
-        {/* Botão 2: Painel Executivo Oficial de SUMPs */}
+          {/* Botão 1: Painel Executivo Oficial de SUMPs */}
         <button
           onClick={() => setShowSumpsPanel(prev => !prev)}
           className={`btn-subtle map-hud-trigger ${showSumpsPanel ? 'active-glow' : ''}`}

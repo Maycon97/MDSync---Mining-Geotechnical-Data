@@ -43,7 +43,8 @@ import {
   ShieldAlert,
   ShieldCheck,
   FolderArchive,
-  Radio
+  Radio,
+  Landmark
 } from 'lucide-react';
 
 export const SideDrawer = ({ 
@@ -156,6 +157,15 @@ export const SideDrawer = ({
     {
       category: 'Monitoramento & Multiperspectiva',
       items: [
+        {
+          id: 'empreendimentos',
+          title: 'Empreendimentos & Complexos',
+          icon: Landmark,
+          type: 'tab',
+          tabId: 'empreendimentos',
+          badge: 'SaaS',
+          badgeColor: '#0284c7'
+        },
         {
           id: 'estruturas_empreendimento',
           title: 'Estruturas do Empreendimento',
