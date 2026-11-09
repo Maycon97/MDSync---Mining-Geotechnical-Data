@@ -1791,6 +1791,22 @@ export const storageService = {
     }
   },
 
+  // Retorna histórico de lotes despachados para ingestão corporativa
+  getStagedBatchesHistory() {
+    try {
+      if (typeof window !== 'undefined' && typeof localStorage !== 'undefined') {
+        const history = localStorage.getItem('mdsync_staged_batches_history');
+        if (history) {
+          const parsed = JSON.parse(history);
+          return Array.isArray(parsed) ? parsed : [];
+        }
+      }
+    } catch (e) {
+      console.warn('Erro ao carregar histórico de lotes despachados:', e);
+    }
+    return [];
+  },
+
   // ============================================================
   // TEMPLATE DO IDENTIFICADOR DO REGISTRO (INSPIRADO NO SYSDAM)
   // ============================================================

@@ -32,6 +32,11 @@ export const SyncQueueTab = ({ onNavigateTab }) => {
 
   const [syncing, setSyncing] = useState(false);
   const [syncSuccess, setSyncSuccess] = useState(null);
+  const [stagedBatches, setStagedBatches] = useState(() => {
+    return typeof storageService?.getStagedBatchesHistory === 'function'
+      ? storageService.getStagedBatchesHistory()
+      : [];
+  });
 
   const handleSyncNow = async () => {
     if (!isOnline) {
@@ -533,6 +538,9 @@ export const SyncQueueTab = ({ onNavigateTab }) => {
               onClick={() => {
                 const pkg = storageService.exportCorporateStagingPackage();
                 storageService.downloadCorporateStagingPackage(pkg);
+                if (typeof storageService?.getStagedBatchesHistory === 'function') {
+                  setStagedBatches(storageService.getStagedBatchesHistory());
+                }
                 alert(`Lote ${pkg.batchId} gerado com sucesso!\n\nArquivos prontos para integração:\n- ${pkg.jsonFilename}\n- ${pkg.csvFilename}\n\nDestino Alvo: C:\\Users\\maycon.nascimento\\ITAMINAS\\SPLO - General\\03) Geotecnia\\01) PCMI\\02) Monitoramentos\\00) Leituras\\MDSync_Integracao_Campo\\01_Entrada_Novas_Leituras`);
               }}
               className="btn-primary"
@@ -585,13 +593,13 @@ export const SyncQueueTab = ({ onNavigateTab }) => {
           <div style={{ fontSize: '0.82rem', fontWeight: 700, color: 'var(--text-main)', marginBottom: '0.65rem' }}>
             Lotes Recentes Prontos para Ingestão:
           </div>
-          {storageService.getStagedBatchesHistory().length === 0 ? (
+          {stagedBatches.length === 0 ? (
             <div style={{ fontSize: '0.76rem', color: 'var(--text-muted)', fontStyle: 'italic', padding: '0.5rem 0' }}>
               Nenhum lote despachado recentemente. Clique em "Exportar Pacote para ITAMINAS" para gerar a primeira remessa.
             </div>
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-              {storageService.getStagedBatchesHistory().slice(0, 5).map(b => (
+              {stagedBatches.slice(0, 5).map(b => (
                 <div key={b.batchId} style={{
                   display: 'flex',
                   alignItems: 'center',

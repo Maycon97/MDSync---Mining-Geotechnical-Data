@@ -5,6 +5,7 @@ import { describe, it, expect, beforeEach, beforeAll, afterAll, vi } from 'vites
 import { storageService } from '../services/storageService';
 import { indexedDBStorage } from '../services/indexedDBStorage';
 import { ImportacoesTab } from '../components/ImportacoesTab';
+import { SyncQueueTab } from '../components/SyncQueueTab';
 import { GeotechDataProvider } from '../context/GeotechDataContext';
 import { AuthProvider } from '../context/AuthContext';
 
@@ -173,5 +174,36 @@ describe('Offline Synchronization & Connection Tunnels Suite', () => {
     expect(text).toContain('Entradas & Saídas de Telemetria e Coletas');
     expect(text).toContain('Baixar Modelo (.csv)');
     expect(text).toContain('Exportar Backup Master (.json)');
+  });
+
+  it('storageService.getStagedBatchesHistory returns empty array initially and returns records after export', () => {
+    expect(storageService.getStagedBatchesHistory()).toEqual([]);
+
+    const pkg = storageService.exportCorporateStagingPackage([{
+      type: 'reading',
+      id: 'PZ-01',
+      valor: 820.5
+    }]);
+
+    expect(pkg.batchId).toBeDefined();
+    const history = storageService.getStagedBatchesHistory();
+    expect(history.length).toBe(1);
+    expect(history[0].batchId).toBe(pkg.batchId);
+  });
+
+  it('SyncQueueTab mounts cleanly without throwing getStagedBatchesHistory is not a function', async () => {
+    await act(async () => {
+      root.render(
+        <AuthProvider>
+          <GeotechDataProvider>
+            <SyncQueueTab />
+          </GeotechDataProvider>
+        </AuthProvider>
+      );
+    });
+
+    const text = container.textContent;
+    expect(text).toContain('Fila de Sincronização');
+    expect(text).toContain('Lotes Recentes Prontos para Ingestão');
   });
 });
