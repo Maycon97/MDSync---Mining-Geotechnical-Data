@@ -138,7 +138,7 @@ export const MapTab = ({
   const [blockModelModalOpen, setBlockModelModalOpen] = useState(false);
 
   const [useClustering, setUseClustering] = useState(true);
-  const [showPerimeters, setShowPerimeters] = useState(true);
+  const [showPerimeters, setShowPerimeters] = useState(false);
   const [showTickets, setShowTickets] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [cursorCoords, setCursorCoords] = useState(null);
@@ -1965,38 +1965,6 @@ export const MapTab = ({
             title="Esri World Imagery"
           >
             Esri
-          </button>
-          <button
-            onClick={() => setMapType('topo')}
-            style={{
-              padding: '0.25rem 0.55rem',
-              fontSize: '0.72rem',
-              fontWeight: 600,
-              borderRadius: '6px',
-              border: 'none',
-              backgroundColor: mapType === 'topo' ? '#0094ea' : 'transparent',
-              color: mapType === 'topo' ? '#ffffff' : '#94a3b8',
-              cursor: 'pointer'
-            }}
-            title="Relevo e Curvas Topográficas"
-          >
-            Relevo
-          </button>
-          <button
-            onClick={() => setMapType('dark')}
-            style={{
-              padding: '0.25rem 0.55rem',
-              fontSize: '0.72rem',
-              fontWeight: 600,
-              borderRadius: '6px',
-              border: 'none',
-              backgroundColor: mapType === 'dark' ? '#0094ea' : 'transparent',
-              color: mapType === 'dark' ? '#ffffff' : '#94a3b8',
-              cursor: 'pointer'
-            }}
-            title="Modo Escuro Geotécnico"
-          >
-            Dark
           </button>
         </div>
 

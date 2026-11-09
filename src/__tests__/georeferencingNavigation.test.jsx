@@ -158,4 +158,36 @@ describe('Ver no Georeferenciamento - Contextual Navigation Verification', () =>
     expect(container).toBeDefined();
     expect(mockClear).toHaveBeenCalled();
   });
+
+  it('renders only Satélite HD and Esri base map buttons, and initializes structure perimeters layer as unchecked (Ocultos)', async () => {
+    // Unmount any previous component to guarantee a fresh instance
+    act(() => root.unmount());
+    root = createRoot(container);
+
+    await act(async () => {
+      root.render(
+        <GeotechDataProvider>
+          <MapTab />
+        </GeotechDataProvider>
+      );
+    });
+
+    const text = container.textContent;
+    // Map base buttons
+    expect(text).toContain('Satélite HD');
+    expect(text).toContain('Esri');
+    expect(text).not.toContain('Relevo');
+    expect(text).not.toContain('Dark');
+
+    // Open layers popover
+    const layersBtn = Array.from(container.querySelectorAll('button')).find(b => b.textContent?.includes('Camadas'));
+    expect(layersBtn).toBeDefined();
+    await act(async () => {
+      layersBtn.click();
+    });
+
+    // Perimeters default to unchecked (Ocultos)
+    expect(container.textContent).toContain('Ocultos');
+    expect(container.textContent).not.toContain('Visíveis (8)');
+  });
 });
