@@ -7,7 +7,11 @@ import 'leaflet.markercluster/dist/MarkerCluster.Default.css';
 import 'leaflet.markercluster';
 
 import './index.css';
+import { initSentry } from './services/sentry';
 import { AuthProvider } from './context/AuthContext';
+
+// Inicializar Sentry (Monitoramento de Erros e Performance)
+initSentry();
 import { GeotechDataProvider } from './context/GeotechDataContext';
 import { App } from './App';
 
