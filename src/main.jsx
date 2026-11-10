@@ -7,6 +7,8 @@ import 'leaflet.markercluster/dist/MarkerCluster.Default.css';
 import 'leaflet.markercluster';
 
 import './index.css';
+import './liquid-glass.css';
+import './liquid-glass.js';
 import { initSentry } from './services/sentry';
 import { AuthProvider } from './context/AuthContext';
 
