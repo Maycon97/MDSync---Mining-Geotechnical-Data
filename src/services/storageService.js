@@ -9,6 +9,7 @@ import { resolveStructureDefaultColor } from '../utils/qgisPinFormatter';
 
 const STORAGE_KEYS = {
   THEME: 'mdsync_theme',
+  LIQUID_GLASS: 'mdsync_liquid_glass',
   ACCENT_COLOR: 'mdsync_accent_color',
   LANGUAGE: 'mdsync_language',
   GEOTECH_UNITS: 'mdsync_geotech_units',
@@ -60,6 +61,23 @@ export const storageService = {
       if (meta) meta.content = theme === 'contrast' ? 'dark' : theme;
     } catch (e) {
       console.error('Erro ao salvar tema:', e);
+    }
+  },
+
+  // Liquid Glass (vidro líquido): padrão ativado; o usuário pode desligar nas Configurações
+  getLiquidGlass() {
+    try {
+      return localStorage.getItem(STORAGE_KEYS.LIQUID_GLASS) !== 'off';
+    } catch {
+      return true;
+    }
+  },
+  setLiquidGlass(enabled) {
+    try {
+      localStorage.setItem(STORAGE_KEYS.LIQUID_GLASS, enabled ? 'on' : 'off');
+      document.documentElement.setAttribute('data-liquid-glass', enabled ? 'on' : 'off');
+    } catch (e) {
+      console.error('Erro ao salvar Liquid Glass:', e);
     }
   },
 

@@ -1,76 +1,88 @@
 /* Liquid Glass — MDSync
-   Em src/main.jsx, importe POR ÚLTIMO (depois do index.css):
-     import './index.css';
-     import './liquid-glass.css';
-   Não mexe em cores nem fundos dos temas; só acrescenta refração,
-   translucidez nos modais e uma borda de luz no topo. */
+   Liga/desliga pelo atributo <html data-liquid-glass="on|off">
+   (Configurações → Tema & Campo → Liquid Glass). Com "off", nada abaixo se aplica
+   e o app volta exatamente ao visual anterior. */
 
 #lg-svg { position: absolute; width: 0; height: 0; overflow: hidden; pointer-events: none; }
 
-:root                      { --lg-edge: rgba(255, 255, 255, .28); --lg-modal-mix: 62%; }
-:root[data-theme='light']  { --lg-edge: rgba(255, 255, 255, .95); --lg-modal-mix: 80%; }
+:root                      { --lg-edge: rgba(255, 255, 255, .28); --lg-modal-mix: 62%; --lg-bar-mix: 72%; }
+:root[data-theme='light']  { --lg-edge: rgba(255, 255, 255, .95); --lg-modal-mix: 80%; --lg-bar-mix: 82%; }
 
-/* ---------- 1. MODAIS (todos os navegadores) ----------
-   O .modal-backdrop com blur impede o modal de enxergar a página,
-   então o desfoque passa para o próprio modal. */
-.modal-backdrop {
+/* ---------- 1. MODAIS E GAVETA LATERAL (todos os navegadores) ----------
+   O desfoque do overlay impedia o painel de enxergar a página; ele passa para o painel. */
+:root:not([data-liquid-glass='off']):not([data-theme='contrast']) .modal-backdrop {
   background-color: rgba(2, 6, 23, .55);
   -webkit-backdrop-filter: none;
   backdrop-filter: none;
 }
-:root:not([data-theme='contrast']) :is(.modal-content, .modal-dialog-panel) {
+:root:not([data-liquid-glass='off']):not([data-theme='contrast']) .drawer-overlay {
+  background-color: rgba(2, 6, 23, .38);
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+:root:not([data-liquid-glass='off']):not([data-theme='contrast']) :is(.modal-content, .modal-dialog-panel) {
   background-color: color-mix(in srgb, var(--bg-surface) var(--lg-modal-mix), transparent);
   -webkit-backdrop-filter: blur(20px) saturate(1.5);
   backdrop-filter: blur(20px) saturate(1.5);
   border-top-color: var(--lg-edge);
 }
 
-/* ---------- 2. BORDA DE LUZ no topo dos painéis flutuantes ---------- */
-:root:not([data-theme='contrast']) :is(.glass-panel, .sysdam-map-topbar) {
+/* ---------- 2. BARRA INFERIOR (app), AVISOS E BORDA DE LUZ ---------- */
+:root:not([data-liquid-glass='off']):not([data-theme='contrast']) .mobile-bottom-bar {
+  background-color: color-mix(in srgb, var(--bg-surface) var(--lg-bar-mix), transparent);
+  -webkit-backdrop-filter: blur(18px) saturate(1.6);
+  backdrop-filter: blur(18px) saturate(1.6);
+  border-top-color: var(--lg-edge);
+}
+:root:not([data-liquid-glass='off']):not([data-theme='contrast']) .nexus-toast {
+  -webkit-backdrop-filter: blur(14px) saturate(1.5);
+  backdrop-filter: blur(14px) saturate(1.5);
+  border-top-color: var(--lg-edge);
+}
+:root:not([data-liquid-glass='off']):not([data-theme='contrast']) :is(.glass-panel, .sysdam-map-topbar) {
   border-top-color: var(--lg-edge);
 }
 
-/* ---------- 3. REFRAÇÃO (só Chromium com mouse: Chrome/Edge no desktop) ----------
-   O liquid-glass.js marca <html data-lg-refract> quando o navegador suporta.
-   Para ligar também no celular/app Android, apague a linha do @media
-   (e o } correspondente) — teste antes: o mapa pode perder fluidez. */
+/* ---------- 3. REFRAÇÃO (Chromium: Chrome, Edge e WebView do Android) ----------
+   O liquid-glass.js marca <html data-lg-refract> quando o navegador suporta. */
+
+/* 3a. Painéis que abrem sobre fundo estático: todos os aparelhos */
+:root[data-lg-refract]:not([data-liquid-glass='off']):not([data-theme='contrast']) :is(.modal-content, .modal-dialog-panel) {
+  -webkit-backdrop-filter: url(#lg) blur(20px) saturate(1.5);
+  backdrop-filter: url(#lg) blur(20px) saturate(1.5);
+}
+:root[data-lg-refract]:not([data-liquid-glass='off']):not([data-theme='contrast']) :is(.drawer-clean-panel, .drawer-3d-panel) {
+  -webkit-backdrop-filter: url(#lg) blur(24px) saturate(180%);
+  backdrop-filter: url(#lg) blur(24px) saturate(180%);
+}
+
+/* 3b. Painéis flutuantes sobre o mapa: só com mouse (desktop).
+   No celular o mapa se move o tempo todo e a refração pesaria; ficam com o vidro fosco. */
 @media (hover: hover) and (pointer: fine) {
-  :root[data-lg-refract]:not([data-theme='contrast']) .glass-panel {
+  :root[data-lg-refract]:not([data-liquid-glass='off']):not([data-theme='contrast']) .glass-panel {
     -webkit-backdrop-filter: url(#lg) blur(12px) saturate(1.5);
     backdrop-filter: url(#lg) blur(12px) saturate(1.5);
   }
-  :root[data-lg-refract]:not([data-theme='contrast']) .sysdam-map-topbar {
+  :root[data-lg-refract]:not([data-liquid-glass='off']):not([data-theme='contrast']) .sysdam-map-topbar {
     -webkit-backdrop-filter: url(#lg) blur(16px) saturate(1.5);
     backdrop-filter: url(#lg) blur(16px) saturate(1.5);
   }
-  :root[data-lg-refract]:not([data-theme='contrast']) :is(.drawer-clean-panel, .drawer-3d-panel) {
-    -webkit-backdrop-filter: url(#lg) blur(24px) saturate(180%);
-    backdrop-filter: url(#lg) blur(24px) saturate(180%);
-  }
-  :root[data-lg-refract]:not([data-theme='contrast']) :is(.modal-content, .modal-dialog-panel) {
-    -webkit-backdrop-filter: url(#lg) blur(20px) saturate(1.5);
-    backdrop-filter: url(#lg) blur(20px) saturate(1.5);
-  }
   /* esses dois usam !important no index.css */
-  :root[data-lg-refract]:not([data-theme='contrast']) .btn-menu-floating,
-  :root[data-lg-refract]:not([data-theme='contrast']) .chamados-executive-popup .leaflet-popup-content-wrapper {
+  :root[data-lg-refract]:not([data-liquid-glass='off']):not([data-theme='contrast']) .btn-menu-floating,
+  :root[data-lg-refract]:not([data-liquid-glass='off']):not([data-theme='contrast']) .chamados-executive-popup .leaflet-popup-content-wrapper {
     -webkit-backdrop-filter: url(#lg) blur(12px) saturate(1.4) !important;
     backdrop-filter: url(#lg) blur(12px) saturate(1.4) !important;
   }
 }
 
 /* ---------- 4. ACESSIBILIDADE ---------- */
-/* Tema de alto contraste: sem translucidez nos modais */
-:root[data-theme='contrast'] :is(.modal-content, .modal-dialog-panel) {
-  background-color: var(--bg-surface);
-}
-/* Usuário pediu menos transparência: modais sólidos, sem desfoque */
+/* Usuário pediu menos transparência no sistema: modais sólidos, sem desfoque */
 @media (prefers-reduced-transparency: reduce) {
-  :root :is(.modal-content, .modal-dialog-panel) {
+  :root :is(.modal-content, .modal-dialog-panel, .mobile-bottom-bar) {
     background-color: var(--bg-surface) !important;
   }
   :root :is(.glass-panel, .sysdam-map-topbar, .drawer-clean-panel, .drawer-3d-panel,
-            .modal-content, .modal-dialog-panel) {
+            .modal-content, .modal-dialog-panel, .mobile-bottom-bar, .nexus-toast) {
     -webkit-backdrop-filter: none !important;
     backdrop-filter: none !important;
   }

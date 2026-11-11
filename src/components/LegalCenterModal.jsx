@@ -94,6 +94,7 @@ export const LegalCenterModal = ({ isOpen, onClose, initialTab = 'privacidade' }
     if (window.confirm('Tem certeza que deseja limpar seus dados locais de preferências e histórico de consentimento neste dispositivo? As leituras salvas na base corporativa permanecerão seguras conforme a legislação da ANM.')) {
       cookieConsentService.resetConsent();
       localStorage.removeItem('mdsync_theme');
+      localStorage.removeItem('mdsync_liquid_glass');
       setCookiePrefs(cookieConsentService.getPreferences());
       showToast('Dados locais e consentimento redefinidos com sucesso.');
     }

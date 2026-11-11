@@ -40,6 +40,7 @@ import {
   Download,
   Upload,
   Sparkles,
+  Droplets,
   Smartphone,
   Laptop,
   Radio,
@@ -95,6 +96,7 @@ export const ProfileSettingsTab = ({ onNavigateTab }) => {
   // 4. ESTADOS DE TEMA & ERGONOMIA
   // ==========================================
   const [currentTheme, setCurrentTheme] = useState(() => storageService.getTheme());
+  const [liquidGlassOn, setLiquidGlassOn] = useState(() => storageService.getLiquidGlass());
   const [accentColor, setAccentColorState] = useState(() => storageService.getAccentColor());
   const [density, setDensity] = useState('normal'); // 'normal' | 'comfortable'
 
@@ -313,6 +315,19 @@ export const ProfileSettingsTab = ({ onNavigateTab }) => {
       setSystemToast({
         type: 'info',
         message: `Tema alterado para ${themeName === 'contrast' ? 'Alto Contraste Solar' : themeName === 'light' ? 'Claro Executivo' : 'Escuro Geotécnico'}`
+      });
+    }
+  };
+
+  // Liga/desliga o efeito Liquid Glass (vidro líquido)
+  const handleLiquidGlassToggle = () => {
+    const next = !liquidGlassOn;
+    setLiquidGlassOn(next);
+    storageService.setLiquidGlass(next);
+    if (setSystemToast) {
+      setSystemToast({
+        type: 'info',
+        message: next ? 'Liquid Glass ativado.' : 'Liquid Glass desativado. O visual anterior foi restaurado.'
       });
     }
   };
@@ -1857,6 +1872,84 @@ Todas as alterações em cotas de alerta, limiares críticos e aprovações de l
                 );
               })}
             </div>
+          </div>
+
+          {/* Liquid Glass (vidro líquido) */}
+          <div className="card-panel" style={{
+            padding: '1.5rem',
+            borderRadius: '8px',
+            border: '1px solid var(--border-medium)',
+            backgroundColor: 'var(--bg-surface)'
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '1.25rem', borderBottom: '1px solid var(--border-subtle)', paddingBottom: '0.75rem' }}>
+              <Droplets size={20} style={{ color: 'var(--primary-accent)' }} />
+              <div>
+                <h3 style={{ fontSize: '1.05rem', fontWeight: 800, color: 'var(--text-main)', margin: 0 }}>
+                  Liquid Glass
+                </h3>
+                <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', margin: '2px 0 0 0' }}>
+                  Efeito de vidro líquido com refração e animação nos painéis, modais e barras
+                </p>
+              </div>
+            </div>
+
+            <button
+              type="button"
+              role="switch"
+              aria-checked={liquidGlassOn}
+              onClick={handleLiquidGlassToggle}
+              style={{
+                width: '100%',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                gap: '1rem',
+                padding: '0.85rem 1rem',
+                borderRadius: '6px',
+                border: liquidGlassOn ? '2px solid var(--primary-accent)' : '1px solid var(--border-subtle)',
+                backgroundColor: 'var(--bg-secondary)',
+                cursor: 'pointer',
+                textAlign: 'left',
+                transition: 'all 0.15s ease'
+              }}
+            >
+              <div>
+                <div style={{ fontSize: '0.85rem', fontWeight: 800, color: 'var(--text-main)' }}>
+                  Animação Liquid Glass
+                </div>
+                <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>
+                  Desative para economizar bateria ou se o mapa ficar lento neste aparelho.
+                </div>
+              </div>
+              <span
+                aria-hidden="true"
+                style={{
+                  position: 'relative',
+                  flexShrink: 0,
+                  width: '46px',
+                  height: '26px',
+                  borderRadius: '13px',
+                  backgroundColor: liquidGlassOn ? 'var(--primary-accent)' : 'var(--border-medium)',
+                  transition: 'background-color 0.2s ease'
+                }}
+              >
+                <span style={{
+                  position: 'absolute',
+                  top: '3px',
+                  left: liquidGlassOn ? '23px' : '3px',
+                  width: '20px',
+                  height: '20px',
+                  borderRadius: '50%',
+                  backgroundColor: '#ffffff',
+                  boxShadow: '0 1px 3px rgba(0,0,0,0.4)',
+                  transition: 'left 0.2s cubic-bezier(0.34, 1.56, 0.64, 1)'
+                }} />
+              </span>
+            </button>
+
+            <p style={{ fontSize: '0.7rem', color: 'var(--text-faint)', margin: '0.75rem 0 0 0' }}>
+              No tema Alto Contraste o efeito fica sempre desligado, para garantir a leitura sob luz solar.
+            </p>
           </div>
 
           {/* Cores de Acento & Densidade */}
