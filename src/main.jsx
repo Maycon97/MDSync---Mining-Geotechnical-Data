@@ -9,6 +9,7 @@ import 'leaflet.markercluster';
 import './index.css';
 import './liquid-glass.css';
 import './liquid-glass.js';
+import './ux-polish.css';
 import { initSentry } from './services/sentry';
 import { AuthProvider } from './context/AuthContext';
 

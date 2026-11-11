@@ -23,6 +23,7 @@ export const MobileBottomBar = ({
     {
       id: 'home',
       label: 'Início',
+      shortLabel: 'Início',
       icon: Home,
       isActive: activeTab === 'home',
       onClick: () => onNavigateTab('home')
@@ -30,6 +31,7 @@ export const MobileBottomBar = ({
     {
       id: 'dashboard',
       label: 'Dashboard',
+      shortLabel: 'Painel',
       icon: LayoutDashboard,
       isActive: activeTab === 'dashboard' || activeTab === 'analises',
       onClick: () => onNavigateTab('dashboard')
@@ -37,6 +39,7 @@ export const MobileBottomBar = ({
     {
       id: 'mapa',
       label: 'Georeferenciamento Espacial',
+      shortLabel: 'Mapa',
       icon: MapPin,
       isActive: activeTab === 'mapa',
       onClick: () => onNavigateTab('mapa')
@@ -44,6 +47,7 @@ export const MobileBottomBar = ({
     {
       id: 'mobile_inspecao',
       label: 'Inspeção',
+      shortLabel: 'Inspeção',
       icon: Smartphone,
       isActive: activeTab === 'mobile_inspecao' || activeTab === 'campo',
       badge: offlineCount > 0 ? offlineCount : null,
@@ -52,6 +56,7 @@ export const MobileBottomBar = ({
     {
       id: 'menu',
       label: 'Menu',
+      shortLabel: 'Menu',
       icon: Menu,
       isActive: false,
       onClick: onToggleDrawer
@@ -86,7 +91,7 @@ export const MobileBottomBar = ({
                 </span>
               )}
             </div>
-            <span>{item.label}</span>
+            <span>{item.shortLabel}</span>
           </button>
         );
       })}

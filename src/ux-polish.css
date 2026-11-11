@@ -1,0 +1,110 @@
+/* UX Polish — MDSync
+   Carregado por último em main.jsx, então vence index.css e liquid-glass.css
+   quando a especificidade empata. Não altera cores nem o tema. */
+
+:root {
+  --bottom-bar-h: 4.25rem;   /* altura da barra inferior no celular */
+  --tap-min: 44px;           /* alvo de toque mínimo (WCAG 2.5.5) */
+}
+
+/* ---------- 1. Conteúdo nunca fica escondido atrás da barra inferior ---------- */
+@media (max-width: 768px) {
+  main#main-content {
+    padding-bottom: calc(var(--bottom-bar-h) + var(--safe-bottom, 0px) + 1rem) !important;
+  }
+}
+
+/* ---------- 2. Barra inferior: legível, sem truncar, alvo grande ---------- */
+@media (max-width: 768px) {
+  .mobile-bottom-bar {
+    min-height: var(--bottom-bar-h);
+  }
+  .mobile-bottom-bar-btn {
+    min-height: 56px;
+    font-size: 0.72rem !important;
+    opacity: 1 !important;                     /* index.css deixava as inativas em 55% */
+    color: var(--text-main);
+    font-weight: 600;
+  }
+  .mobile-bottom-bar-btn:not(.active) {
+    color: var(--text-muted);
+  }
+  .mobile-bottom-bar-btn > span:last-child {
+    display: block;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    line-height: 1.1;
+  }
+  .mobile-bottom-bar-btn.active {
+    color: var(--primary-accent);
+    font-weight: 800;
+  }
+  .mobile-bottom-bar-btn.active .mobile-bottom-bar-icon-wrap {
+    transform: none !important;                /* o scale(1.2) empurrava o ícone para fora da área */
+  }
+}
+
+/* Altura base dos modais (dvh ignora a barra de endereço do navegador) */
+.modal-content {
+  max-height: 92vh;
+  max-height: 92dvh;
+}
+
+/* ---------- 3. Modais viram folha inferior no celular (alcance do polegar) ---------- */
+@media (max-width: 640px) {
+  .modal-backdrop {
+    align-items: flex-end !important;
+    padding: 0 !important;
+  }
+  .modal-content {
+    max-width: 100% !important;
+    max-height: 88vh;
+    max-height: 88dvh;
+    border-radius: 20px 20px 0 0 !important;
+    padding-bottom: calc(1rem + var(--safe-bottom, 0px)) !important;
+  }
+}
+/* Botão de fechar dos painéis com alvo de 44px */
+.modal-content button[aria-label*='echar'],
+.modal-content button[aria-label*='lose'],
+.modal-content button[title*='echar'] {
+  min-width: var(--tap-min);
+  min-height: var(--tap-min);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* ---------- 4. Alvos de toque em aparelhos touch ---------- */
+@media (pointer: coarse) {
+  .btn-primary,
+  .btn-secondary,
+  .modal-content button,
+  .drawer-clean-panel button {
+    min-height: var(--tap-min);
+  }
+  .btn-primary,
+  .btn-secondary {
+    font-size: 0.85rem !important;
+    padding: 0.6rem 0.9rem !important;
+  }
+}
+
+/* ---------- 5. Foco visível por teclado (sem afetar o clique do mouse) ---------- */
+:where(button, a, [role='button'], [role='tab'], input, select, textarea):focus-visible {
+  outline: 2px solid var(--primary-accent);
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+
+/* ---------- 6. Respeita quem reduz movimento ---------- */
+@media (prefers-reduced-motion: reduce) {
+  .mobile-bottom-bar-btn,
+  .modal-content,
+  .modal-backdrop {
+    transition: none !important;
+    animation: none !important;
+  }
+}
